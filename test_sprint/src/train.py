@@ -88,6 +88,7 @@ def run_epoch(
     optimizer: Adam | None,
     loss_config: V1LossConfig,
     device: torch.device,
+    progress_label: str | None = None,
 ) -> dict[str, float]:
     is_train = optimizer is not None
     model.train(mode=is_train)
@@ -128,6 +129,16 @@ def run_epoch(
         total_consistency += float(loss_dict["consistency_loss"].cpu())
         total_regularization += float(loss_dict["regularization_loss"].cpu())
         steps += 1
+
+        if progress_label and (steps == 1 or steps % 100 == 0):
+            print(
+                (
+                    f"{progress_label} step={steps}/{len(dataloader)} "
+                    f"loss={float(loss_dict['loss'].detach().cpu()):.4f} "
+                    f"station={float(loss_dict['station_loss'].cpu()):.4f}"
+                ),
+                flush=True,
+            )
 
     if steps == 0:
         return {"loss": 0.0, "station_loss": 0.0, "consistency_loss": 0.0, "regularization_loss": 0.0}
@@ -330,6 +341,7 @@ def main() -> None:
             optimizer=optimizer,
             loss_config=loss_config,
             device=device,
+            progress_label=f"train epoch={epoch}",
         )
         val_stats = run_epoch(
             model=model,
@@ -337,6 +349,7 @@ def main() -> None:
             optimizer=None,
             loss_config=loss_config,
             device=device,
+            progress_label=f"validation epoch={epoch}",
         )
         history.append({"epoch": epoch, **{f"train_{k}": v for k, v in train_stats.items()}, **{f"val_{k}": v for k, v in val_stats.items()}})
         print(

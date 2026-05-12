@@ -216,7 +216,7 @@ def load_weatherstats_station(
     )
     frame["timestamp_local"] = frame["timestamp_local"].dt.tz_localize(
         LOCAL_TIMEZONE,
-        ambiguous="infer",
+        ambiguous="NaT",
         nonexistent="shift_forward",
     )
     frame["timestamp_utc"] = frame["timestamp_local"].dt.tz_convert(UTC)
@@ -287,11 +287,17 @@ def subset_station_panel(
     end_utc: str | pd.Timestamp | None = None,
     station_ids: Iterable[str] | None = None,
 ) -> pd.DataFrame:
+    def _to_utc_timestamp(value: str | pd.Timestamp) -> pd.Timestamp:
+        timestamp = pd.Timestamp(value)
+        if timestamp.tzinfo is None:
+            return timestamp.tz_localize(UTC)
+        return timestamp.tz_convert(UTC)
+
     df = station_panel.copy()
     if start_utc is not None:
-        df = df[df["timestamp_utc"] >= pd.Timestamp(start_utc, tz=UTC)]
+        df = df[df["timestamp_utc"] >= _to_utc_timestamp(start_utc)]
     if end_utc is not None:
-        df = df[df["timestamp_utc"] <= pd.Timestamp(end_utc, tz=UTC)]
+        df = df[df["timestamp_utc"] <= _to_utc_timestamp(end_utc)]
     if station_ids is not None:
         df = df[df["station_id"].isin(list(station_ids))]
     return df.sort_values(["timestamp_utc", "station_id"]).reset_index(drop=True)

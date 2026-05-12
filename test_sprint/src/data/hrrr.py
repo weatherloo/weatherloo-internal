@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections import OrderedDict
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -31,15 +32,50 @@ class WaterlooPatchConfig:
         return (self.center_lon - self.lon_half_span, self.center_lon + self.lon_half_span)
 
 
+@dataclass(frozen=True)
+class HRRRArchiveVariable:
+    level: str
+    name: str
+
+
 class HRRRPatchLoader:
+    ARCHIVE_ROOT = "s3://hrrrzarr"
+    ARCHIVE_LEVEL_TYPE = "sfc"
+    ARCHIVE_RUN_CACHE_SIZE = 256
+    ARCHIVE_VARIABLES: dict[str, HRRRArchiveVariable] = {
+        "t2m": HRRRArchiveVariable(level="2m_above_ground", name="TMP"),
+        "d2m": HRRRArchiveVariable(level="2m_above_ground", name="DPT"),
+        "u10": HRRRArchiveVariable(level="10m_above_ground", name="UGRD"),
+        "v10": HRRRArchiveVariable(level="10m_above_ground", name="VGRD"),
+        "sp": HRRRArchiveVariable(level="surface", name="PRES"),
+    }
+
     def __init__(self, dataset_path: str | Path, config: WaterlooPatchConfig | None = None) -> None:
         self.dataset_path = dataset_path
         self.config = config or WaterlooPatchConfig()
         self._dataset: xr.Dataset | None = None
+        self._archive_chunk_index: xr.Dataset | None = None
+        self._archive_window: dict[str, Any] | None = None
+        self._archive_store_cache: dict[str, Any] = {}
+        self._archive_s3 = None
+        self._archive_run_data_cache: OrderedDict[str, dict[str, np.ndarray]] = OrderedDict()
+
+    @staticmethod
+    def _to_utc_timestamp(value: str | pd.Timestamp) -> pd.Timestamp:
+        timestamp = pd.Timestamp(value)
+        if timestamp.tzinfo is None:
+            return timestamp.tz_localize("UTC")
+        return timestamp.tz_convert("UTC")
 
     def open_dataset(self) -> xr.Dataset:
+        dataset_path = self._dataset_path_str()
+        if self._is_hrrr_archive_root(dataset_path):
+            msg = (
+                "The public HRRR archive root is not a single xarray dataset. "
+                "Use load_patch() instead so the loader can slice per-run forecast stores."
+            )
+            raise ValueError(msg)
         if self._dataset is None:
-            dataset_path = self._dataset_path_str()
             if self._is_zarr_store(dataset_path):
                 self._dataset = xr.open_zarr(
                     dataset_path,
@@ -56,6 +92,13 @@ class HRRRPatchLoader:
         init_time_utc: str | pd.Timestamp,
         lead_hour: int,
     ) -> dict[str, Any]:
+        dataset_path = self._dataset_path_str()
+        if self._is_hrrr_archive_root(dataset_path):
+            return self._load_patch_from_archive(
+                init_time_utc=self._to_utc_timestamp(init_time_utc),
+                lead_hour=lead_hour,
+            )
+
         ds = self.open_dataset()
         selected = self._select_init_and_lead(ds, init_time_utc=init_time_utc, lead_hour=lead_hour)
         patch = self._crop_to_waterloo(selected)
@@ -85,7 +128,7 @@ class HRRRPatchLoader:
             "lat_grid": lat_grid,
             "lon_grid": lon_grid,
             "lead_hour": int(lead_hour),
-            "init_time_utc": pd.Timestamp(init_time_utc, tz="UTC"),
+            "init_time_utc": self._to_utc_timestamp(init_time_utc),
         }
 
     def _select_init_and_lead(
@@ -233,4 +276,175 @@ class HRRRPatchLoader:
             # NOAA's HRRR Zarr archive is public, so anonymous S3 access works.
             return {"anon": True}
         return None
+
+    @classmethod
+    def _is_hrrr_archive_root(cls, dataset_path: str) -> bool:
+        return dataset_path.rstrip("/") == cls.ARCHIVE_ROOT
+
+    def _load_patch_from_archive(
+        self,
+        *,
+        init_time_utc: pd.Timestamp,
+        lead_hour: int,
+    ) -> dict[str, Any]:
+        if lead_hour < 1:
+            msg = f"lead_hour must be >= 1 for HRRR forecast data, got {lead_hour}."
+            raise ValueError(msg)
+
+        window = self._get_archive_window()
+        run_data = self._get_archive_run_data(init_time_utc)
+        dynamic = np.stack(
+            [
+                run_data[variable_name][lead_hour - 1]
+                for variable_name in self.config.dynamic_variables
+            ],
+            axis=0,
+        )
+        static = (
+            np.stack(
+                [
+                    run_data[variable_name][lead_hour - 1]
+                    for variable_name in self.config.static_variables
+                ],
+                axis=0,
+            )
+            if self.config.static_variables
+            else np.zeros((0, *dynamic.shape[-2:]), dtype=np.float32)
+        )
+        baseline_index = self.config.dynamic_variables.index(self.config.target_variable)
+        baseline = dynamic[baseline_index].copy()
+
+        return {
+            "dynamic": dynamic,
+            "static": static,
+            "baseline_t2m_c": baseline,
+            "lat_grid": window["lat_grid"],
+            "lon_grid": window["lon_grid"],
+            "lead_hour": int(lead_hour),
+            "init_time_utc": init_time_utc,
+        }
+
+    def _get_archive_window(self) -> dict[str, Any]:
+        if self._archive_window is not None:
+            return self._archive_window
+
+        chunk_index = self._get_archive_chunk_index()
+        lat = np.asarray(chunk_index["latitude"].compute(), dtype=np.float64)
+        lon = np.asarray(chunk_index["longitude"].compute(), dtype=np.float64)
+        lat_min, lat_max = self.config.lat_bounds
+        lon_min, lon_max = self.config.lon_bounds
+        mask = (lat >= lat_min) & (lat <= lat_max) & (lon >= lon_min) & (lon <= lon_max)
+        if not np.any(mask):
+            msg = "No HRRR archive cells intersect the configured Waterloo patch."
+            raise ValueError(msg)
+
+        y_idx, x_idx = np.where(mask)
+        y_slice = slice(int(y_idx.min()), int(y_idx.max()) + 1)
+        x_slice = slice(int(x_idx.min()), int(x_idx.max()) + 1)
+        lat_grid = lat[y_slice, x_slice].astype(np.float32)
+        lon_grid = lon[y_slice, x_slice].astype(np.float32)
+
+        self._archive_window = {
+            "y_slice": y_slice,
+            "x_slice": x_slice,
+            "lat_grid": lat_grid,
+            "lon_grid": lon_grid,
+        }
+        return self._archive_window
+
+    def _get_archive_chunk_index(self) -> xr.Dataset:
+        if self._archive_chunk_index is None:
+            import s3fs
+
+            chunk_index_store = s3fs.S3Map(
+                f"{self.ARCHIVE_ROOT}/grid/HRRR_chunk_index.zarr",
+                s3=self._get_archive_s3(),
+            )
+            self._archive_chunk_index = xr.open_zarr(chunk_index_store, consolidated=False)
+        return self._archive_chunk_index
+
+    def _get_archive_s3(self):
+        if self._archive_s3 is None:
+            import s3fs
+
+            self._archive_s3 = s3fs.S3FileSystem(anon=True)
+        return self._archive_s3
+
+    def _get_archive_run_store(self, init_time_utc: pd.Timestamp):
+        import s3fs
+        import zarr
+
+        date_token = init_time_utc.strftime("%Y%m%d")
+        hour_token = init_time_utc.strftime("%H")
+        store_url = (
+            f"{self.ARCHIVE_ROOT}/{self.ARCHIVE_LEVEL_TYPE}/{date_token}/"
+            f"{date_token}_{hour_token}z_fcst.zarr"
+        )
+        if store_url not in self._archive_store_cache:
+            self._archive_store_cache[store_url] = zarr.open(
+                s3fs.S3Map(store_url, s3=self._get_archive_s3()),
+                mode="r",
+            )
+        return self._archive_store_cache[store_url]
+
+    def _get_archive_run_data(self, init_time_utc: pd.Timestamp) -> dict[str, np.ndarray]:
+        store_url = self._archive_store_url(init_time_utc)
+        if store_url in self._archive_run_data_cache:
+            self._archive_run_data_cache.move_to_end(store_url)
+            return self._archive_run_data_cache[store_url]
+
+        window = self._get_archive_window()
+        store = self._get_archive_run_store(init_time_utc)
+        run_data = {
+            variable_name: self._load_archive_variable_block(
+                store=store,
+                variable_name=variable_name,
+                y_slice=window["y_slice"],
+                x_slice=window["x_slice"],
+            )
+            for variable_name in (*self.config.dynamic_variables, *self.config.static_variables)
+        }
+        self._archive_run_data_cache[store_url] = run_data
+        if len(self._archive_run_data_cache) > self.ARCHIVE_RUN_CACHE_SIZE:
+            self._archive_run_data_cache.popitem(last=False)
+        return run_data
+
+    def _archive_store_url(self, init_time_utc: pd.Timestamp) -> str:
+        date_token = init_time_utc.strftime("%Y%m%d")
+        hour_token = init_time_utc.strftime("%H")
+        return (
+            f"{self.ARCHIVE_ROOT}/{self.ARCHIVE_LEVEL_TYPE}/{date_token}/"
+            f"{date_token}_{hour_token}z_fcst.zarr"
+        )
+
+    def _load_archive_variable_block(
+        self,
+        *,
+        store,
+        variable_name: str,
+        y_slice: slice,
+        x_slice: slice,
+    ) -> np.ndarray:
+        if variable_name not in self.ARCHIVE_VARIABLES:
+            msg = f"Unsupported HRRR archive variable mapping for '{variable_name}'."
+            raise KeyError(msg)
+
+        archive_var = self.ARCHIVE_VARIABLES[variable_name]
+        zarr_path = (
+            f"{archive_var.level}/{archive_var.name}/"
+            f"{archive_var.level}/{archive_var.name}"
+        )
+        values = np.asarray(store[zarr_path][:, y_slice, x_slice])
+        if values.ndim == 2:
+            values = values[None, ...]
+        return np.stack(
+            [
+                self._as_float_array(
+                    xr.DataArray(values[lead_index]),
+                    variable_name=variable_name,
+                )
+                for lead_index in range(values.shape[0])
+            ],
+            axis=0,
+        )
 

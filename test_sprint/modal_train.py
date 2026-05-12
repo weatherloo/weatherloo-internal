@@ -217,24 +217,32 @@ def run_training(
     if station_ids.strip():
         command.extend(["--station-ids", station_ids.strip()])
 
-    completed = subprocess.run(
+    process = subprocess.Popen(
         command,
         cwd=PROJECT_REMOTE_DIR,
         env=_pythonpath_env(),
-        capture_output=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
         text=True,
+        bufsize=1,
     )
+    combined_tail: list[str] = []
+    assert process.stdout is not None
+    for line in process.stdout:
+        print(line, end="", flush=True)
+        stripped = line.rstrip("\n")
+        if stripped:
+            combined_tail.append(stripped)
+            combined_tail = combined_tail[-80:]
+    returncode = process.wait()
     artifact_volume.commit()
 
-    stdout_tail = completed.stdout.splitlines()[-40:]
-    stderr_tail = completed.stderr.splitlines()[-40:]
-    if completed.returncode != 0:
+    if returncode != 0:
         raise RuntimeError(
             json.dumps(
                 {
-                    "returncode": completed.returncode,
-                    "stdout_tail": stdout_tail,
-                    "stderr_tail": stderr_tail,
+                    "returncode": returncode,
+                    "combined_tail": combined_tail,
                 },
                 indent=2,
             )
@@ -246,8 +254,7 @@ def run_training(
         "cuda_device_name": torch.cuda.get_device_name(0) if torch.cuda.is_available() else None,
         "output_dir": output_dir,
         "artifact_volume": DEFAULT_ARTIFACT_VOLUME,
-        "stdout_tail": stdout_tail,
-        "stderr_tail": stderr_tail,
+        "combined_tail": combined_tail,
     }
 
 
