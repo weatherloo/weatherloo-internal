@@ -9,6 +9,7 @@ from pathlib import Path, PurePosixPath
 from urllib.parse import urlparse
 
 import modal
+from modal.exception import NotFoundError
 
 
 APP_NAME = "weatherloo-train"
@@ -27,8 +28,10 @@ DEFAULT_TIMEOUT_SECONDS = int(
 )
 # Set this once instead of passing an HRRR path on every `modal run`.
 # This can be a local path to upload, a mounted volume path, or a public s3:// Zarr URI.
-HARDCODED_HRRR_PATH = "s3://hrrrzarr"
-HARDCODED_HRRR_VOLUME_SUBPATH = ""
+HARDCODED_HRRR_PATH = str(
+    (PROJECT_DIR.parent / "data" / "hrrr" / "waterloo_janfeb_2026_subset.zarr").resolve()
+)
+HARDCODED_HRRR_VOLUME_SUBPATH = "inputs/hrrr/waterloo_janfeb_2026_subset.zarr"
 
 app = modal.App(APP_NAME)
 data_volume = modal.Volume.from_name(DEFAULT_DATA_VOLUME, create_if_missing=True)
@@ -69,13 +72,36 @@ def _default_remote_subpath(local_path: Path, prefix: str) -> str:
     return PurePosixPath(prefix, local_path.name).as_posix()
 
 
+def _local_sidecar_paths(local_path: Path) -> list[Path]:
+    sidecars: list[Path] = []
+    for suffix in (".init_times.txt", ".missing_runs.txt"):
+        candidate = local_path.with_suffix(suffix)
+        if candidate.exists():
+            sidecars.append(candidate)
+    return sidecars
+
+
+def _existing_volume_entries(volume: modal.Volume, remote_parent: PurePosixPath) -> set[str]:
+    try:
+        return {entry.path for entry in volume.listdir(remote_parent.as_posix())}
+    except NotFoundError:
+        return set()
+
+
 def _upload_local_path(local_path: Path, remote_subpath: str, volume: modal.Volume) -> str:
     remote_subpath = PurePosixPath(remote_subpath).as_posix()
+    remote_parent = PurePosixPath(remote_subpath).parent
+    existing_entries = _existing_volume_entries(volume, remote_parent)
     with volume.batch_upload() as batch:
-        if local_path.is_dir():
-            batch.put_directory(str(local_path), remote_subpath)
-        else:
-            batch.put_file(str(local_path), remote_subpath)
+        if remote_subpath not in existing_entries:
+            if local_path.is_dir():
+                batch.put_directory(str(local_path), remote_subpath)
+            else:
+                batch.put_file(str(local_path), remote_subpath)
+        for sidecar_path in _local_sidecar_paths(local_path):
+            remote_sidecar_path = PurePosixPath(remote_parent, sidecar_path.name).as_posix()
+            if remote_sidecar_path not in existing_entries:
+                batch.put_file(str(sidecar_path), remote_sidecar_path)
     return remote_subpath
 
 

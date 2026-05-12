@@ -59,6 +59,7 @@ class HRRRPatchLoader:
         self._archive_store_cache: dict[str, Any] = {}
         self._archive_s3 = None
         self._archive_run_data_cache: OrderedDict[str, dict[str, np.ndarray]] = OrderedDict()
+        self._archive_run_miss_count = 0
 
     @staticmethod
     def _to_utc_timestamp(value: str | pd.Timestamp) -> pd.Timestamp:
@@ -84,6 +85,7 @@ class HRRRPatchLoader:
                 )
             else:
                 self._dataset = xr.open_dataset(dataset_path)
+            self._dataset = self._apply_local_init_time_manifest(self._dataset)
         return self._dataset
 
     def load_patch(
@@ -256,6 +258,30 @@ class HRRRPatchLoader:
             return str(self.dataset_path.expanduser())
         return str(self.dataset_path)
 
+    def _apply_local_init_time_manifest(self, ds: xr.Dataset) -> xr.Dataset:
+        manifest_path = self._local_init_time_manifest_path()
+        if manifest_path is None or not manifest_path.exists() or "time" not in ds.sizes:
+            return ds
+
+        init_times: list[np.datetime64] = []
+        for line in manifest_path.read_text(encoding="utf-8").splitlines():
+            line = line.strip()
+            if not line:
+                continue
+            init_times.append(self._to_utc_timestamp(line).tz_convert(None).to_datetime64())
+
+        if len(init_times) != int(ds.sizes["time"]):
+            return ds
+
+        return ds.assign_coords(time=("time", np.asarray(init_times, dtype="datetime64[ns]")))
+
+    def _local_init_time_manifest_path(self) -> Path | None:
+        dataset_path = self._dataset_path_str()
+        parsed = urlparse(dataset_path)
+        if parsed.scheme not in {"", "file"}:
+            return None
+        return Path(parsed.path or dataset_path).expanduser().with_suffix(".init_times.txt")
+
     @staticmethod
     def _is_zarr_store(dataset_path: str) -> bool:
         parsed = urlparse(dataset_path)
@@ -328,6 +354,7 @@ class HRRRPatchLoader:
         if self._archive_window is not None:
             return self._archive_window
 
+        print("HRRR archive: loading chunk index for Waterloo window", flush=True)
         chunk_index = self._get_archive_chunk_index()
         lat = np.asarray(chunk_index["latitude"].compute(), dtype=np.float64)
         lon = np.asarray(chunk_index["longitude"].compute(), dtype=np.float64)
@@ -350,12 +377,22 @@ class HRRRPatchLoader:
             "lat_grid": lat_grid,
             "lon_grid": lon_grid,
         }
+        print(
+            (
+                "HRRR archive: cached Waterloo window "
+                f"shape={lat_grid.shape} "
+                f"lat=({lat_grid.min():.3f},{lat_grid.max():.3f}) "
+                f"lon=({lon_grid.min():.3f},{lon_grid.max():.3f})"
+            ),
+            flush=True,
+        )
         return self._archive_window
 
     def _get_archive_chunk_index(self) -> xr.Dataset:
         if self._archive_chunk_index is None:
             import s3fs
 
+            print("HRRR archive: opening HRRR_chunk_index.zarr", flush=True)
             chunk_index_store = s3fs.S3Map(
                 f"{self.ARCHIVE_ROOT}/grid/HRRR_chunk_index.zarr",
                 s3=self._get_archive_s3(),
@@ -381,6 +418,7 @@ class HRRRPatchLoader:
             f"{date_token}_{hour_token}z_fcst.zarr"
         )
         if store_url not in self._archive_store_cache:
+            print(f"HRRR archive: opening forecast store {store_url}", flush=True)
             self._archive_store_cache[store_url] = zarr.open(
                 s3fs.S3Map(store_url, s3=self._get_archive_s3()),
                 mode="r",
@@ -393,8 +431,18 @@ class HRRRPatchLoader:
             self._archive_run_data_cache.move_to_end(store_url)
             return self._archive_run_data_cache[store_url]
 
+        self._archive_run_miss_count += 1
         window = self._get_archive_window()
         store = self._get_archive_run_store(init_time_utc)
+        if self._archive_run_miss_count <= 5 or self._archive_run_miss_count % 25 == 0:
+            print(
+                (
+                    "HRRR archive: fetching run data "
+                    f"miss={self._archive_run_miss_count} "
+                    f"init={init_time_utc.isoformat()}"
+                ),
+                flush=True,
+            )
         run_data = {
             variable_name: self._load_archive_variable_block(
                 store=store,

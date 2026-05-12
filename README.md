@@ -66,7 +66,20 @@ python3 -m src.train \
 Use `--help` on `python3 -m src.train` for the full argument list.
 
 The training run writes metrics and plots into the chosen output directory,
-including `training_history.csv` and `loss_curves.png`.
+including:
+
+- `training_history.csv`
+- `loss_curves.png`
+- `*_metrics.json`
+- `*_*_by_lead.csv`
+- `*_model_by_lead_baseline_comparison.csv`
+- `*_metrics_by_lead.png`
+- `*_model_by_lead_baseline_comparison.png`
+- `*_metrics_summary.png`
+- `*_prediction_scatter.png`
+- `*_station_timeseries_lead*.png`
+- `validation_spatial_epoch*_example*_lead*.png`
+- `test_spatial_example*_lead*.png`
 
 ## Notes
 

@@ -149,6 +149,8 @@ class HRRRTemperatureDataset(Dataset[dict[str, torch.Tensor]]):
             "dynamic": torch.from_numpy(patch["dynamic"]),
             "static": torch.from_numpy(patch["static"]),
             "baseline_t2m_c": torch.from_numpy(patch["baseline_t2m_c"][None, ...]),
+            "lat_grid": torch.from_numpy(patch["lat_grid"]),
+            "lon_grid": torch.from_numpy(patch["lon_grid"]),
             "lead_hour": torch.tensor(int(row["lead_hour"]), dtype=torch.long),
             "station_xy": torch.from_numpy(station_xy),
             "station_values_c": torch.from_numpy(station_values),

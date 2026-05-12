@@ -27,6 +27,14 @@ directory:
 - `*_raw_bilinear_by_lead.csv`
 - `*_bias_baseline_by_lead.csv`
 - `*_model_by_lead.csv`
+- `*_model_by_lead_baseline_comparison.csv`
+- `*_metrics_by_lead.png`
+- `*_model_by_lead_baseline_comparison.png`
+- `*_metrics_summary.png`
+- `*_prediction_scatter.png`
+- `*_station_timeseries_lead*.png`
+- `validation_spatial_epoch*_example*_lead*.png`
+- `test_spatial_example*_lead*.png`
 
 ## Metrics to review
 
