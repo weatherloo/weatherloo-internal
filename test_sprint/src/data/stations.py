@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import csv
 from dataclasses import dataclass
 from io import StringIO
 from typing import Iterable
@@ -116,7 +117,26 @@ def load_uw_station(csv_url: str) -> pd.DataFrame:
     3. Otherwise drop the hour.
     """
 
-    raw = pd.read_csv(csv_url)
+    csv_text = _fetch_text(csv_url)
+    reader = csv.reader(StringIO(csv_text), skipinitialspace=True)
+    try:
+        header = next(reader)
+    except StopIteration:
+        return pd.DataFrame(columns=["timestamp_utc", "temperature_c", "hourly_method"])
+
+    cleaned_header = [column.strip() for column in header]
+    normalized_rows: list[list[str]] = []
+    for row in reader:
+        if not row or not any(cell.strip() for cell in row):
+            continue
+        if len(row) < len(cleaned_header):
+            row = row + [""] * (len(cleaned_header) - len(row))
+        elif len(row) > len(cleaned_header):
+            # The UW export currently appends unlabeled trailing cells we do not use.
+            row = row[: len(cleaned_header)]
+        normalized_rows.append(row)
+
+    raw = pd.DataFrame(normalized_rows, columns=cleaned_header)
     raw["temperature_c"] = pd.to_numeric(raw["Temperature"], errors="coerce")
     raw.loc[raw["temperature_c"] <= -9990.0, "temperature_c"] = pd.NA
 
@@ -133,7 +153,7 @@ def load_uw_station(csv_url: str) -> pd.DataFrame:
     raw["timestamp_local"] = (
         local_timestamp.dt.tz_localize(
             LOCAL_TIMEZONE,
-            ambiguous="infer",
+            ambiguous="NaT",
             nonexistent="shift_forward",
         )
     )

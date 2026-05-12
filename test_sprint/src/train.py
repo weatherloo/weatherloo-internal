@@ -303,6 +303,15 @@ def main() -> None:
     effective_station_ids = train_dataset.station_ids
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    print(
+        (
+            f"Using device={device.type} train_samples={len(dataloaders['train'].dataset)} "
+            f"validation_samples={len(dataloaders['validation'].dataset)} "
+            f"test_samples={len(dataloaders['test'].dataset)} "
+            f"stations={len(effective_station_ids)}"
+        ),
+        flush=True,
+    )
     model = DenseTemperatureResidualUNet(
         dynamic_channels=len(patch_config.dynamic_variables),
         static_channels=len(patch_config.static_variables),
@@ -330,6 +339,16 @@ def main() -> None:
             device=device,
         )
         history.append({"epoch": epoch, **{f"train_{k}": v for k, v in train_stats.items()}, **{f"val_{k}": v for k, v in val_stats.items()}})
+        print(
+            (
+                f"Epoch {epoch}/{args.epochs} "
+                f"train_loss={train_stats['loss']:.4f} "
+                f"val_loss={val_stats['loss']:.4f} "
+                f"train_station={train_stats['station_loss']:.4f} "
+                f"val_station={val_stats['station_loss']:.4f}"
+            ),
+            flush=True,
+        )
         if val_stats["loss"] <= best_val_loss:
             best_val_loss = val_stats["loss"]
             best_state = {key: value.detach().cpu() for key, value in model.state_dict().items()}
@@ -362,6 +381,8 @@ def main() -> None:
             continue
         rows["bias_baseline_c"] = bias_baseline.predict(rows)
         save_split_artifacts(output_dir=output_dir, split_name=split_name, frame=rows)
+
+    print(f"Wrote artifacts to {output_dir}", flush=True)
 
 
 if __name__ == "__main__":

@@ -1,8 +1,9 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlparse
 
 import numpy as np
 import pandas as pd
@@ -32,17 +33,21 @@ class WaterlooPatchConfig:
 
 class HRRRPatchLoader:
     def __init__(self, dataset_path: str | Path, config: WaterlooPatchConfig | None = None) -> None:
-        self.dataset_path = Path(dataset_path)
+        self.dataset_path = dataset_path
         self.config = config or WaterlooPatchConfig()
         self._dataset: xr.Dataset | None = None
 
     def open_dataset(self) -> xr.Dataset:
         if self._dataset is None:
-            suffix = self.dataset_path.suffix.lower()
-            if self.dataset_path.name.endswith(".zarr") or suffix == ".zarr":
-                self._dataset = xr.open_zarr(self.dataset_path)
+            dataset_path = self._dataset_path_str()
+            if self._is_zarr_store(dataset_path):
+                self._dataset = xr.open_zarr(
+                    dataset_path,
+                    consolidated=False,
+                    storage_options=self._storage_options(dataset_path),
+                )
             else:
-                self._dataset = xr.open_dataset(self.dataset_path)
+                self._dataset = xr.open_dataset(dataset_path)
         return self._dataset
 
     def load_patch(
@@ -91,7 +96,12 @@ class HRRRPatchLoader:
         lead_hour: int,
     ) -> xr.Dataset:
         subset = ds
-        init_timestamp = pd.Timestamp(init_time_utc, tz="UTC").tz_convert(None)
+        init_timestamp = pd.Timestamp(init_time_utc)
+        if init_timestamp.tzinfo is None:
+            init_timestamp = init_timestamp.tz_localize("UTC")
+        else:
+            init_timestamp = init_timestamp.tz_convert("UTC")
+        init_timestamp = init_timestamp.tz_convert(None)
 
         if "time" in subset.coords:
             subset = subset.sel(time=init_timestamp, method="nearest")
@@ -197,4 +207,30 @@ class HRRRPatchLoader:
         if variable_name in {"sp", "msl"} and np.nanmean(values) > 2000.0:
             values = values / 100.0
         return values
+
+    def _dataset_path_str(self) -> str:
+        if isinstance(self.dataset_path, Path):
+            return str(self.dataset_path.expanduser())
+        return str(self.dataset_path)
+
+    @staticmethod
+    def _is_zarr_store(dataset_path: str) -> bool:
+        parsed = urlparse(dataset_path)
+        if parsed.scheme == "s3":
+            return True
+
+        local_path = Path(dataset_path).expanduser()
+        return (
+            local_path.name.endswith(".zarr")
+            or local_path.suffix.lower() == ".zarr"
+            or local_path.is_dir()
+        )
+
+    @staticmethod
+    def _storage_options(dataset_path: str) -> dict[str, object] | None:
+        parsed = urlparse(dataset_path)
+        if parsed.scheme == "s3":
+            # NOAA's HRRR Zarr archive is public, so anonymous S3 access works.
+            return {"anon": True}
+        return None
 

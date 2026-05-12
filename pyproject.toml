@@ -10,10 +10,13 @@ readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
   "matplotlib",
+  "netCDF4",
   "numpy",
   "pandas",
+  "s3fs",
   "xarray",
   "torch",
+  "zarr",
 ]
 
 [tool.hatch.build.targets.wheel]

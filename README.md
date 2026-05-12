@@ -38,7 +38,8 @@ The code expects:
 
 - the UW 2026 15-minute CSV
 - hourly Weatherstats CSV exports for the nearby auxiliary stations
-- a local HRRR dataset with Waterloo-region coverage in NetCDF or Zarr format
+- an HRRR dataset with Waterloo-region coverage in NetCDF or Zarr format,
+  either local or a public `s3://...` Zarr store
 
 The station URLs and default v1 station metadata live in `src/data/stations.py`.
 The HRRR loader is intentionally format-flexible, but it assumes the dataset
@@ -50,6 +51,15 @@ contains a target variable named `t2m` plus a few context variables.
 python3 -m src.train \
   --uw-csv "path/to/Hobo_15minutedata_2026.csv" \
   --hrrr-path "path/to/hrrr_dataset.zarr" \
+  --output-dir "artifacts/v1"
+```
+
+You can also point `--hrrr-path` at a public HRRR Zarr store on S3, for example
+within NOAA's public HRRR archives on AWS:
+
+```bash
+python3 -m src.train \
+  --hrrr-path "s3://hrrrzarr/path/to/store" \
   --output-dir "artifacts/v1"
 ```
 
