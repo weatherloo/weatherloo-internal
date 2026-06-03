@@ -12,7 +12,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-OBS_ROOT = ROOT / "benchmark-site" / "data" / "observations"
+OBS_ROOT = ROOT / "benchmarking-site" / "data" / "observations"
 
 ECCC_API = "https://api.weather.gc.ca/collections/climate-hourly/items"
 CYYZ_STN_ID = 51459
@@ -26,6 +26,8 @@ SOULIS_HOBO_URL = (
 
 MISSING = -9999.9
 TARGET_HOURS_UTC = (0, 6, 12, 18)
+# UW archive timestamps are local standard time (no DST), same as Canada Eastern Standard.
+UW_ARCHIVE_TZ = timezone(timedelta(hours=-5))
 
 
 def download(url: str, dest: Path) -> None:
@@ -62,11 +64,34 @@ def six_hourly_targets(year: int) -> list[datetime]:
     return out
 
 
-def nearest_sample(
+def clean_metric(val: float | None, *, non_negative: bool = False) -> float | None:
+    if val is None or is_missing(val):
+        return None
+    if non_negative and val < 0:
+        return None
+    return val
+
+
+def sample_at_utc(
     samples: list[tuple[datetime, dict[str, float | None]]],
     target: datetime,
     window_minutes: int = 45,
 ) -> dict[str, float | None]:
+    """Pick value at exact UTC target, else nearest within window (all times UTC)."""
+    exact = [vals for ts, vals in samples if ts == target]
+    if exact:
+        return exact[0]
+
+    in_hour = [
+        (ts, vals)
+        for ts, vals in samples
+        if ts.replace(minute=0, second=0, microsecond=0)
+        == target.replace(minute=0, second=0, microsecond=0)
+    ]
+    if in_hour:
+        _, vals = min(in_hour, key=lambda pair: abs(pair[0] - target))
+        return vals
+
     best: tuple[datetime, dict[str, float | None]] | None = None
     best_delta = timedelta(days=999)
     window = timedelta(minutes=window_minutes)
@@ -95,7 +120,7 @@ def build_observations_json(
     targets = six_hourly_targets(year)
     observations = []
     for t in targets:
-        vals = nearest_sample(samples, t)
+        vals = sample_at_utc(samples, t)
         observations.append(
             {
                 "valid_time": t.strftime("%Y-%m-%dT%H:%M:%SZ"),
@@ -123,6 +148,10 @@ def build_observations_json(
         "period": {"start": period_start, "end": period_end},
         "cadence_hours": 6,
         "time_standard": "UTC",
+        "resampling": {
+            "grid_utc_hours": list(TARGET_HOURS_UTC),
+            "method": "exact_utc_instant, else same_utc_hour, else nearest_within_45min",
+        },
         "variables": variables_meta,
         "observations": observations,
     }
@@ -136,7 +165,9 @@ def fetch_eccc_hourly(stn_id: int, year: int) -> list[dict]:
     features: list[dict] = []
     offset = 0
     limit = 10000
-    filt = f"properties.STN_ID={stn_id} AND properties.LOCAL_YEAR={year}"
+    # UTC_YEAR so boundary hours (e.g. 2025-01-01T00:00:00Z) are included even when
+    # LOCAL_YEAR is still the previous calendar year.
+    filt = f"properties.STN_ID={stn_id} AND properties.UTC_YEAR={year}"
 
     while True:
         params = urllib.parse.urlencode(
@@ -171,8 +202,12 @@ def eccc_to_samples(rows: list[dict]) -> list[tuple[datetime, dict[str, float | 
         ts = parse_utc(utc)
         temp = p.get("TEMP")
         wind = p.get("WIND_SPEED")
-        t2m = float(temp) if temp is not None and temp != "" else None
-        ws = float(wind) if wind is not None and wind != "" else None
+        t2m = clean_metric(float(temp)) if temp is not None and temp != "" else None
+        ws = (
+            clean_metric(float(wind), non_negative=True)
+            if wind is not None and wind != ""
+            else None
+        )
         samples.append((ts, {"t2m": t2m, "wind_speed": ws}))
     return samples
 
@@ -199,16 +234,17 @@ def load_soulis_main_csv(path: Path, year: int) -> list[tuple[datetime, dict[str
                 continue
             if y != year:
                 continue
-            dt = datetime(year, 1, 1, tzinfo=timezone.utc) + timedelta(
+            dt_lst = datetime(year, 1, 1, tzinfo=UW_ARCHIVE_TZ) + timedelta(
                 days=jday - 1, minutes=minute_of_day
             )
+            dt = dt_lst.astimezone(timezone.utc)
             try:
                 temp_f = float(row[9])
                 wind = float(row[12])
             except ValueError:
                 continue
-            t2m = None if is_missing(temp_f) else round(f_to_c(temp_f), 2)
-            ws = None if is_missing(wind) else wind
+            t2m = clean_metric(round(f_to_c(temp_f), 2)) if not is_missing(temp_f) else None
+            ws = clean_metric(wind, non_negative=True)
             samples.append((dt, {"t2m": t2m, "wind_speed": ws}))
     return samples
 
@@ -229,11 +265,9 @@ def load_soulis_hobo_csv(path: Path) -> list[tuple[datetime, dict[str, float | N
             except (ValueError, IndexError):
                 continue
             # Archive notes: local standard time (EST, no DST). Approximate as UTC-5.
-            dt = datetime(y, m, d, h, mi, tzinfo=timezone(timedelta(hours=-5))).astimezone(
-                timezone.utc
-            )
-            t2m = None if is_missing(temp) else round(temp, 2)
-            ws = None if is_missing(wind) else round(wind, 2)
+            dt = datetime(y, m, d, h, mi, tzinfo=UW_ARCHIVE_TZ).astimezone(timezone.utc)
+            t2m = clean_metric(round(temp, 2))
+            ws = clean_metric(round(wind, 2), non_negative=True)
             samples.append((dt, {"t2m": t2m, "wind_speed": ws}))
     return samples
 
@@ -283,7 +317,10 @@ def process_soulis(year: int) -> None:
         raw_path = raw_dir / f"uw_main_15min_{year}.csv"
         source = "uw_soulis_main_15min"
         notes = {
-            "time_interpretation": "Julian day + minutes from local midnight (archive LST).",
+            "time_interpretation": (
+                "Archive clock is local standard time (UTC-5, no DST); "
+                "converted to UTC for valid_time."
+            ),
             "temperature": "Converted from Fahrenheit (Ambient Air Temperature).",
             "wind_speed": "Main logger wind speed column; units as archive (typically km/h).",
         }
@@ -292,7 +329,10 @@ def process_soulis(year: int) -> None:
         raw_path = raw_dir / f"uw_hobo_15min_{year}.csv"
         source = "uw_soulis_hobo_15min"
         notes = {
-            "time_interpretation": "Local standard time (EST, no DST) → converted to UTC (fixed -5h).",
+            "time_interpretation": (
+                "Archive clock is local standard time (UTC-5, no DST); "
+                "converted to UTC for valid_time."
+            ),
             "temperature": "HOBO Temperature column (°C).",
             "wind_speed": "Wind Speed - Average 4.4 m (km/h); not 10 m — height differs from benchmark label.",
             "data_limitation": "Public bulk CSV for 2015+ is HOBO subset only; full main-logger yearly files stop at 2014.",

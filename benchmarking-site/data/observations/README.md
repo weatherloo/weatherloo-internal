@@ -16,7 +16,7 @@ observations/
 
 ## Canonical file: `observations_6h_<year>.json`
 
-One file per station per year. Timestamps align with benchmark initializations (00Z) and lead-time verification (6h steps through 72h).
+One file per station per year. **All `valid_time` values are UTC** (`…Z`), aligned with benchmark initializations at **00:00 UTC** and lead-time verification at **+6h, +12h, … +72h UTC**.
 
 ```json
 {
@@ -44,11 +44,23 @@ One file per station per year. Timestamps align with benchmark initializations (
 }
 ```
 
-### Resampling rules (6-hourly)
+### Time standard (UTC everywhere)
 
-- Target valid times: every **6 hours UTC** (`…T00:00:00Z`, `06:00`, `12:00`, `18:00`).
-- Upstream is **hourly** (ECCC) or **15-minute** (UW Soulis archive).
-- For each target time, use the **nearest** observation within ±45 minutes; if none, value is `null` and flag `"missing"`.
+| Layer | UTC handling |
+|-------|----------------|
+| **CYYZ** | ECCC `UTC_DATE` for timing; downloads use **`UTC_YEAR`** (not `LOCAL_YEAR`) so 00Z rows on Jan 1 are included. |
+| **Soulis** | Archive labels are **local standard time (UTC−5, no DST)** per UW; converted to UTC before resampling. |
+| **Output grid** | `00:00`, `06:00`, `12:00`, `18:00` **UTC** every day. |
+| **Benchmark epic** | Initializations at `00:00 UTC`; lead times in hours UTC. |
+
+A slot can still be `null` when no observation exists near that **UTC** instant (e.g. ECCC may not report exactly at `00:00 UTC` for every calendar day). That is a data gap in UTC, not local-time mixing.
+
+### Resampling rules (6-hourly UTC)
+
+1. Observation at **exact** UTC target instant, if present.
+2. Else closest observation in the **same UTC hour**.
+3. Else **nearest within ±45 minutes** (UTC).
+4. Else `null` with flag `"missing"`.
 
 ### Station sources
 

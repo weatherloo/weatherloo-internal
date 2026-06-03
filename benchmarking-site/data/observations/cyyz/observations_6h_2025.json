@@ -14,6 +14,15 @@
   },
   "cadence_hours": 6,
   "time_standard": "UTC",
+  "resampling": {
+    "grid_utc_hours": [
+      0,
+      6,
+      12,
+      18
+    ],
+    "method": "exact_utc_instant, else same_utc_hour, else nearest_within_45min"
+  },
   "variables": {
     "t2m": {
       "description": "2 m air temperature",
@@ -27,11 +36,11 @@
   "observations": [
     {
       "valid_time": "2025-01-01T00:00:00Z",
-      "t2m": null,
-      "wind_speed": null,
+      "t2m": 3.1,
+      "wind_speed": 16.0,
       "flags": {
-        "t2m": "missing",
-        "wind_speed": "missing"
+        "t2m": null,
+        "wind_speed": null
       }
     },
     {

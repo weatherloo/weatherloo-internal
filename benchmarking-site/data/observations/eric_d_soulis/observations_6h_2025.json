@@ -14,6 +14,15 @@
   },
   "cadence_hours": 6,
   "time_standard": "UTC",
+  "resampling": {
+    "grid_utc_hours": [
+      0,
+      6,
+      12,
+      18
+    ],
+    "method": "exact_utc_instant, else same_utc_hour, else nearest_within_45min"
+  },
   "variables": {
     "t2m": {
       "description": "2 m air temperature (near-surface)",
@@ -1837,19 +1846,19 @@
     {
       "valid_time": "2025-02-20T06:00:00Z",
       "t2m": 2.2,
-      "wind_speed": -13.48,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
       "valid_time": "2025-02-20T12:00:00Z",
       "t2m": 0.0,
-      "wind_speed": -13.85,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
@@ -13167,7 +13176,7 @@
     }
   ],
   "processing_notes": {
-    "time_interpretation": "Local standard time (EST, no DST) \u2192 converted to UTC (fixed -5h).",
+    "time_interpretation": "Archive clock is local standard time (UTC-5, no DST); converted to UTC for valid_time.",
     "temperature": "HOBO Temperature column (\u00b0C).",
     "wind_speed": "Wind Speed - Average 4.4 m (km/h); not 10 m \u2014 height differs from benchmark label.",
     "data_limitation": "Public bulk CSV for 2015+ is HOBO subset only; full main-logger yearly files stop at 2014."

@@ -2,6 +2,8 @@
 
 Barebones internal dashboard for [issue #1](https://github.com/weatherloo/weatherloo-internal/issues/1): compare deterministic forecast skill at **Eric D. Soulis** and **Toronto Pearson (CYYZ)** for **t2m** and **10 m wind speed** across lead times.
 
+**Implementing a benchmark method?** Read [`AGENTS.md`](AGENTS.md) first.
+
 ## Run locally
 
 From this directory:
