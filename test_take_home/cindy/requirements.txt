@@ -1,7 +1,0 @@
-xarray>=2024.1
-zarr>=2.14
-gcsfs>=2024.1
-fsspec>=2024.1
-plotly>=5.18
-numpy>=1.26
-dask>=2024.1
