@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Forecast Benchmark</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ol@9.2.4/ol.css" />
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+</head>
+<body>
+  <header>
+    <h1>Weather Forecast Benchmark</h1>
+    <p class="subtitle">Internal skill scores — placeholders until benchmark JSON is wired in</p>
+  </header>
+
+  <main>
+    <section id="map-panel" aria-label="Station map">
+      <h2>Locations</h2>
+      <div id="map" aria-label="Southern Ontario map with weather stations"></div>
+      <p id="selected-location">Select a location on the map.</p>
+    </section>
+
+    <section id="detail-panel" aria-label="Skill score charts" hidden>
+      <div class="panel-header">
+        <h2 id="detail-title">Skill scores</h2>
+        <label>
+          Method
+          <select id="method-select"></select>
+        </label>
+      </div>
+
+      <p id="load-status" class="status"></p>
+
+      <div class="variable-block">
+        <h3>2 m temperature (t2m)</h3>
+        <div class="chart-grid" id="charts-t2m"></div>
+      </div>
+
+      <div class="variable-block">
+        <h3>10 m wind speed</h3>
+        <div class="chart-grid" id="charts-wind_speed"></div>
+      </div>
+    </section>
+  </main>
+
+  <script src="app.js" type="module"></script>
+</body>
+</html>

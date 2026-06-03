@@ -1,0 +1,24 @@
+{
+  "schema_version": "1",
+  "stations": [
+    {
+      "id": "cyyz",
+      "name": "Toronto Pearson (CYYZ)",
+      "coordinates": {
+        "lat": 43.6777,
+        "lon": -79.6248
+      },
+      "eccc_stn_id": 51459,
+      "observations_glob": "cyyz/observations_6h_*.json"
+    },
+    {
+      "id": "eric_d_soulis",
+      "name": "Eric D. Soulis station",
+      "coordinates": {
+        "lat": 43.4668,
+        "lon": -80.5164
+      },
+      "observations_glob": "eric_d_soulis/observations_6h_*.json"
+    }
+  ]
+}
