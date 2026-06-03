@@ -17,6 +17,16 @@ npm run dev
 
 Open http://localhost:5173 — click a station on the map, pick a method, view RMSE / MAE / bias / ACC vs lead time. The UI **averages** metrics across all loaded init files for the selected location.
 
+`npm run dev` starts **Vite** and the **NPZ API** (`server/npz_api.py` on port 5174). When a method has a consolidated `<method_id>_2025.npz`, the dashboard loads aggregates via `/api/benchmark/…` instead of fetching hundreds of per-init JSON files. Without NPZ, it falls back to per-init JSON (via `index.json` or sample file).
+
+Rebuild the consolidated NPZ from existing JSON without re-fetching:
+
+```bash
+python3 data/gfs_interpolated/compute_benchmark.py --export-npz-only
+```
+
+API only needs `numpy` (`pip install -r server/requirements.txt`, or use the repo `.venv` — `server/run_api.sh` picks it automatically).
+
 Production build (serves `dist/` with benchmark JSON copied in):
 
 ```bash
@@ -36,7 +46,7 @@ The UI is a **React** app (`src/`) built with Vite. Benchmark JSON stays in `dat
 | Method benchmark output | `data/<method_id>/` |
 | Method compute script (when present) | `data/<method_id>/compute_benchmark.py` |
 | Method Python deps (when present) | `data/<method_id>/requirements.txt` |
-| Consolidated analysis (optional) | `data/<method_id>/<method_id>_<year>.npz` |
+| Consolidated analysis | `data/<method_id>/<method_id>_<year>.npz` |
 | Sample output shape | `data/climatology/climatology_sample.json` |
 | Observations spec | `data/observations/README.md` |
 | Regenerate observations | `python3 scripts/fetch_station_observations.py --year 2025` (from repo root) |
@@ -46,7 +56,7 @@ The UI is a **React** app (`src/`) built with Vite. Benchmark JSON stays in `dat
 
 Each method's pipeline lives **alongside its output** under `data/<method_id>/`:
 
-- `compute_benchmark.py` — fetches/processes forecasts, writes JSON (+ optional NPZ) into the same folder
+- `compute_benchmark.py` — fetches/processes forecasts, writes per-init JSON and consolidated NPZ into the same folder
 - `requirements.txt` — method-specific Python dependencies
 
 Run from repo root or from the method folder:
@@ -112,9 +122,9 @@ The dashboard **averages over whatever loads**; sparse or in-progress datasets a
 - JSON shape per init: see epic #1 and `data/climatology/climatology_sample.json`.
 - **Done on site:** method appears in dropdown; both stations show 8 charts (4 metrics × 2 variables) without load errors.
 
-### Optional NPZ export (analysis)
+### NPZ export
 
-Compute scripts may also write a **single consolidated NPZ** alongside the JSON files. The dashboard does **not** read NPZ; it is for Python/numpy aggregation across all inits.
+Compute scripts write a **single consolidated NPZ** alongside the per-init JSON files. The dashboard reads NPZ **via the thin API** in `server/npz_api.py` (proxied at `/api/benchmark` during `npm run dev` / `npm run preview`); without NPZ it falls back to per-init JSON.
 
 - **Filename:** `data/<method_id>/<method_id>_<year>.npz` (e.g. `gfs_interpolated_2025.npz`).
 - **Document in** `data/<method_id>/metadata.json` via `"npz_file"` and `"npz_schema": "see benchmarking-site/AGENTS.md"`.
@@ -162,7 +172,7 @@ Full coverage below is the goal for a **finished** method; incomplete cycles, le
 - [ ] Both `cyyz` and `eric_d_soulis`, both `t2m` and `wind_speed`, all 12 lead times
 - [ ] Spot-check one init (e.g. `2025-01-15T06:00:00Z`) at `cyyz` for one lead time vs hand calculation
 - [ ] Dashboard loads method and renders charts
-- [ ] (Optional) Consolidated `<method_id>_<year>.npz` for numpy analysis — see NPZ section above
+- [ ] Consolidated `<method_id>_<year>.npz` with `npz_file` / `npz_schema` in `metadata.json` — see NPZ section above
 
 ## Method IDs (folder names)
 

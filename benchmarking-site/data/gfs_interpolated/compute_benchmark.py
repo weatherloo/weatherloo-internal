@@ -6,8 +6,8 @@ interpolates 2 m temperature and 10 m wind (from u/v components) to each station
 and writes per-initialization metric files in this directory
 (``data/gfs_interpolated/``).
 
-Also writes a consolidated ``gfs_interpolated_<year>.npz`` for numpy analysis
-(see ``benchmarking-site/AGENTS.md``).
+Also writes a consolidated ``gfs_interpolated_<year>.npz`` (see
+``benchmarking-site/AGENTS.md``).
 
 Wind speed: sqrt(u10^2 + v10^2), converted m/s -> km/h (* 3.6).
 ACC anomaly baseline: DOY + UTC-hour climatology from station observations
@@ -456,11 +456,6 @@ def main() -> None:
         action="store_true",
         help="Rebuild NPZ from existing JSON files without fetching GFS",
     )
-    parser.add_argument(
-        "--skip-npz",
-        action="store_true",
-        help="Do not write consolidated NPZ after JSON export",
-    )
     args = parser.parse_args()
 
     global DOWNLOAD_RETRIES
@@ -525,8 +520,7 @@ def main() -> None:
     write_metadata(out_dir, args.year)
     existing = sorted(p.name for p in init_json_paths(out_dir, args.year))
     write_index(out_dir, existing)
-    if not args.skip_npz:
-        export_npz(out_dir, args.year)
+    export_npz(out_dir, args.year)
     print(f"Done. {len(existing)} init files, index.json updated.")
 
 
