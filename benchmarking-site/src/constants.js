@@ -1,3 +1,6 @@
+/** Full-year 2025 target: 365 days × 4 cycles (00/06/12/18 UTC). See AGENTS.md. */
+export const TARGET_INIT_COUNT = 1460;
+
 export const LEAD_TIMES_HOURS = [6, 12, 18, 24, 30, 36, 42, 48, 54, 60, 66, 72];
 export const VARIABLES = ["t2m", "wind_speed"];
 export const METRICS = ["rmse", "mae", "bias", "acc"];
@@ -46,3 +49,4 @@ export const METRIC_TITLES = {
 export const SOUTH_ONTARIO_EXTENT_4326 = [-84.85, 41.85, -77.75, 44.95];
 
 export const DATA_DIR = "/data";
+export const API_DIR = "/api/benchmark";

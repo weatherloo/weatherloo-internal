@@ -1,7 +1,22 @@
 import { useEffect, useState } from "react";
-import { LOCATION_LABELS, METHODS } from "../constants.js";
-import { aggregateRuns, loadMethodRuns } from "../lib/benchmarkData.js";
+import {
+  LOCATION_LABELS,
+  METHODS,
+  TARGET_INIT_COUNT,
+} from "../constants.js";
+import { loadMethodData } from "../lib/benchmarkData.js";
 import VariableCharts from "./VariableCharts.jsx";
+
+function formatLoadStatus(nInits, source) {
+  const via = source === "npz" ? " (consolidated NPZ)" : "";
+  if (nInits === TARGET_INIT_COUNT) {
+    return `Averaged over all ${TARGET_INIT_COUNT} initializations (00/06/12/18 UTC)${via}.`;
+  }
+  if (nInits === 1) {
+    return `Showing 1 initialization. Full-year target: ${TARGET_INIT_COUNT} inits (365 days × 4 cycles)${via}.`;
+  }
+  return `Averaged over ${nInits} of ${TARGET_INIT_COUNT} initializations (00/06/12/18 UTC)${via}.`;
+}
 
 export default function DetailPanel({ locationId }) {
   const [methodId, setMethodId] = useState(METHODS[0].id);
@@ -19,24 +34,19 @@ export default function DetailPanel({ locationId }) {
       setT2mAgg(null);
       setWindAgg(null);
 
-      const runs = await loadMethodRuns(methodId);
+      const data = await loadMethodData(methodId, locationId);
       if (cancelled) return;
 
-      const n = runs.length;
-      if (n === 0) {
+      if (!data) {
         setLoadStatus(
-          `No JSON found for method "${methodId}". Add files under data/${methodId}/.`,
+          `No data for method "${methodId}". Add per-init JSON or export ${methodId}_2025.npz under data/${methodId}/.`,
         );
         return;
       }
 
-      setLoadStatus(
-        n === 1
-          ? "Showing 1 initialization (placeholder). Production: average over 365 runs."
-          : `Averaged over ${n} initializations.`,
-      );
-      setT2mAgg(aggregateRuns(runs, locationId, "t2m"));
-      setWindAgg(aggregateRuns(runs, locationId, "wind_speed"));
+      setLoadStatus(formatLoadStatus(data.nInits, data.source));
+      setT2mAgg(data.t2m);
+      setWindAgg(data.wind_speed);
     }
 
     load();
@@ -46,7 +56,7 @@ export default function DetailPanel({ locationId }) {
   }, [locationId, methodId]);
 
   const title = LOCATION_LABELS[locationId] ?? locationId;
-  const noData = loadStatus.startsWith("No JSON");
+  const noData = loadStatus.startsWith("No data");
 
   return (
     <section id="detail-panel" aria-label="Skill score charts">

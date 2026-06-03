@@ -7,8 +7,19 @@ import { viteStaticCopy } from "vite-plugin-static-copy";
 
 const root = path.dirname(fileURLToPath(import.meta.url));
 const dataRoot = path.join(root, "data");
+const apiTarget = process.env.BENCHMARK_API_URL ?? "http://127.0.0.1:5174";
 
 export default defineConfig({
+  server: {
+    proxy: {
+      "/api": { target: apiTarget, changeOrigin: true },
+    },
+  },
+  preview: {
+    proxy: {
+      "/api": { target: apiTarget, changeOrigin: true },
+    },
+  },
   plugins: [
     react(),
     viteStaticCopy({

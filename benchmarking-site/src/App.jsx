@@ -19,7 +19,9 @@ export default function App() {
       <header>
         <h1>Weather Forecast Benchmark</h1>
         <p className="subtitle">
-          Internal skill scores — placeholders until benchmark JSON is wired in
+          Internal forecast skill scores for 2025 — 2 m temperature and 10 m
+          wind speed, averaged over loaded initializations (target: 1460 inits at
+          00/06/12/18 UTC).
         </p>
       </header>
 

@@ -3,9 +3,11 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "concurrently -k -n api,vite -c blue,green \"npm:dev:api\" \"vite\"",
+    "dev:api": "bash server/run_api.sh",
+    "dev:vite": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "concurrently -k -n api,vite -c blue,green \"npm:dev:api\" \"vite preview\""
   },
   "dependencies": {
     "chart.js": "^4.4.1",
@@ -15,6 +17,7 @@
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.5.2",
+    "concurrently": "^9.1.2",
     "vite": "^6.3.5",
     "vite-plugin-static-copy": "^3.0.0"
   }

@@ -1,16 +1,37 @@
 import {
+  API_DIR,
   DATA_DIR,
   LEAD_TIMES_HOURS,
   METRICS,
+  VARIABLES,
 } from "../constants.js";
 
 const runsCache = new Map();
+const methodDataCache = new Map();
+
+/**
+ * @typedef {object} AggregateResult
+ * @property {number[]} lead_times_hours
+ * @property {(number|null)[]} rmse
+ * @property {(number|null)[]} mae
+ * @property {(number|null)[]} bias
+ * @property {(number|null)[]} acc
+ */
+
+/**
+ * @typedef {object} MethodData
+ * @property {"npz"|"json"} source
+ * @property {number} nInits
+ * @property {AggregateResult|null} t2m
+ * @property {AggregateResult|null} wind_speed
+ */
 
 /**
  * Average metric arrays across multiple run objects for one location + variable.
  * @param {object[]} runs
  * @param {string} locationId
  * @param {string} variableKey
+ * @returns {AggregateResult|null}
  */
 export function aggregateRuns(runs, locationId, variableKey) {
   const slices = runs
@@ -33,6 +54,53 @@ export function aggregateRuns(runs, locationId, variableKey) {
   }
 
   return out;
+}
+
+/**
+ * @param {object} payload
+ * @returns {AggregateResult}
+ */
+function aggregatePayloadToResult(payload) {
+  const out = { lead_times_hours: payload.lead_times_hours ?? LEAD_TIMES_HOURS };
+  for (const metric of METRICS) {
+    out[metric] = payload[metric] ?? [];
+  }
+  return out;
+}
+
+/**
+ * @param {string} methodId
+ * @param {Record<string, string>} [filters]
+ */
+async function tryLoadFromNpzApi(methodId, locationId, filters = {}) {
+  const statusRes = await fetch(`${API_DIR}/${methodId}`);
+  if (!statusRes.ok) return null;
+
+  const status = await statusRes.json();
+  if (!status.npz_available) return null;
+
+  const baseParams = new URLSearchParams({ location: locationId, ...filters });
+
+  const fetchVariable = async (variable) => {
+    const params = new URLSearchParams(baseParams);
+    params.set("variable", variable);
+    const res = await fetch(`${API_DIR}/${methodId}/aggregate?${params}`);
+    if (!res.ok) {
+      throw new Error(`NPZ aggregate failed for ${variable}: ${res.status}`);
+    }
+    return res.json();
+  };
+
+  const [t2mPayload, windPayload] = await Promise.all(
+    VARIABLES.map((variable) => fetchVariable(variable)),
+  );
+
+  return {
+    source: "npz",
+    nInits: t2mPayload.n_inits ?? status.n_inits ?? 0,
+    t2m: aggregatePayloadToResult(t2mPayload),
+    wind_speed: aggregatePayloadToResult(windPayload),
+  };
 }
 
 export async function loadMethodRuns(methodId) {
@@ -70,4 +138,42 @@ export async function loadMethodRuns(methodId) {
 
   runsCache.set(methodId, runs);
   return runs;
+}
+
+/**
+ * Load aggregated skill scores for a method at a location.
+ * Prefers consolidated NPZ via /api when available; falls back to per-init JSON.
+ *
+ * @param {string} methodId
+ * @param {string} locationId
+ * @param {Record<string, string>} [filters] — forwarded to NPZ API (init_from, init_to, cycles)
+ * @returns {Promise<MethodData|null>}
+ */
+export async function loadMethodData(methodId, locationId, filters = {}) {
+  const cacheKey = `${methodId}:${locationId}:${JSON.stringify(filters)}`;
+  if (methodDataCache.has(cacheKey)) {
+    return methodDataCache.get(cacheKey);
+  }
+
+  try {
+    const fromApi = await tryLoadFromNpzApi(methodId, locationId, filters);
+    if (fromApi) {
+      methodDataCache.set(cacheKey, fromApi);
+      return fromApi;
+    }
+  } catch (err) {
+    console.warn(`NPZ API unavailable for ${methodId}, falling back to JSON:`, err);
+  }
+
+  const runs = await loadMethodRuns(methodId);
+  if (runs.length === 0) return null;
+
+  const result = {
+    source: "json",
+    nInits: runs.length,
+    t2m: aggregateRuns(runs, locationId, "t2m"),
+    wind_speed: aggregateRuns(runs, locationId, "wind_speed"),
+  };
+  methodDataCache.set(cacheKey, result);
+  return result;
 }
