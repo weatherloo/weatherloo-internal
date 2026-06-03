@@ -3,3 +3,7 @@ artifacts/
 data/hrrr/
 test_sprint/__pycache__/
 test_sprint/src/**/__pycache__/
+**/__pycache__/
+.DS_Store
+.cache/
+.ipynb_checkpoints/

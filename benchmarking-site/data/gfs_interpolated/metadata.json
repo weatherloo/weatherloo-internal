@@ -1,0 +1,18 @@
+{
+  "method_id": "gfs_interpolated",
+  "model": "NOAA GFS",
+  "cycles": [
+    "00Z",
+    "06Z",
+    "12Z",
+    "18Z"
+  ],
+  "grid": "0p25",
+  "year": 2025,
+  "interpolation": "bilinear",
+  "wind": "sqrt(u10^2 + v10^2) from 10 m u/v components, m/s to km/h",
+  "acc_climatology": "DOY + UTC-hour mean from 2025 station obs, \u00b115-day window",
+  "source": "https://registry.opendata.aws/noaa-gfs-bdp-pds/",
+  "npz_file": "gfs_interpolated_2025.npz",
+  "npz_schema": "see benchmarking-site/AGENTS.md"
+}
