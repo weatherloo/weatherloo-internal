@@ -32,7 +32,7 @@ export const METHODS = [
   { id: "mos", label: "Model Output Statistics (MOS)" },
   { id: "gefs_mean", label: "GEFS ensemble mean" },
   { id: "gfs_interpolated", label: "GFS interpolated at station" },
-  { id: "gfs_analysis", label: "GFS past-hour analysis" },
+  { id: "gfs_analysis", label: "GFS analysis" },
   { id: "ecmwf_aifs", label: "ECMWF AIFS" },
   { id: "graphcast", label: "GraphCast" },
   { id: "pangu", label: "Pangu-Weather" },
