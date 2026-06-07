@@ -86,6 +86,17 @@ Add a row here when implementing other methods.
 | `cyyz` | 43.6777 | -79.6248 | ECCC hourly **`STN_ID` 51459** (TORONTO INTL A). API filter: **`UTC_YEAR`**, not `LOCAL_YEAR`. |
 | `eric_d_soulis` | 43.4668 | -80.5164 | UW Soulis archive. 2015+: `Hobo_15minutedata_2025.csv` only (see observations README). |
 
+## Grid-to-station interpolation
+
+When a method reads **gridded** model output (NWP, AI global models, ensemble means, etc.), extract values at each station using **bilinear interpolation** in latitude/longitude:
+
+- **t2m:** bilinear interp on the 2 m temperature grid.
+- **Wind:** bilinear interp on **u** and **v** separately at 10 m, then `wind_speed = √(u² + v²)` — do not interpolate speed directly.
+
+Reference implementation: `data/gfs_interpolated/compute_benchmark.py` (`scipy.interpolate.RegularGridInterpolator` with `method="linear"` on a 2D lat/lon grid).
+
+Analysis methods (`*_analysis`) use the same rule on the init-time analysis field (`f000`).
+
 ## Time rules (UTC only)
 
 - **1460 initializations (2025):** every **00, 06, 12, 18 UTC** from `2025-01-01T00:00:00Z` through `2025-12-31T18:00:00Z` (365 days × 4 cycles).
@@ -185,7 +196,11 @@ Full coverage below is the goal for a **finished** method; incomplete cycles, le
 | MOS | `mos` |
 | GEFS ensemble mean | `gefs_mean` |
 | GFS interpolated | `gfs_interpolated` |
-| GFS past-hour analysis | `gfs_analysis` |
+| GFS analysis | `gfs_analysis` |
+| HRDPS interpolated | `hrdps_interpolated` |
+| HRDPS analysis | `hrdps_analysis` |
+| HRRR interpolated | `hrrr_interpolated` |
+| HRRR analysis | `hrrr_analysis` |
 | ECMWF AIFS | `ecmwf_aifs` |
 | GraphCast | `graphcast` |
 | Pangu-Weather | `pangu` |
