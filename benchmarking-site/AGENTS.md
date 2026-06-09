@@ -51,6 +51,7 @@ The UI is a **React** app (`src/`) built with Vite. Benchmark JSON stays in `dat
 | Observations spec | `data/observations/README.md` |
 | Regenerate observations | `python3 scripts/fetch_station_observations.py --year 2025` (from repo root) |
 | GRIB download cache (GFS) | `.cache/gfs_grib/` (repo root; not committed) |
+| GRIB download cache (HRDPS) | `.cache/hrdps_grib/` (repo root; not committed) |
 
 ## Compute scripts
 
@@ -76,8 +77,35 @@ Rebuild NPZ from existing JSON without re-fetching:
 | `method_id` | Script | Notes |
 |-------------|--------|-------|
 | `gfs_interpolated` | `data/gfs_interpolated/compute_benchmark.py` | GFS 0.25° at **00/06/12/18Z**; bilinear interp; wind from 10 m u/v. `--resume` skips existing init JSONs. Use `--workers 2` if AWS connection resets; downloads retry automatically. |
+| `gfs_analysis` | `data/gfs_analysis/compute_benchmark.py` | GFS **f000** analysis; one value per init reused at all leads. Same interp/wind rules as `gfs_interpolated`. |
+| `hrdps_analysis` | `data/hrdps_analysis/compute_benchmark.py` | HRDPS **PT000H** from MSC Datamart; geographic bilinear interp on curvilinear grid; one analysis value per init at all leads. Datamart ~30-day retention — cache under `.cache/hrdps_grib/` for reruns. **Live archive:** run `data/hrdps_analysis/cache_daily.sh` on a cron (see `crontab.example`). |
 
 Add a row here when implementing other methods.
+
+### HRDPS analysis live GRIB archive
+
+MSC Datamart only keeps HRDPS on the server for about **30 days**. To build a local archive for backfill:
+
+```bash
+chmod +x benchmarking-site/data/hrdps_analysis/cache_daily.sh
+benchmarking-site/data/hrdps_analysis/cache_daily.sh
+```
+
+Install cron (four times daily, shortly after each 00/06/12/18Z cycle):
+
+```bash
+# Edit paths, then paste from benchmarking-site/data/hrdps_analysis/crontab.example
+crontab -e
+```
+
+Backfill benchmark JSON from cached GRIB (when obs year matches):
+
+```bash
+.venv/bin/python benchmarking-site/data/hrdps_analysis/compute_benchmark.py \
+  --start-date 2026-06-01 --end-date 2026-06-07 --resume
+```
+
+Historical 2025 beyond Datamart retention requires ECCC archive retrieval (`ec.dps-client.ec@canada.ca`); see issue #20.
 
 ## Station IDs and coordinates (use exactly)
 

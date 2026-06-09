@@ -33,6 +33,7 @@ export const METHODS = [
   { id: "gefs_mean", label: "GEFS ensemble mean" },
   { id: "gfs_interpolated", label: "GFS interpolated at station" },
   { id: "gfs_analysis", label: "GFS analysis" },
+  { id: "hrdps_analysis", label: "HRDPS analysis" },
   { id: "ecmwf_aifs", label: "ECMWF AIFS" },
   { id: "graphcast", label: "GraphCast" },
   { id: "pangu", label: "Pangu-Weather" },
