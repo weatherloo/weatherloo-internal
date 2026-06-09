@@ -20,7 +20,7 @@ Chart.register(
   Tooltip,
 );
 
-export default function MetricChart({ title, labels, values, yLabel }) {
+export default function MetricChart({ title, labels, values, yLabel, nSamples }) {
   const canvasRef = useRef(null);
   const chartRef = useRef(null);
 
@@ -47,7 +47,18 @@ export default function MetricChart({ title, labels, values, yLabel }) {
       options: {
         responsive: true,
         maintainAspectRatio: false,
-        plugins: { legend: { display: false } },
+        plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                afterLabel: (ctx) => {
+                  if (!nSamples) return "";
+                  const n = nSamples[ctx.dataIndex];
+                  return typeof n === "number" ? `n = ${n}` : "";
+                },
+              },
+            },
+          },
         scales: {
           x: { title: { display: true, text: "Lead time" } },
           y: { title: { display: true, text: yLabel } },
@@ -59,7 +70,7 @@ export default function MetricChart({ title, labels, values, yLabel }) {
       chartRef.current?.destroy();
       chartRef.current = null;
     };
-  }, [title, labels, values, yLabel]);
+  }, [title, labels, values, yLabel, nSamples]);
 
   return (
     <div className="chart-card">
