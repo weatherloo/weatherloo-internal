@@ -1,0 +1,20 @@
+{
+  "method_id": "hrdps_analysis",
+  "model": "ECCC HRDPS analysis (PT000H / f000)",
+  "cycles": [
+    "00Z",
+    "06Z",
+    "12Z",
+    "18Z"
+  ],
+  "grid": "continental 2.5 km rotated lat-lon (RLatLon0.0225)",
+  "year": 2025,
+  "interpolation": "bilinear on geographic lat/lon via scipy LinearNDInterpolator (±1° window; curvilinear HRDPS grid)",
+  "wind": "sqrt(u10^2 + v10^2) from 10 m u/v components, m/s to km/h",
+  "acc_climatology": "DOY + UTC-hour mean from 2025 station obs, ±15-day window",
+  "forecast_logic": "Single PT000H analysis value at init reused for all 12 lead times; obs verified at init + lead_hours",
+  "source": "https://dd.weather.gc.ca/model_hrdps/continental/2.5km/",
+  "datamart_retention": "MSC Datamart keeps ~30 days of HRDPS on rolling dated paths ({YYYYMMDD}/WXO-DD/...). Full-year 2025 requires a local GRIB cache under .cache/hrdps_grib/ or running during the calendar year.",
+  "npz_file": "hrdps_analysis_2025.npz",
+  "npz_schema": "see benchmarking-site/AGENTS.md"
+}
