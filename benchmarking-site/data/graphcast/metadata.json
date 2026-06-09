@@ -1,0 +1,15 @@
+{
+  "method_id": "graphcast",
+  "model": "GraphCastGFS (NOAA EAGLE SOLO) v2.0",
+  "based_on": "Google DeepMind GraphCast fine-tuned on NCEP GDAS",
+  "note": "Not pure DeepMind GraphCast which uses ERA5 — this uses GDAS initial conditions",
+  "cycles": ["00Z", "06Z", "12Z", "18Z"],
+  "grid": "0p25",
+  "year": 2025,
+  "interpolation": "bilinear",
+  "wind": "sqrt(u10^2 + v10^2) from 10 m u/v components, m/s to km/h",
+  "acc_climatology": "DOY + UTC-hour mean from 2025 station obs, ±15-day window",
+  "source": "https://registry.opendata.aws/noaa-nws-graphcastgfs-pds/",
+  "npz_file": "graphcast_2025.npz",
+  "npz_schema": "see benchmarking-site/AGENTS.md"
+}
