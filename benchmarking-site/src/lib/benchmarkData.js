@@ -53,6 +53,10 @@ export function aggregateRuns(runs, locationId, variableKey) {
     });
   }
 
+  out.n_samples = leadTimes.map((_, i) =>
+    slices.filter((s) => typeof s.rmse?.[i] === "number").length
+  );
+
   return out;
 }
 
@@ -65,6 +69,7 @@ function aggregatePayloadToResult(payload) {
   for (const metric of METRICS) {
     out[metric] = payload[metric] ?? [];
   }
+  out.n_samples = payload.n_samples ?? null;
   return out;
 }
 
