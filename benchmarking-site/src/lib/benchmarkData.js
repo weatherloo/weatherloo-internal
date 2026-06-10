@@ -90,6 +90,24 @@ export function filterRunsByCycle(runs, cycles) {
 }
 
 /**
+ * Filter runs to those whose initialization falls within [initFrom, initTo] (inclusive).
+ * @param {object[]} runs
+ * @param {string|null} initFrom — ISO8601 UTC string
+ * @param {string|null} initTo   — ISO8601 UTC string
+ * @returns {object[]}
+ */
+export function filterRunsByDateRange(runs, initFrom, initTo) {
+  if (!initFrom && !initTo) return runs;
+  const from = initFrom ? new Date(initFrom).getTime() : -Infinity;
+  const to = initTo ? new Date(initTo).getTime() : Infinity;
+  return runs.filter((run) => {
+    if (!run.initialization) return false;
+    const t = new Date(run.initialization).getTime();
+    return t >= from && t <= to;
+  });
+}
+
+/**
  * @param {string} methodId
  * @param {Record<string, string>} [filters]
  */
@@ -192,7 +210,8 @@ export async function loadMethodData(methodId, locationId, filters = {}) {
   const cycleNums = filters.cycles
     ? filters.cycles.split(",").map((c) => parseInt(c, 10))
     : [];
-  const runs = filterRunsByCycle(allRuns, cycleNums);
+  const afterCycle = filterRunsByCycle(allRuns, cycleNums);
+  const runs = filterRunsByDateRange(afterCycle, filters.init_from ?? null, filters.init_to ?? null);
 
   if (runs.length === 0) return null;
 

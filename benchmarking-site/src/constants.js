@@ -52,3 +52,24 @@ export const SOUTH_ONTARIO_EXTENT_4326 = [-84.85, 41.85, -77.75, 44.95];
 
 export const DATA_DIR = "/data";
 export const API_DIR = "/api/benchmark";
+
+export const TIME_PRESETS = [
+  { value: "all", label: "All data" },
+  { value: "Q1", label: "Q1 (Jan–Mar)", from: "2025-01-01T00:00:00Z", to: "2025-03-31T18:00:00Z" },
+  { value: "Q2", label: "Q2 (Apr–Jun)", from: "2025-04-01T00:00:00Z", to: "2025-06-30T18:00:00Z" },
+  { value: "Q3", label: "Q3 (Jul–Sep)", from: "2025-07-01T00:00:00Z", to: "2025-09-30T18:00:00Z" },
+  { value: "Q4", label: "Q4 (Oct–Dec)", from: "2025-10-01T00:00:00Z", to: "2025-12-31T18:00:00Z" },
+  { value: "Jan", label: "January",   from: "2025-01-01T00:00:00Z", to: "2025-01-31T18:00:00Z" },
+  { value: "Feb", label: "February",  from: "2025-02-01T00:00:00Z", to: "2025-02-28T18:00:00Z" },
+  { value: "Mar", label: "March",     from: "2025-03-01T00:00:00Z", to: "2025-03-31T18:00:00Z" },
+  { value: "Apr", label: "April",     from: "2025-04-01T00:00:00Z", to: "2025-04-30T18:00:00Z" },
+  { value: "May", label: "May",       from: "2025-05-01T00:00:00Z", to: "2025-05-31T18:00:00Z" },
+  { value: "Jun", label: "June",      from: "2025-06-01T00:00:00Z", to: "2025-06-30T18:00:00Z" },
+  { value: "Jul", label: "July",      from: "2025-07-01T00:00:00Z", to: "2025-07-31T18:00:00Z" },
+  { value: "Aug", label: "August",    from: "2025-08-01T00:00:00Z", to: "2025-08-31T18:00:00Z" },
+  { value: "Sep", label: "September", from: "2025-09-01T00:00:00Z", to: "2025-09-30T18:00:00Z" },
+  { value: "Oct", label: "October",   from: "2025-10-01T00:00:00Z", to: "2025-10-31T18:00:00Z" },
+  { value: "Nov", label: "November",  from: "2025-11-01T00:00:00Z", to: "2025-11-30T18:00:00Z" },
+  { value: "Dec", label: "December",  from: "2025-12-01T00:00:00Z", to: "2025-12-31T18:00:00Z" },
+  { value: "custom", label: "Custom…" },
+];

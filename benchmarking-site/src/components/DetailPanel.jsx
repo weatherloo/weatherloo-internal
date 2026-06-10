@@ -4,26 +4,41 @@ import {
   LOCATION_LABELS,
   METHODS,
   TARGET_INIT_COUNT,
+  TIME_PRESETS,
 } from "../constants.js";
 import { loadMethodData } from "../lib/benchmarkData.js";
 import VariableCharts from "./VariableCharts.jsx";
 
-function formatLoadStatus(nInits, source, selectedCycles) {
+function formatLoadStatus(nInits, source, selectedCycles, timePreset, customFrom, customTo) {
   const via = source === "npz" ? " (consolidated NPZ)" : "";
-  const allSelected = selectedCycles.length === INIT_CYCLES.length;
-  const cycleLabel = allSelected
-    ? "00/06/12/18 UTC"
-    : selectedCycles.map((h) => `${String(h).padStart(2, "0")}Z`).join(", ");
-  const target = allSelected ? TARGET_INIT_COUNT : 365 * selectedCycles.length;
+  const allCycles = selectedCycles.length === INIT_CYCLES.length;
+  const cycleLabel = allCycles
+    ? null
+    : selectedCycles.map((h) => `${String(h).padStart(2, "0")}Z`).join("/");
 
-  if (nInits === 0) return `No initializations match the selected cycles (${cycleLabel}).`;
-  if (nInits === target) return `Averaged over all ${nInits} initializations (${cycleLabel})${via}.`;
-  return `Averaged over ${nInits} of ${target} initializations (${cycleLabel})${via}.`;
+  let timeLabel = null;
+  if (timePreset !== "all") {
+    const preset = TIME_PRESETS.find((p) => p.value === timePreset);
+    if (preset && timePreset !== "custom") {
+      timeLabel = preset.label;
+    } else if (timePreset === "custom" && (customFrom || customTo)) {
+      timeLabel = `${customFrom || "…"} – ${customTo || "…"}`;
+    }
+  }
+
+  const parts = [timeLabel, cycleLabel].filter(Boolean);
+  const rangeDesc = parts.length > 0 ? `${parts.join(", ")} — ` : "";
+
+  if (nInits === 0) return `No initializations match the selected filters.`;
+  return `${rangeDesc}${nInits} inits${via}.`;
 }
 
 export default function DetailPanel({ locationId }) {
   const [methodId, setMethodId] = useState(METHODS[0].id);
   const [cycleFilter, setCycleFilter] = useState("all");
+  const [timePreset, setTimePreset] = useState("all");
+  const [customFrom, setCustomFrom] = useState("");
+  const [customTo, setCustomTo] = useState("");
   const [loadStatus, setLoadStatus] = useState("");
   const [t2mAgg, setT2mAgg] = useState(null);
   const [windAgg, setWindAgg] = useState(null);
@@ -46,10 +61,20 @@ export default function DetailPanel({ locationId }) {
         return;
       }
 
-      const filters =
-        selectedCycles.length === INIT_CYCLES.length
-          ? {}
-          : { cycles: selectedCycles.join(",") };
+      const filters = {};
+      if (selectedCycles.length !== INIT_CYCLES.length)
+        filters.cycles = selectedCycles.join(",");
+
+      if (timePreset !== "all") {
+        const preset = TIME_PRESETS.find((p) => p.value === timePreset);
+        if (preset && timePreset !== "custom") {
+          filters.init_from = preset.from;
+          filters.init_to = preset.to;
+        } else if (timePreset === "custom") {
+          if (customFrom) filters.init_from = `${customFrom}T00:00:00Z`;
+          if (customTo) filters.init_to = `${customTo}T18:00:00Z`;
+        }
+      }
 
       const data = await loadMethodData(methodId, locationId, filters);
       if (cancelled) return;
@@ -61,7 +86,7 @@ export default function DetailPanel({ locationId }) {
         return;
       }
 
-      setLoadStatus(formatLoadStatus(data.nInits, data.source, selectedCycles));
+      setLoadStatus(formatLoadStatus(data.nInits, data.source, selectedCycles, timePreset, customFrom, customTo));
       setT2mAgg(data.t2m);
       setWindAgg(data.wind_speed);
     }
@@ -70,7 +95,7 @@ export default function DetailPanel({ locationId }) {
     return () => {
       cancelled = true;
     };
-  }, [locationId, methodId, cycleFilter]);
+  }, [locationId, methodId, cycleFilter, timePreset, customFrom, customTo]);
 
   const title = LOCATION_LABELS[locationId] ?? locationId;
   const noData = loadStatus.startsWith("No data");
@@ -108,6 +133,51 @@ export default function DetailPanel({ locationId }) {
             ))}
           </select>
         </label>
+        <label>
+          Time range
+          <select
+            id="time-preset-select"
+            value={timePreset}
+            onChange={(e) => setTimePreset(e.target.value)}
+          >
+            <option value="all">All data</option>
+            <optgroup label="Quarters">
+              {TIME_PRESETS.filter((p) => p.value.startsWith("Q")).map((p) => (
+                <option key={p.value} value={p.value}>{p.label}</option>
+              ))}
+            </optgroup>
+            <optgroup label="Months">
+              {TIME_PRESETS.filter((p) => p.value.length === 3 && p.value !== "all" && !p.value.startsWith("Q")).map((p) => (
+                <option key={p.value} value={p.value}>{p.label}</option>
+              ))}
+            </optgroup>
+            <option value="custom">Custom…</option>
+          </select>
+        </label>
+        {timePreset === "custom" && (
+          <>
+            <label>
+              From
+              <input
+                type="date"
+                value={customFrom}
+                min="2025-01-01"
+                max="2025-12-31"
+                onChange={(e) => setCustomFrom(e.target.value)}
+              />
+            </label>
+            <label>
+              To
+              <input
+                type="date"
+                value={customTo}
+                min="2025-01-01"
+                max="2025-12-31"
+                onChange={(e) => setCustomTo(e.target.value)}
+              />
+            </label>
+          </>
+        )}
       </div>
 
       <p id="load-status" className="status">
