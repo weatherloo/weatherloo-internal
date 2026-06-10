@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import {
+  INIT_CYCLES,
   LOCATION_LABELS,
   METHODS,
   TARGET_INIT_COUNT,
@@ -7,22 +8,28 @@ import {
 import { loadMethodData } from "../lib/benchmarkData.js";
 import VariableCharts from "./VariableCharts.jsx";
 
-function formatLoadStatus(nInits, source) {
+function formatLoadStatus(nInits, source, selectedCycles) {
   const via = source === "npz" ? " (consolidated NPZ)" : "";
-  if (nInits === TARGET_INIT_COUNT) {
-    return `Averaged over all ${TARGET_INIT_COUNT} initializations (00/06/12/18 UTC)${via}.`;
-  }
-  if (nInits === 1) {
-    return `Showing 1 initialization. Full-year target: ${TARGET_INIT_COUNT} inits (365 days × 4 cycles)${via}.`;
-  }
-  return `Averaged over ${nInits} of ${TARGET_INIT_COUNT} initializations (00/06/12/18 UTC)${via}.`;
+  const allSelected = selectedCycles.length === INIT_CYCLES.length;
+  const cycleLabel = allSelected
+    ? "00/06/12/18 UTC"
+    : selectedCycles.map((h) => `${String(h).padStart(2, "0")}Z`).join(", ");
+  const target = allSelected ? TARGET_INIT_COUNT : 365 * selectedCycles.length;
+
+  if (nInits === 0) return `No initializations match the selected cycles (${cycleLabel}).`;
+  if (nInits === target) return `Averaged over all ${nInits} initializations (${cycleLabel})${via}.`;
+  return `Averaged over ${nInits} of ${target} initializations (${cycleLabel})${via}.`;
 }
 
 export default function DetailPanel({ locationId }) {
   const [methodId, setMethodId] = useState(METHODS[0].id);
+  const [cycleFilter, setCycleFilter] = useState("all");
   const [loadStatus, setLoadStatus] = useState("");
   const [t2mAgg, setT2mAgg] = useState(null);
   const [windAgg, setWindAgg] = useState(null);
+
+  const selectedCycles =
+    cycleFilter === "all" ? INIT_CYCLES : [parseInt(cycleFilter, 10)];
 
   useEffect(() => {
     if (!locationId) return;
@@ -34,7 +41,17 @@ export default function DetailPanel({ locationId }) {
       setT2mAgg(null);
       setWindAgg(null);
 
-      const data = await loadMethodData(methodId, locationId);
+      if (selectedCycles.length === 0) {
+        setLoadStatus("No cycles selected. Select at least one cycle.");
+        return;
+      }
+
+      const filters =
+        selectedCycles.length === INIT_CYCLES.length
+          ? {}
+          : { cycles: selectedCycles.join(",") };
+
+      const data = await loadMethodData(methodId, locationId, filters);
       if (cancelled) return;
 
       if (!data) {
@@ -44,7 +61,7 @@ export default function DetailPanel({ locationId }) {
         return;
       }
 
-      setLoadStatus(formatLoadStatus(data.nInits, data.source));
+      setLoadStatus(formatLoadStatus(data.nInits, data.source, selectedCycles));
       setT2mAgg(data.t2m);
       setWindAgg(data.wind_speed);
     }
@@ -53,7 +70,7 @@ export default function DetailPanel({ locationId }) {
     return () => {
       cancelled = true;
     };
-  }, [locationId, methodId]);
+  }, [locationId, methodId, cycleFilter]);
 
   const title = LOCATION_LABELS[locationId] ?? locationId;
   const noData = loadStatus.startsWith("No data");
@@ -72,6 +89,21 @@ export default function DetailPanel({ locationId }) {
             {METHODS.map(({ id, label }) => (
               <option key={id} value={id}>
                 {label}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label>
+          Init cycle
+          <select
+            id="cycle-select"
+            value={cycleFilter}
+            onChange={(e) => setCycleFilter(e.target.value)}
+          >
+            <option value="all">All cycles</option>
+            {INIT_CYCLES.map((hour) => (
+              <option key={hour} value={String(hour)}>
+                {String(hour).padStart(2, "0")}Z
               </option>
             ))}
           </select>

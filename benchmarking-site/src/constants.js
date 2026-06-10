@@ -1,5 +1,6 @@
 /** Full-year 2025 target: 365 days × 4 cycles (00/06/12/18 UTC). See AGENTS.md. */
 export const TARGET_INIT_COUNT = 1460;
+export const INIT_CYCLES = [0, 6, 12, 18];
 
 export const LEAD_TIMES_HOURS = [6, 12, 18, 24, 30, 36, 42, 48, 54, 60, 66, 72];
 export const VARIABLES = ["t2m", "wind_speed"];
