@@ -74,6 +74,40 @@ function aggregatePayloadToResult(payload) {
 }
 
 /**
+ * Filter runs to those whose initialization UTC hour is in the cycles list.
+ * @param {object[]} runs
+ * @param {number[]} cycles — e.g. [0, 6, 12, 18]; empty means keep all
+ * @returns {object[]}
+ */
+export function filterRunsByCycle(runs, cycles) {
+  if (!cycles || cycles.length === 0) return runs;
+  return runs.filter((run) => {
+    const init = run.initialization;
+    if (!init) return cycles.includes(0);
+    const hour = new Date(init).getUTCHours();
+    return cycles.includes(hour);
+  });
+}
+
+/**
+ * Filter runs to those whose initialization falls within [initFrom, initTo] (inclusive).
+ * @param {object[]} runs
+ * @param {string|null} initFrom — ISO8601 UTC string
+ * @param {string|null} initTo   — ISO8601 UTC string
+ * @returns {object[]}
+ */
+export function filterRunsByDateRange(runs, initFrom, initTo) {
+  if (!initFrom && !initTo) return runs;
+  const from = initFrom ? new Date(initFrom).getTime() : -Infinity;
+  const to = initTo ? new Date(initTo).getTime() : Infinity;
+  return runs.filter((run) => {
+    if (!run.initialization) return false;
+    const t = new Date(run.initialization).getTime();
+    return t >= from && t <= to;
+  });
+}
+
+/**
  * @param {string} methodId
  * @param {Record<string, string>} [filters]
  */
@@ -170,7 +204,15 @@ export async function loadMethodData(methodId, locationId, filters = {}) {
     console.warn(`NPZ API unavailable for ${methodId}, falling back to JSON:`, err);
   }
 
-  const runs = await loadMethodRuns(methodId);
+  const allRuns = await loadMethodRuns(methodId);
+  if (allRuns.length === 0) return null;
+
+  const cycleNums = filters.cycles
+    ? filters.cycles.split(",").map((c) => parseInt(c, 10))
+    : [];
+  const afterCycle = filterRunsByCycle(allRuns, cycleNums);
+  const runs = filterRunsByDateRange(afterCycle, filters.init_from ?? null, filters.init_to ?? null);
+
   if (runs.length === 0) return null;
 
   const result = {
