@@ -281,11 +281,11 @@ def process_cyyz(year: int) -> None:
     station_dir = OBS_ROOT / "cyyz"
     raw_path = station_dir / "raw" / f"eccc_hourly_{year}.json"
 
-    print(f"[cyyz] Fetching ECCC hourly STN_ID={CYYZ_STN_ID} for {year}…")
+    print(f"[cyyz] Fetching ECCC hourly STN_ID={CYYZ_STN_ID} for {year}...")
     rows = fetch_eccc_hourly(CYYZ_STN_ID, year)
     raw_path.parent.mkdir(parents=True, exist_ok=True)
     raw_path.write_text(json.dumps({"features": rows}, indent=2) + "\n")
-    print(f"[cyyz] {len(rows)} hourly records → {raw_path}")
+    print(f"[cyyz] {len(rows)} hourly records -> {raw_path}")
 
     samples = eccc_to_samples(rows)
     doc = build_observations_json(
@@ -338,12 +338,12 @@ def process_soulis(year: int) -> None:
             "data_limitation": "Public bulk CSV for 2015+ is HOBO subset only; full main-logger yearly files stop at 2014.",
         }
 
-    print(f"[eric_d_soulis] Downloading {url}…")
+    print(f"[eric_d_soulis] Downloading {url}...")
     try:
         download(url, raw_path)
     except urllib.error.HTTPError as e:
         raise SystemExit(f"[eric_d_soulis] Download failed ({e.code}): {url}") from e
-    print(f"[eric_d_soulis] Saved raw → {raw_path}")
+    print(f"[eric_d_soulis] Saved raw -> {raw_path}")
 
     if use_main:
         samples = load_soulis_main_csv(raw_path, year)
