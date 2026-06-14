@@ -1,0 +1,16 @@
+{
+  "method_id": "persistence",
+  "model": "Persistence baseline",
+  "description": "Forecast = observed value at initialization time, held constant across all lead times.",
+  "cycles": [
+    "00Z",
+    "06Z",
+    "12Z",
+    "18Z"
+  ],
+  "year": 2025,
+  "source": "data/observations/<station_id>/observations_6h_2025.json",
+  "acc_climatology": "DOY + UTC-hour mean from 2025 station obs, +/-15-day window",
+  "npz_file": "persistence_2025.npz",
+  "npz_schema": "see benchmarking-site/AGENTS.md"
+}
