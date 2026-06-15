@@ -1,0 +1,29 @@
+{
+  "method_id": "ecmwf_aifs",
+  "model": "ECMWF AIFS Single",
+  "cycles": [
+    "00Z",
+    "06Z",
+    "12Z",
+    "18Z"
+  ],
+  "grid": "0.25 degree regular lat/lon (dynamical.org regridded archive)",
+  "year": 2025,
+  "interpolation": "bilinear",
+  "wind": "sqrt(u10^2 + v10^2) from 10 m u/v components, m/s to km/h",
+  "acc_climatology": "DOY + UTC-hour mean from 2025 station obs, +/-15-day window",
+  "source": "https://dynamical.org/catalog/ecmwf-aifs-single-forecast/",
+  "catalog_id": "ecmwf-aifs-single-forecast",
+  "source_notes": [
+    "ECMWF AIFS Single forecast data processed by dynamical.org from ECMWF Open Data.",
+    "Licensed under CC BY 4.0 and ECMWF Terms of Use.",
+    "Archive spans 2024-04-01 to present at 6-hourly inits and 6-hourly lead steps (0-360 h)."
+  ],
+  "params": {
+    "t2m": "temperature_2m",
+    "u10": "wind_u_10m",
+    "v10": "wind_v_10m"
+  },
+  "npz_file": "ecmwf_aifs_2025.npz",
+  "npz_schema": "see benchmarking-site/AGENTS.md"
+}
