@@ -51,6 +51,7 @@ The UI is a **React** app (`src/`) built with Vite. Benchmark JSON stays in `dat
 | Observations spec | `data/observations/README.md` |
 | Regenerate observations | `python3 scripts/fetch_station_observations.py --year 2025` (from repo root) |
 | GRIB download cache (GFS) | `.cache/gfs_grib/` (repo root; not committed) |
+| GRIB download cache (GEFS) | `.cache/gefs_grib/` (repo root; not committed) |
 | GRIB download cache (HRDPS) | `.cache/hrdps_grib/` (repo root; not committed) |
 
 ## Compute scripts
@@ -80,6 +81,7 @@ Rebuild NPZ from existing JSON without re-fetching:
 | `gfs_analysis` | `data/gfs_analysis/compute_benchmark.py` | GFS **f000** analysis; one value per init reused at all leads. Same interp/wind rules as `gfs_interpolated`. |
 | `hrdps_analysis` | `data/hrdps_analysis/compute_benchmark.py` | HRDPS **PT000H** from MSC Datamart; geographic bilinear interp on curvilinear grid; one analysis value per init at all leads. Datamart ~30-day retention — cache under `.cache/hrdps_grib/` for reruns. **Live archive:** run `data/hrdps_analysis/cache_daily.sh` on a cron (see `crontab.example`). |
 | `ecmwf_aifs` | `data/ecmwf_aifs/compute_benchmark.py` | ECMWF AIFS Single 0.25° at **00/06/12/18Z** via [dynamical.org catalog](https://dynamical.org/catalog/ecmwf-aifs-single-forecast/) (`dynamical-catalog`); 6-hourly steps; bilinear interp of `temperature_2m` / `wind_u_10m` / `wind_v_10m`. Archive 2024-04-01–present includes full 2025. `--resume` skips existing init JSONs. |
+| `gefs_mean` | `data/gefs_mean/compute_benchmark.py` | GEFS **ensemble mean** (`geavg`) at **0.5°** from AWS `noaa-gefs-pds`; 00/06/12/18Z; bilinear interp; wind from 10 m u/v. Pre-averaged 21-member mean on grid — no per-member downloads. `--resume` skips existing init JSONs. |
 
 Add a row here when implementing other methods.
 
