@@ -1,0 +1,20 @@
+{
+  "method_id": "linear_regression",
+  "model": "Linear regression bias correction: corrected = a + b * raw_gfs",
+  "training": "leave-one-month-out CV on gfs_interpolated 2025 forecasts",
+  "regressions_per_fold": "per (station, variable, lead_time) \u2014 48",
+  "folds": 12,
+  "raw_forecast": "GFS interpolated 2025; recovered as observation + bias",
+  "min_pairs": 30,
+  "cycles": [
+    "00Z",
+    "06Z",
+    "12Z",
+    "18Z"
+  ],
+  "year": 2025,
+  "acc_climatology": "DOY + UTC-hour mean from 2025 station obs, +/-15-day window",
+  "coefficients_file": "coefficients.json (fold-averaged a, b per station/var/lead)",
+  "npz_file": "linear_regression_2025.npz",
+  "npz_schema": "see benchmarking-site/AGENTS.md"
+}

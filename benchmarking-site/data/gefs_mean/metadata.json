@@ -1,0 +1,19 @@
+{
+  "method_id": "gefs_mean",
+  "model": "NOAA GEFS ensemble mean (geavg)",
+  "cycles": [
+    "00Z",
+    "06Z",
+    "12Z",
+    "18Z"
+  ],
+  "grid": "0p50",
+  "ensemble": "21-member mean on grid (gec00 + gep01\u2013gep20), pre-averaged in AWS archive",
+  "year": 2025,
+  "interpolation": "bilinear",
+  "wind": "sqrt(u10^2 + v10^2) from 10 m u/v components, m/s to km/h",
+  "acc_climatology": "DOY + UTC-hour mean from 2025 station obs, \u00b115-day window",
+  "source": "https://github.com/awslabs/open-data-docs/tree/main/docs/noaa/noaa-gefs-pds",
+  "npz_file": "gefs_mean_2025.npz",
+  "npz_schema": "see benchmarking-site/AGENTS.md"
+}
