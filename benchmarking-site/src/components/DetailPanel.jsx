@@ -1,9 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   INIT_CYCLES,
   LOCATION_LABELS,
   METHODS,
-  TARGET_INIT_COUNT,
   TIME_PRESETS,
 } from "../constants.js";
 import { loadMethodData } from "../lib/benchmarkData.js";
@@ -34,17 +33,34 @@ function formatLoadStatus(nInits, source, selectedCycles, timePreset, customFrom
 }
 
 export default function DetailPanel({ locationId }) {
-  const [methodId, setMethodId] = useState(METHODS[0].id);
+  const [selectedIds, setSelectedIds] = useState(() => new Set());
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const pickerRef = useRef(null);
   const [cycleFilter, setCycleFilter] = useState("all");
   const [timePreset, setTimePreset] = useState("all");
   const [customFrom, setCustomFrom] = useState("");
   const [customTo, setCustomTo] = useState("");
   const [loadStatus, setLoadStatus] = useState("");
-  const [t2mAgg, setT2mAgg] = useState(null);
-  const [windAgg, setWindAgg] = useState(null);
+  const [methodResults, setMethodResults] = useState([]);
 
   const selectedCycles =
     cycleFilter === "all" ? INIT_CYCLES : [parseInt(cycleFilter, 10)];
+
+  function toggleMethod(id) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  }
+
+  useEffect(() => {
+    function handleOutsideClick(e) {
+      if (!pickerRef.current?.contains(e.target)) setDropdownOpen(false);
+    }
+    document.addEventListener("mousedown", handleOutsideClick);
+    return () => document.removeEventListener("mousedown", handleOutsideClick);
+  }, []);
 
   useEffect(() => {
     if (!locationId) return;
@@ -52,9 +68,14 @@ export default function DetailPanel({ locationId }) {
     let cancelled = false;
 
     async function load() {
+      if (selectedIds.size === 0) {
+        setLoadStatus("");
+        setMethodResults([]);
+        return;
+      }
+
       setLoadStatus("Loading…");
-      setT2mAgg(null);
-      setWindAgg(null);
+      setMethodResults([]);
 
       if (selectedCycles.length === 0) {
         setLoadStatus("No cycles selected. Select at least one cycle.");
@@ -76,48 +97,79 @@ export default function DetailPanel({ locationId }) {
         }
       }
 
-      const data = await loadMethodData(methodId, locationId, filters);
+      const ids = [...selectedIds];
+      const results = await Promise.all(
+        ids.map((id) => loadMethodData(id, locationId, filters))
+      );
+
       if (cancelled) return;
 
-      if (!data) {
+      const entries = ids
+        .map((id, i) => ({
+          id,
+          label: METHODS.find((m) => m.id === id)?.label ?? id,
+          ...(results[i] ?? {}),
+        }))
+        .filter((_, i) => results[i] !== null);
+
+      if (entries.length === 0) {
         setLoadStatus(
-          `No data for method "${methodId}". Add per-init JSON or export ${methodId}_2025.npz under data/${methodId}/.`,
+          `No data for selected method(s). Add per-init JSON or export NPZ under data/<method>/.`
         );
         return;
       }
 
-      setLoadStatus(formatLoadStatus(data.nInits, data.source, selectedCycles, timePreset, customFrom, customTo));
-      setT2mAgg(data.t2m);
-      setWindAgg(data.wind_speed);
+      setLoadStatus(
+        entries.length === 1
+          ? formatLoadStatus(entries[0].nInits, entries[0].source, selectedCycles, timePreset, customFrom, customTo)
+          : `${entries.length} methods loaded.`
+      );
+      setMethodResults(entries);
     }
 
     load();
     return () => {
       cancelled = true;
     };
-  }, [locationId, methodId, cycleFilter, timePreset, customFrom, customTo]);
+  }, [locationId, selectedIds, cycleFilter, timePreset, customFrom, customTo]);
 
   const title = LOCATION_LABELS[locationId] ?? locationId;
-  const noData = loadStatus.startsWith("No data");
+  const noData = selectedIds.size > 0 && methodResults.length === 0 && !loadStatus.startsWith("Loading");
 
   return (
     <section id="detail-panel" aria-label="Skill score charts">
       <div className="panel-header">
         <h2 id="detail-title">{title}</h2>
-        <label>
-          Method
-          <select
-            id="method-select"
-            value={methodId}
-            onChange={(e) => setMethodId(e.target.value)}
+        <div className="method-picker" ref={pickerRef}>
+          <span className="picker-label">Methods</span>
+          <button
+            className="picker-trigger"
+            onClick={() => setDropdownOpen((o) => !o)}
           >
-            {METHODS.map(({ id, label }) => (
-              <option key={id} value={id}>
-                {label}
-              </option>
-            ))}
-          </select>
-        </label>
+            {selectedIds.size === 0 ? "None selected" : `${selectedIds.size} selected`}
+            <span className="picker-caret">{dropdownOpen ? "▲" : "▼"}</span>
+          </button>
+          {dropdownOpen && (
+            <div className="method-dropdown">
+              <button
+                className="clear-all-btn"
+                onClick={() => setSelectedIds(new Set())}
+              >
+                Clear all
+              </button>
+              {METHODS.map(({ id, label }) => (
+                <label key={id} className="method-option">
+                  <input
+                    type="checkbox"
+                    checked={selectedIds.has(id)}
+                    onChange={() => toggleMethod(id)}
+                  />
+                  {label}
+                </label>
+              ))}
+            </div>
+          )}
+        </div>
         <label>
           Init cycle
           <select
@@ -184,18 +236,20 @@ export default function DetailPanel({ locationId }) {
         {loadStatus}
       </p>
 
-      {noData ? (
+      {selectedIds.size === 0 ? (
+        <p className="status">Select one or more methods above to see charts.</p>
+      ) : noData ? (
         <p>—</p>
       ) : (
         <>
           <div className="variable-block">
             <h3>2 m temperature (t2m)</h3>
-            <VariableCharts agg={t2mAgg} />
+            <VariableCharts entries={methodResults.map((r) => ({ id: r.id, label: r.label, agg: r.t2m }))} />
           </div>
 
           <div className="variable-block">
             <h3>10 m wind speed</h3>
-            <VariableCharts agg={windAgg} />
+            <VariableCharts entries={methodResults.map((r) => ({ id: r.id, label: r.label, agg: r.wind_speed }))} />
           </div>
         </>
       )}
