@@ -35,6 +35,7 @@ export const METHODS = [
   { id: "gfs_interpolated", label: "GFS interpolated at station" },
   { id: "gfs_analysis", label: "GFS analysis" },
   { id: "hrdps_analysis", label: "HRDPS analysis" },
+  { id: "hrrr_interpolated", label: "HRRR interpolated at station" },
   { id: "ecmwf_aifs", label: "ECMWF AIFS" },
   { id: "graphcast", label: "GraphCast" },
   { id: "pangu", label: "Pangu-Weather" },
