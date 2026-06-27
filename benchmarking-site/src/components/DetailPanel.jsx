@@ -8,6 +8,7 @@ import {
 } from "../constants.js";
 import { loadMethodData } from "../lib/benchmarkData.js";
 import VariableCharts from "./VariableCharts.jsx";
+import SummaryTable from "./SummaryTable.jsx";
 
 function formatLoadStatus(nInits, source, selectedCycles, timePreset, customFrom, customTo) {
   const via = source === "npz" ? " (consolidated NPZ)" : "";
@@ -45,6 +46,20 @@ export default function DetailPanel({ locationId }) {
 
   const selectedCycles =
     cycleFilter === "all" ? INIT_CYCLES : [parseInt(cycleFilter, 10)];
+
+  const filters = {};
+  if (selectedCycles.length !== INIT_CYCLES.length) filters.cycles = selectedCycles.join(",");
+
+  if (timePreset !== "all") {
+    const preset = TIME_PRESETS.find((p) => p.value === timePreset);
+    if (preset && timePreset !== "custom") {
+      filters.init_from = preset.from;
+      filters.init_to = preset.to;
+    } else if (timePreset === "custom") {
+      if (customFrom) filters.init_from = `${customFrom}T00:00:00Z`;
+      if (customTo) filters.init_to = `${customTo}T18:00:00Z`;
+    }
+  }
 
   useEffect(() => {
     if (!locationId) return;
@@ -183,6 +198,8 @@ export default function DetailPanel({ locationId }) {
       <p id="load-status" className="status">
         {loadStatus}
       </p>
+
+      <SummaryTable locationId={locationId} filters={filters} />
 
       {noData ? (
         <p>—</p>
