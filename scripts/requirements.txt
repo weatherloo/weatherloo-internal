@@ -1,0 +1,10 @@
+# Dependencies for the raw HRRR/ERA5 training-data downloaders
+# (scripts/download_hrrr.py, scripts/download_era5.py).
+numpy>=1.26
+xarray>=2024.1
+dask>=2024.1
+cfgrib>=0.9.14
+eccodes>=1.6.0
+netCDF4>=1.6
+zarr>=2.16
+gcsfs>=2024.2
