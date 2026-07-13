@@ -129,9 +129,9 @@ def bbox_window(sample_grib: Path) -> tuple[slice, slice]:
     global _WINDOW
     if _WINDOW is not None:
         return _WINDOW
-    ds = cfgrib.open_dataset(sample_grib)
-    lat = np.asarray(ds.latitude.values, dtype=float)
-    lon = np.asarray(ds.longitude.values, dtype=float)
+    with cfgrib.open_dataset(sample_grib) as ds:
+        lat = np.asarray(ds.latitude.values, dtype=float)
+        lon = np.asarray(ds.longitude.values, dtype=float)
     lon = np.where(lon > 180.0, lon - 360.0, lon)
     inside = (
         (lat >= LAT_MIN - PAD_DEG)
@@ -150,13 +150,27 @@ def bbox_window(sample_grib: Path) -> tuple[slice, slice]:
 def read_field(grib_path: Path) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Return (values, lat, lon) cropped to the bbox window for one GRIB message."""
     jsl, isl = bbox_window(grib_path)
-    ds = cfgrib.open_dataset(grib_path)
-    var = list(ds.data_vars)[0]
-    vals = np.asarray(ds[var].values, dtype=np.float32)[jsl, isl]
-    lat = np.asarray(ds.latitude.values, dtype=np.float32)[jsl, isl]
-    lon = np.asarray(ds.longitude.values, dtype=np.float32)[jsl, isl]
+    with cfgrib.open_dataset(grib_path) as ds:
+        var = list(ds.data_vars)[0]
+        vals = np.asarray(ds[var].values, dtype=np.float32)[jsl, isl]
+        lat = np.asarray(ds.latitude.values, dtype=np.float32)[jsl, isl]
+        lon = np.asarray(ds.longitude.values, dtype=np.float32)[jsl, isl]
     lon = np.where(lon > 180.0, lon - 360.0, lon).astype(np.float32)
     return vals, lat, lon
+
+
+def purge_cycle_cache(day: date, cycle: int) -> None:
+    """Delete this init-cycle's cached GRIB blobs (full-CONUS, ~5 MB/lead).
+
+    Without this the cache grows to terabytes over a full backfill. Called after
+    the cropped NetCDF is safely written. cfgrib also writes ``*.grib2.*.idx``
+    sidecars, so glob the whole prefix.
+    """
+    for p in CACHE_DIR.glob(f"{day:%Y%m%d}_t{cycle:02d}z_f*"):
+        try:
+            p.unlink()
+        except OSError:
+            pass  # best-effort; a lingering handle just leaves one file behind
 
 
 def build_cycle_dataset(
@@ -221,7 +235,13 @@ def build_cycle_dataset(
 
 
 def process_cycle(
-    day: date, cycle: int, data_root: Path, max_lead: int, retries: int, resume: bool
+    day: date,
+    cycle: int,
+    data_root: Path,
+    max_lead: int,
+    retries: int,
+    resume: bool,
+    keep_grib: bool,
 ) -> str:
     out_path = (
         data_root / "hrrr" / f"{day:%Y}" / f"{day:%Y%m%d}" / f"hrrr_{day:%Y%m%d}_t{cycle:02d}z.nc"
@@ -239,7 +259,13 @@ def process_cycle(
     tmp = out_path.parent / (out_path.name + ".tmp")
     ds.to_netcdf(tmp, encoding=encoding)
     tmp.replace(out_path)
-    return f"wrote {out_path.name} ({ds.sizes['lead']} leads)"
+    nleads = ds.sizes["lead"]
+    ds.close()
+    if not keep_grib:
+        # Drop the ~5 MB/lead full-CONUS GRIB cache now that the crop is written,
+        # so the cache never grows past a few in-flight cycles (~TBs otherwise).
+        purge_cycle_cache(day, cycle)
+    return f"wrote {out_path.name} ({nleads} leads)"
 
 
 def daterange(start: date, end: date):
@@ -259,6 +285,7 @@ def main() -> None:
     parser.add_argument("--workers", type=int, default=3, help="Parallel init-cycle workers (3 avoids AWS resets)")
     parser.add_argument("--download-retries", type=int, default=6, help="Retries per GRIB/idx download")
     parser.add_argument("--resume", action="store_true", help="Skip cycles whose NetCDF already exists")
+    parser.add_argument("--keep-grib", action="store_true", help="Keep cached full-CONUS GRIB blobs (else purged per cycle; cache is ~5 MB/lead)")
     parser.add_argument("--dry-run", action="store_true", help="Process only the start date's first cycle")
     args = parser.parse_args()
 
@@ -281,7 +308,9 @@ def main() -> None:
 
     def run(job):
         d, c = job
-        return process_cycle(d, c, data_root, args.max_lead, args.download_retries, args.resume)
+        return process_cycle(
+            d, c, data_root, args.max_lead, args.download_retries, args.resume, args.keep_grib
+        )
 
     if args.workers <= 1:
         for job in jobs:
