@@ -8,3 +8,5 @@ eccodes>=1.6.0
 netCDF4>=1.6
 zarr>=2.16
 gcsfs>=2024.2
+matplotlib>=3.8
+pillow>=10.0

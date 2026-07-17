@@ -7,7 +7,8 @@ Kitchener-Waterloo bounding box, and writes one compact NetCDF per month:
 
     {data_root}/era5/{YYYY}/era5_{YYYYMM}.nc
         dims:  (time, latitude, longitude)
-        vars:  t2m (K), u10 (m/s), v10 (m/s), tp (m accumulated)
+        vars:  t2m (K), u10 (m/s), v10 (m/s), tp (m accumulated),
+               q2 (kg/kg), psfc (Pa), pblh (m), hgt (m), tsk (K), ust (m/s)
 
 Month granularity bounds memory and gives natural resume. ARCO-ERA5 lags
 real-time by ~2-3 months; months with no data yet are skipped.
@@ -36,14 +37,81 @@ from weather_download_common import (
 
 DEFAULT_STORE = "gs://gcp-public-data-arco-era5/ar/full_37-1h-0p25deg-chunk-1.zarr-v3"
 DEFAULT_START = "2018-01"
+G = 9.80665
 
 # ARCO-ERA5 variable name -> compact output name (matches download_hrrr.py).
 VAR_MAP = {
     "2m_temperature": "t2m",
+    "2m_dewpoint_temperature": "d2m",
     "10m_u_component_of_wind": "u10",
     "10m_v_component_of_wind": "v10",
     "total_precipitation": "tp",
+    "surface_pressure": "psfc",
+    "boundary_layer_height": "pblh",
+    "geopotential_at_surface": "z_surface",
+    "skin_temperature": "tsk",
+    "friction_velocity": "ust",
 }
+OUTPUT_VARS = ("t2m", "u10", "v10", "tp", "q2", "psfc", "pblh", "hgt", "tsk", "ust")
+# ARCO variables needed to produce each output variable (for incremental patches).
+ARCO_FOR_OUTPUT: dict[str, tuple[str, ...]] = {
+    "t2m": ("2m_temperature",),
+    "u10": ("10m_u_component_of_wind",),
+    "v10": ("10m_v_component_of_wind",),
+    "tp": ("total_precipitation",),
+    "psfc": ("surface_pressure",),
+    "pblh": ("boundary_layer_height",),
+    "hgt": ("geopotential_at_surface",),
+    "tsk": ("skin_temperature",),
+    "ust": ("friction_velocity",),
+    "q2": ("2m_dewpoint_temperature", "surface_pressure"),
+}
+DIRECT_OUTPUT_VARS = tuple(v for v in OUTPUT_VARS if v not in ("q2", "hgt"))
+
+
+def mixing_ratio_from_t_td_p(t_k: xr.DataArray, td_k: xr.DataArray, p_pa: xr.DataArray) -> xr.DataArray:
+    """Mass mixing ratio at 2 m from temperature, dewpoint, and surface pressure."""
+    td_c = td_k - 273.15
+    es = 611.2 * np.exp(17.67 * td_c / (td_c + 243.5))
+    q = 0.622 * es / (p_pa - 0.378 * es)
+    return q / (1.0 - q)
+
+
+def month_file_complete(path: Path) -> bool:
+    if not path.is_file() or path.stat().st_size == 0:
+        return False
+    try:
+        with xr.open_dataset(path) as ds:
+            return all(v in ds.data_vars for v in OUTPUT_VARS)
+    except Exception:
+        return False
+
+
+def missing_month_vars(path: Path) -> tuple[str, ...]:
+    if not path.is_file() or path.stat().st_size == 0:
+        return OUTPUT_VARS
+    try:
+        with xr.open_dataset(path) as ds:
+            return tuple(v for v in OUTPUT_VARS if v not in ds.data_vars)
+    except Exception:
+        return OUTPUT_VARS
+
+
+def arco_vars_for_missing(missing: tuple[str, ...]) -> tuple[str, ...]:
+    arco: list[str] = []
+    for out_var in missing:
+        for arco_var in ARCO_FOR_OUTPUT[out_var]:
+            if arco_var not in arco:
+                arco.append(arco_var)
+    return tuple(arco)
+
+
+def write_month_netcdf(ds: xr.Dataset, out_path: Path) -> None:
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    encoding = {v: {"zlib": True, "complevel": 4} for v in ds.data_vars}
+    tmp = out_path.parent / (out_path.name + ".tmp")
+    ds.to_netcdf(tmp, encoding=encoding)
+    tmp.replace(out_path)
 
 
 def months(start: str, end: str):
@@ -81,10 +149,15 @@ def subset_region(ds: xr.Dataset) -> xr.Dataset:
 
 def process_month(ds: xr.Dataset, y: int, m: int, data_root: Path, resume: bool) -> str:
     out_path = data_root / "era5" / f"{y:04d}" / f"era5_{y:04d}{m:02d}.nc"
-    if resume and out_path.exists():
+    if resume and month_file_complete(out_path):
         return f"skip {out_path.name}"
 
-    month = ds[list(VAR_MAP)].sel(time=slice(f"{y:04d}-{m:02d}", f"{y:04d}-{m:02d}"))
+    missing = missing_month_vars(out_path) if resume and out_path.exists() else OUTPUT_VARS
+    if resume and not missing:
+        return f"skip {out_path.name}"
+
+    arco_needed = arco_vars_for_missing(missing)
+    month = ds[list(arco_needed)].sel(time=slice(f"{y:04d}-{m:02d}", f"{y:04d}-{m:02d}"))
     if month.sizes.get("time", 0) == 0:
         return f"MISSING {y:04d}-{m:02d} (no time steps in store)"
 
@@ -94,6 +167,33 @@ def process_month(ds: xr.Dataset, y: int, m: int, data_root: Path, resume: bool)
     # not-yet-reanalysed months. Load just the first hour of one variable (one
     # global chunk, ~4 MB) and skip the whole month if it's all-NaN, so we don't
     # pay the full ~12 GB month read for data that isn't published yet.
+    probe = month[arco_needed[0]].isel(time=0).load()
+    if bool(np.isnan(probe.values).all()):
+        return f"MISSING {y:04d}-{m:02d} (not published yet)"
+
+    month = month.rename({k: VAR_MAP[k] for k in arco_needed}).load()
+    if all(bool(np.isnan(month[v].values).all()) for v in month.data_vars):
+        return f"MISSING {y:04d}-{m:02d} (all-NaN after load)"
+
+    if resume and out_path.exists() and missing != OUTPUT_VARS:
+        with xr.open_dataset(out_path) as existing:
+            merged = existing.load()
+        # Merge direct fields first so derived q2/hgt can reuse them.
+        for var in DIRECT_OUTPUT_VARS:
+            if var in missing and var in month:
+                merged[var] = month[var]
+        if "hgt" in missing and "z_surface" in month:
+            merged["hgt"] = month["z_surface"] / G
+        if "q2" in missing:
+            t2m = merged["t2m"] if "t2m" in merged else month["t2m"]
+            psfc = merged["psfc"] if "psfc" in merged else month["psfc"]
+            merged["q2"] = mixing_ratio_from_t_td_p(t2m, month["d2m"], psfc)
+        merged = merged[list(v for v in OUTPUT_VARS if v in merged)]
+        write_month_netcdf(merged, out_path)
+        return f"patched {out_path.name} (+{','.join(missing)}, {merged.sizes['time']} hrs)"
+
+    month = ds[list(VAR_MAP)].sel(time=slice(f"{y:04d}-{m:02d}", f"{y:04d}-{m:02d}"))
+    month = subset_region(month)
     probe = month[next(iter(VAR_MAP))].isel(time=0).load()
     if bool(np.isnan(probe.values).all()):
         return f"MISSING {y:04d}-{m:02d} (not published yet)"
@@ -102,11 +202,12 @@ def process_month(ds: xr.Dataset, y: int, m: int, data_root: Path, resume: bool)
     if all(bool(np.isnan(month[v].values).all()) for v in month.data_vars):
         return f"MISSING {y:04d}-{m:02d} (all-NaN after load)"
 
-    out_path.parent.mkdir(parents=True, exist_ok=True)
-    encoding = {v: {"zlib": True, "complevel": 4} for v in month.data_vars}
-    tmp = out_path.parent / (out_path.name + ".tmp")
-    month.to_netcdf(tmp, encoding=encoding)
-    tmp.replace(out_path)
+    month["hgt"] = month["z_surface"] / G
+    month["q2"] = mixing_ratio_from_t_td_p(month["t2m"], month["d2m"], month["psfc"])
+    month = month.drop_vars(["d2m", "z_surface"])
+    month = month[list(OUTPUT_VARS)]
+
+    write_month_netcdf(month, out_path)
     return f"wrote {out_path.name} ({month.sizes['time']} hrs)"
 
 

@@ -45,6 +45,117 @@ def resolve_data_root(cli_value: str | None) -> Path:
     return REPO_ROOT / "data"
 
 
+def resolve_hrrr_cache_dir(data_root: Path, cli_value: str | None = None) -> Path:
+    """GRIB byte-range cache base. Prefer data_root (bulk disk), not repo ``.cache/``.
+
+    Precedence: ``--cache-dir`` -> ``$WEATHERLOO_HRRR_CACHE`` ->
+    ``{data_root}/.cache/hrrr_grib``. Home/SSD fills and crashes around ~20 GB
+    with many tiny GRIB blobs, so the default stays next to NetCDF outputs.
+
+    Callers should normally wrap this with :func:`private_hrrr_cache_dir` so
+    parallel Slurm jobs do not share one directory (eccodes segfaults when
+    another worker deletes/prunes a GRIB still being read).
+    """
+    if cli_value:
+        return Path(cli_value).expanduser().resolve()
+    env = os.environ.get("WEATHERLOO_HRRR_CACHE")
+    if env:
+        return Path(env).expanduser().resolve()
+    return data_root / ".cache" / "hrrr_grib"
+
+
+def private_hrrr_cache_dir(base: Path) -> Path:
+    """Per-process cache under ``base`` so Slurm workers do not race on NFS.
+
+    Uses ``job-{SLURM_JOB_ID}`` when present, else ``pid-{pid}``. Downloaders
+    remove this subdirectory when they finish.
+    """
+    job = os.environ.get("SLURM_JOB_ID") or os.environ.get("SLURM_JOBID")
+    leaf = f"job-{job}" if job else f"pid-{os.getpid()}"
+    return base / leaf
+
+
+def unlink_quiet(path: Path) -> None:
+    """Best-effort delete; ignore races from parallel workers."""
+    try:
+        path.unlink(missing_ok=True)
+    except OSError:
+        pass
+
+
+def unlink_grib_and_sidecars(grib_path: Path) -> None:
+    """Remove a GRIB blob plus cfgrib's ``*.grib2.*.idx`` sidecars."""
+    parent = grib_path.parent
+    name = grib_path.name
+    for path in parent.glob(f"{name}*"):
+        unlink_quiet(path)
+
+
+def cycle_cache_glob(day, cycle: int) -> str:
+    """Filename prefix for one init-cycle's cached GRIB/idx files."""
+    return f"{day:%Y%m%d}_t{cycle:02d}z"
+
+
+def cleanup_cycle_cache(cache_dir: Path, day, cycle: int) -> int:
+    """Delete all cache files for one init-cycle. Returns bytes freed."""
+    if not cache_dir.is_dir():
+        return 0
+    prefix = cycle_cache_glob(day, cycle)
+    freed = 0
+    for path in cache_dir.glob(f"{prefix}*"):
+        try:
+            freed += path.stat().st_size
+        except OSError:
+            continue
+        unlink_quiet(path)
+    return freed
+
+
+def cache_dir_nbytes(cache_dir: Path) -> int:
+    if not cache_dir.is_dir():
+        return 0
+    total = 0
+    for path in cache_dir.iterdir():
+        try:
+            if path.is_file():
+                total += path.stat().st_size
+        except OSError:
+            continue
+    return total
+
+
+def enforce_cache_budget(cache_dir: Path, max_bytes: int) -> int:
+    """Delete oldest files until cache is under ``max_bytes``. Returns bytes freed.
+
+    Safety valve for a *private* cache dir (see :func:`private_hrrr_cache_dir`).
+    Prefer per-cycle cleanup after each NetCDF write; this catches leftovers so
+    we never approach the ~20 GB home crash threshold.
+    """
+    if max_bytes <= 0 or not cache_dir.is_dir():
+        return 0
+    entries: list[tuple[float, int, Path]] = []
+    total = 0
+    for path in cache_dir.iterdir():
+        try:
+            if not path.is_file():
+                continue
+            st = path.stat()
+        except OSError:
+            continue
+        entries.append((st.st_mtime, st.st_size, path))
+        total += st.st_size
+    if total <= max_bytes:
+        return 0
+    entries.sort(key=lambda t: t[0])  # oldest first
+    freed = 0
+    for _mtime, size, path in entries:
+        if total - freed <= max_bytes:
+            break
+        unlink_quiet(path)
+        freed += size
+    return freed
+
+
 def download_bytes(
     url: str,
     start: int | None = None,
