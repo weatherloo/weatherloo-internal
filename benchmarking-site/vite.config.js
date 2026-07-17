@@ -7,23 +7,28 @@ import { viteStaticCopy } from "vite-plugin-static-copy";
 
 const root = path.dirname(fileURLToPath(import.meta.url));
 const dataRoot = path.join(root, "data");
-const apiTarget = process.env.BENCHMARK_API_URL ?? "http://127.0.0.1:5174";
+
+// Production data bundle: methods with a static aggregate.json (built by
+// scripts/build_static_aggregates.py) ship only that file — the dashboard
+// never needs their per-init JSON or NPZ. Methods without one ship all their
+// JSON (index/sample/per-init) for the client-side fallback. observations/
+// is ground truth for compute scripts only and is never fetched by the app.
+function dataCopyTargets() {
+  return fs
+    .readdirSync(dataRoot, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory() && entry.name !== "observations")
+    .map((entry) =>
+      fs.existsSync(path.join(dataRoot, entry.name, "aggregate.json"))
+        ? { src: `data/${entry.name}/aggregate.json`, dest: `data/${entry.name}` }
+        : { src: `data/${entry.name}/*.json`, dest: `data/${entry.name}` },
+    );
+}
 
 export default defineConfig({
-  server: {
-    proxy: {
-      "/api": { target: apiTarget, changeOrigin: true },
-    },
-  },
-  preview: {
-    proxy: {
-      "/api": { target: apiTarget, changeOrigin: true },
-    },
-  },
   plugins: [
     react(),
     viteStaticCopy({
-      targets: [{ src: "data", dest: "." }],
+      targets: dataCopyTargets(),
     }),
     {
       name: "serve-benchmark-data",

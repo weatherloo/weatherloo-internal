@@ -17,7 +17,7 @@ npm run dev
 
 Open http://localhost:5173 — click a station on the map, pick a method, view RMSE / MAE / bias / ACC vs lead time. The UI **averages** metrics across all loaded init files for the selected location.
 
-`npm run dev` starts **Vite** and the **NPZ API** (`server/npz_api.py` on port 5174). When a method has a consolidated `<method_id>_2025.npz`, the dashboard loads aggregates via `/api/benchmark/…` instead of fetching hundreds of per-init JSON files. Without NPZ, it falls back to per-init JSON (via `index.json` or sample file).
+When a method has a consolidated `<method_id>_2025.npz`, the dashboard loads its precomputed **static aggregate** (`data/<method_id>/aggregate.json`, built by `scripts/build_static_aggregates.py` — run automatically by `npm run build`, or manually via `bash scripts/build_static_aggregates.sh`). There is no API server; cycle/month filters recombine the aggregate's per-(month × cycle) partial sums client-side. Without NPZ (or for non-month-aligned custom ranges), it falls back to per-init JSON (via `index.json` or sample file).
 
 Rebuild the consolidated NPZ from existing JSON without re-fetching:
 
@@ -25,9 +25,13 @@ Rebuild the consolidated NPZ from existing JSON without re-fetching:
 python3 data/gfs_interpolated/compute_benchmark.py --export-npz-only
 ```
 
-API only needs `numpy` (`pip install -r server/requirements.txt`, or use the repo `.venv` — `server/run_api.sh` picks it automatically).
+After (re)building an NPZ, refresh the static aggregate:
 
-Production build (serves `dist/` with benchmark JSON copied in):
+```bash
+bash scripts/build_static_aggregates.sh --methods <method_id>
+```
+
+Production build (bundles `dist/` with `aggregate.json` files copied in; see `DEPLOY.md` for Vercel):
 
 ```bash
 npm run build
@@ -167,7 +171,7 @@ The dashboard **averages over whatever loads**; sparse or in-progress datasets a
 
 ### NPZ export
 
-Compute scripts write a **single consolidated NPZ** alongside the per-init JSON files. The dashboard reads NPZ **via the thin API** in `server/npz_api.py` (proxied at `/api/benchmark` during `npm run dev` / `npm run preview`); without NPZ it falls back to per-init JSON.
+Compute scripts write a **single consolidated NPZ** alongside the per-init JSON files. The dashboard reads NPZ **indirectly via the static aggregate** `data/<method_id>/aggregate.json` built from it by `scripts/build_static_aggregates.py` (part of `npm run build`); without NPZ it falls back to per-init JSON. `server/npz_api.py` is a legacy local tool (run manually with `bash server/run_api.sh`) kept for ad-hoc NPZ inspection; nothing in the site calls it anymore.
 
 - **Filename:** `data/<method_id>/<method_id>_<year>.npz` (e.g. `gfs_interpolated_2025.npz`).
 - **Document in** `data/<method_id>/metadata.json` via `"npz_file"` and `"npz_schema": "see benchmarking-site/AGENTS.md"`.

@@ -10,7 +10,7 @@ import { loadMethodData } from "../lib/benchmarkData.js";
 import VariableCharts from "./VariableCharts.jsx";
 
 function formatLoadStatus(nInits, source, selectedCycles, timePreset, customFrom, customTo) {
-  const via = source === "npz" ? " (consolidated NPZ)" : "";
+  const via = source === "aggregate" ? " (precomputed NPZ aggregate)" : "";
   const allCycles = selectedCycles.length === INIT_CYCLES.length;
   const cycleLabel = allCycles
     ? null
