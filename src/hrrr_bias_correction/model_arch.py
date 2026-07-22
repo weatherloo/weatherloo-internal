@@ -14,8 +14,18 @@ def build_model(input_shape=input_shape, n_outputs: int = N_TARGETS):
 
     Output shape: (batch, 49, 2) — t2m bias and wind_speed bias.
     """
+    if len(input_shape) == 5:
+        sample_shape = input_shape[1:]
+    elif len(input_shape) == 4:
+        sample_shape = input_shape
+    else:
+        raise ValueError(
+            "input_shape must be (lead, row, col, channel) or "
+            "(batch, lead, row, col, channel)."
+        )
+
     model = Sequential()
-    model.add(Input(shape=input_shape[1:]))
+    model.add(Input(shape=sample_shape))
 
     model.add(TimeDistributed(Conv2D(filters=16, kernel_size=(3, 3), activation="relu", padding="same")))
     model.add(TimeDistributed(MaxPooling2D(pool_size=(2, 2), padding="same")))
