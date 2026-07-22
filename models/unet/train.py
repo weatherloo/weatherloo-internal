@@ -25,6 +25,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import os
 import sys
 from pathlib import Path
 
@@ -52,6 +53,17 @@ def pick_device() -> torch.device:
         return torch.device("cuda")
     if torch.backends.mps.is_available():
         return torch.device("mps")
+    # CPU fallback. PyTorch's oneDNN (mkldnn) conv backend raises
+    # "RuntimeError: could not create a primitive" on some constrained hosts
+    # (notably cluster login nodes with tight cpu/memory cgroups). This model is
+    # tiny (~117k params on a 21x41 grid), so the mkldnn speedup is negligible;
+    # disable it by default to run reliably anywhere, with an opt-back-in escape
+    # hatch (UNET_ENABLE_MKLDNN=1) for beefy CPU-only compute nodes.
+    if os.environ.get("UNET_ENABLE_MKLDNN", "0") != "1":
+        try:
+            torch.backends.mkldnn.enabled = False
+        except Exception:
+            pass
     return torch.device("cpu")
 
 
@@ -136,7 +148,10 @@ def evaluate(model, val_ds, device, stats: dict) -> None:
 def train(args) -> None:
     device = pick_device()
     ckpt_path = CKPT_DIR / args.ckpt_name
-    print(f"device: {device}")
+    if device.type == "cuda":
+        print(f"device: {device} ({torch.cuda.get_device_name(device)})")
+    else:
+        print(f"device: {device}")
     print(f"range: {args.start} .. {args.end}   epochs: {args.epochs}   "
           f"batch: {args.batch_size}   workers: {args.workers}")
     print(f"split: {args.split_mode}"
