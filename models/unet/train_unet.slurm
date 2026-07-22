@@ -6,12 +6,17 @@
 # run could exceed 24h. Docs: https://cloud.watonomous.ca/docs/compute-cluster/slurm
 #
 # GPU options (pick ONE --gres line):
-#   fractional (recommended, neighbour-friendly): --gres shard:8192,tmpdisk:0
-#       8192 MiB VRAM is plenty for this ~117k-param model on a 21x41 grid.
-#   whole GPU:            --gres gpu:1
-#   whole GPU of a type:  --gres gpu:rtx_3090:1   (run `sinfo -o "%N %G"` to list)
+#   IMPORTANT: pin a modern GPU type. A bare `shard:` / `gpu:1` can land you on
+#   an old GTX 1080 (Pascal, sm_61) whose kernels are NOT in modern PyTorch
+#   wheels -> "CUDA error: no kernel image is available for execution on the
+#   device". Request an Ampere-or-newer card by type instead.
+#   List available types + counts:  sinfo -o "%N %G"
+#
+#   whole GPU of a type:  --gres gpu:rtx_3090:1   (Ampere sm_86 — works)
+#   any whole GPU:        --gres gpu:1            (risks the 1080; not advised)
+#   fractional of a type: --gres shard:8192       (only if all shard GPUs are new)
 #SBATCH --partition=compute
-#SBATCH --gres=shard:8192
+#SBATCH --gres=gpu:rtx_3090:1
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=8
