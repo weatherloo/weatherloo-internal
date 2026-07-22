@@ -34,6 +34,22 @@ DEFAULT_VARIABLES = ("t2m", "u10", "v10", "q2", "psfc", "tp")
 DEFAULT_STATIONS = ("stn_51459_toronto_intl_a",)
 
 
+def _lead_to_hours(lead) -> int:
+    """Normalize a forecast lead value to an integer number of hours.
+
+    xarray decodes the ``lead`` coordinate as ``timedelta64[ns]`` when the file
+    carries timedelta-like units, so a bare ``int(lead)`` would return the
+    nanosecond count (e.g. 3.6e12 for a 1-hour lead) and overflow C's ``int``
+    inside ``datetime.timedelta``. Handle timedelta64, python timedelta, and
+    plain hour counts uniformly.
+    """
+    if isinstance(lead, np.timedelta64):
+        return int(lead / np.timedelta64(1, "h"))
+    if isinstance(lead, timedelta):
+        return int(lead.total_seconds() // 3600)
+    return int(lead)
+
+
 class HRRRDataset(Dataset):
     """Dataset over HRRR forecast files and matching ERA5/obs targets."""
 
@@ -90,7 +106,7 @@ class HRRRDataset(Dataset):
                         continue
                     init_dt = datetime.strptime(m.group(1) + m.group(2), "%Y%m%d%H").replace(tzinfo=timezone.utc)
                     try:
-                        ds = xr.open_dataset(file)
+                        ds = xr.open_dataset(file, decode_timedelta=True)
                     except Exception:
                         continue
                     try:
@@ -98,7 +114,8 @@ class HRRRDataset(Dataset):
                     except Exception:
                         lead_vals = np.arange(49)
                     for idx, lead in enumerate(lead_vals):
-                        valid_dt = init_dt + timedelta(hours=int(lead))
+                        lead_hours = _lead_to_hours(lead)
+                        valid_dt = init_dt + timedelta(hours=lead_hours)
                         # Keep the full historical range but use 2025 only for val.
                         if self.split == "train" and valid_dt.year >= 2025:
                             continue
@@ -108,7 +125,7 @@ class HRRRDataset(Dataset):
                             "file": file,
                             "init_dt": init_dt,
                             "lead_idx": int(idx),
-                            "lead": int(lead),
+                            "lead": lead_hours,
                             "valid_dt": valid_dt,
                         })
                     ds.close()
@@ -151,7 +168,7 @@ class HRRRDataset(Dataset):
 
     def _load_hrrr(self, path: Path) -> xr.Dataset:
         if path not in self._hrrr_cache:
-            self._hrrr_cache[path] = xr.open_dataset(path)
+            self._hrrr_cache[path] = xr.open_dataset(path, decode_timedelta=True)
         return self._hrrr_cache[path]
 
     def _load_era5(self, valid_dt: datetime) -> xr.Dataset:
