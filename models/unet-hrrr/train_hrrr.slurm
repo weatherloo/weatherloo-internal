@@ -15,13 +15,13 @@ cd /home/c52li/weatherloo-internal/models/unet-hrrr
 
 export UNET_DATA_ROOT=/mnt/wato-drive/c52li/weatherloo-data
 
-python3 -m pip install --user torch==2.3.1 --index-url https://download.pytorch.org/whl/cpu
-python3 -m pip install --user xarray numpy
+# whichever venv actually has torch — your home one, or the mount one you created
+source /home/c52li/weatherloo-internal/.venv/bin/activate
 
 python3 train.py \
   --data-dir "$UNET_DATA_ROOT" \
   --output-dir /home/c52li/weatherloo-internal/models/unet-hrrr/checkpoints \
-  --epochs 8 \
+  --epochs 20 \
   --batch-size 4 \
   --patience 3 \
   --station-loss-weight 0.2 \
