@@ -1,0 +1,146 @@
+{
+  "method": "unet_postprocessing",
+  "kind": "validation_period_summary",
+  "note": "Held-out 2021 chronological val split; raw GFS vs seasonal-mean-bias baseline vs U-Net vs ERA5 oracle, scored against real 2021 station obs.",
+  "methods": {
+    "raw_gfs": "raw GFS (no correction)",
+    "seasonal_bias": "seasonal mean bias corr.",
+    "unet": "U-Net residual (learned)",
+    "era5_oracle": "ERA5 oracle (ceiling)"
+  },
+  "validation_period": {
+    "start": "2021-11-05T06:00:00Z",
+    "end": "2021-12-31T18:00:00Z",
+    "n_samples": 454
+  },
+  "checkpoint": {
+    "epoch": 11,
+    "val_loss_normalized_mse": 0.49150537262929167
+  },
+  "seasonal_baseline": {
+    "train_samples_per_season": {
+      "MAM": 556,
+      "JJA": 736,
+      "SON": 522
+    },
+    "val_season_to_applied": {
+      "SON->SON": 206,
+      "DJF->SON": 248
+    },
+    "note": "per-cell, per-channel mean(GFS-ERA5) by season; DJF absent in training so December val falls back to nearest trained season."
+  },
+  "interpolation": "bilinear (scipy RegularGridInterpolator) on region grid",
+  "wind": "sqrt(u10^2 + v10^2) from corrected 10 m u/v components, m/s -> km/h",
+  "observations_source": "benchmarking-site/data/observations/*/observations_6h_2021.json",
+  "stations": {
+    "cyyz": {
+      "t2m": {
+        "raw_gfs": {
+          "rmse": 1.289420719559609,
+          "mae": 1.0464839383005848,
+          "bias": -0.18943121787883319,
+          "n": 454
+        },
+        "seasonal_bias": {
+          "rmse": 1.3118777643580632,
+          "mae": 1.0639699395819586,
+          "bias": -0.3070857588261273,
+          "n": 454
+        },
+        "unet": {
+          "rmse": 1.4038877973937356,
+          "mae": 1.1270118027053575,
+          "bias": -0.5521306936425684,
+          "n": 454
+        },
+        "era5_oracle": {
+          "rmse": 0.8766978115830286,
+          "mae": 0.6800133491718552,
+          "bias": -0.21360184018351122,
+          "n": 454
+        }
+      },
+      "wind_speed": {
+        "raw_gfs": {
+          "rmse": 5.639757895186612,
+          "mae": 4.294150742269583,
+          "bias": -1.2965155210214652,
+          "n": 454
+        },
+        "seasonal_bias": {
+          "rmse": 5.815670645857203,
+          "mae": 4.387438376768966,
+          "bias": -1.5200716522103308,
+          "n": 454
+        },
+        "unet": {
+          "rmse": 5.699287692004883,
+          "mae": 4.262074818549927,
+          "bias": -1.248584693617629,
+          "n": 454
+        },
+        "era5_oracle": {
+          "rmse": 5.770538877080378,
+          "mae": 4.429343493422631,
+          "bias": -1.0342223319810555,
+          "n": 454
+        }
+      }
+    },
+    "eric_d_soulis": {
+      "t2m": {
+        "raw_gfs": {
+          "rmse": 1.4753320592172832,
+          "mae": 1.1168445230879906,
+          "bias": -0.270325915629222,
+          "n": 454
+        },
+        "seasonal_bias": {
+          "rmse": 1.451133126457597,
+          "mae": 1.0595150201375165,
+          "bias": 0.04752632613141275,
+          "n": 454
+        },
+        "unet": {
+          "rmse": 1.513114524960208,
+          "mae": 1.1688834393654928,
+          "bias": -0.4446433668228585,
+          "n": 454
+        },
+        "era5_oracle": {
+          "rmse": 0.9615869546066046,
+          "mae": 0.659292660708633,
+          "bias": 0.15915053071690638,
+          "n": 454
+        }
+      },
+      "wind_speed": {
+        "raw_gfs": {
+          "rmse": 16.381024729316806,
+          "mae": 14.844587355986013,
+          "bias": 14.844587355986013,
+          "n": 454
+        },
+        "seasonal_bias": {
+          "rmse": 16.061763095066876,
+          "mae": 14.561970230926981,
+          "bias": 14.561970230926981,
+          "n": 454
+        },
+        "unet": {
+          "rmse": 13.012779622277113,
+          "mae": 11.944762634222089,
+          "bias": 11.944762634222089,
+          "n": 454
+        },
+        "era5_oracle": {
+          "rmse": 12.54170934804299,
+          "mae": 11.434034739982758,
+          "bias": 11.434034739982758,
+          "n": 454
+        }
+      }
+    }
+  },
+  "generated": "2026-07-14T21:57:05Z"
+}
