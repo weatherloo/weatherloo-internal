@@ -1,0 +1,150 @@
+{
+  "method": "unet_postprocessing",
+  "kind": "validation_period_summary",
+  "note": "Held-out 2021 chronological val split; raw GFS vs seasonal-mean-bias baseline vs U-Net vs ERA5 oracle, scored against real 2021 station obs.",
+  "methods": {
+    "raw_gfs": "raw GFS (no correction)",
+    "seasonal_bias": "seasonal mean bias corr.",
+    "unet": "U-Net residual (learned)",
+    "era5_oracle": "ERA5 oracle (ceiling)"
+  },
+  "validation_period": {
+    "start": "2021-03-25T00:00:00Z",
+    "end": "2021-12-31T18:00:00Z",
+    "n_samples": 528
+  },
+  "checkpoint": {
+    "epoch": 19,
+    "val_loss_normalized_mse": 0.6667460374759905
+  },
+  "seasonal_baseline": {
+    "train_samples_per_season": {
+      "MAM": 396,
+      "JJA": 576,
+      "SON": 576,
+      "DJF": 192
+    },
+    "val_season_to_applied": {
+      "MAM->MAM": 160,
+      "JJA->JJA": 160,
+      "SON->SON": 152,
+      "DJF->DJF": 56
+    },
+    "note": "per-cell, per-channel mean(GFS-ERA5) by season; DJF absent in training so December val falls back to nearest trained season."
+  },
+  "interpolation": "bilinear (scipy RegularGridInterpolator) on region grid",
+  "wind": "sqrt(u10^2 + v10^2) from corrected 10 m u/v components, m/s -> km/h",
+  "observations_source": "benchmarking-site/data/observations/*/observations_6h_2021.json",
+  "stations": {
+    "cyyz": {
+      "t2m": {
+        "raw_gfs": {
+          "rmse": 1.7092712347922514,
+          "mae": 1.3042293850935132,
+          "bias": -0.6610064253500307,
+          "n": 528
+        },
+        "seasonal_bias": {
+          "rmse": 1.6928505244494352,
+          "mae": 1.2869440755640158,
+          "bias": -0.6634216003177783,
+          "n": 528
+        },
+        "unet": {
+          "rmse": 1.7973799137470519,
+          "mae": 1.3616981913190147,
+          "bias": -0.7832171935104503,
+          "n": 528
+        },
+        "era5_oracle": {
+          "rmse": 1.2150449901488802,
+          "mae": 0.9189508801546956,
+          "bias": -0.5804778790334183,
+          "n": 528
+        }
+      },
+      "wind_speed": {
+        "raw_gfs": {
+          "rmse": 6.137706511521256,
+          "mae": 4.819023231833385,
+          "bias": -2.1885781838916807,
+          "n": 528
+        },
+        "seasonal_bias": {
+          "rmse": 6.388048955959762,
+          "mae": 5.0176187337596065,
+          "bias": -2.3403054532544227,
+          "n": 528
+        },
+        "unet": {
+          "rmse": 6.800439972278295,
+          "mae": 5.266098720225124,
+          "bias": -2.517948598126359,
+          "n": 528
+        },
+        "era5_oracle": {
+          "rmse": 6.496603454024651,
+          "mae": 4.925570701502832,
+          "bias": -2.073789420953442,
+          "n": 528
+        }
+      }
+    },
+    "eric_d_soulis": {
+      "t2m": {
+        "raw_gfs": {
+          "rmse": 2.2009719684170173,
+          "mae": 1.6199619143996853,
+          "bias": -0.8862190003195305,
+          "n": 526
+        },
+        "seasonal_bias": {
+          "rmse": 2.0027415642676876,
+          "mae": 1.454603232203648,
+          "bias": -0.1260829153004764,
+          "n": 526
+        },
+        "unet": {
+          "rmse": 1.7873126192826407,
+          "mae": 1.3296955463239994,
+          "bias": -0.3510343365364369,
+          "n": 526
+        },
+        "era5_oracle": {
+          "rmse": 1.314199823664907,
+          "mae": 0.9724974885245331,
+          "bias": -0.10118831636078342,
+          "n": 526
+        }
+      },
+      "wind_speed": {
+        "raw_gfs": {
+          "rmse": 14.770358604340858,
+          "mae": 13.389438880962393,
+          "bias": 13.389438880962393,
+          "n": 526
+        },
+        "seasonal_bias": {
+          "rmse": 14.62497984151373,
+          "mae": 13.239542610973064,
+          "bias": 13.239542610973064,
+          "n": 526
+        },
+        "unet": {
+          "rmse": 11.265629733715585,
+          "mae": 10.108084449056214,
+          "bias": 10.104351726210231,
+          "n": 526
+        },
+        "era5_oracle": {
+          "rmse": 11.175268394682751,
+          "mae": 10.264996057307956,
+          "bias": 10.23461693278936,
+          "n": 526
+        }
+      }
+    }
+  },
+  "generated": "2026-07-14T22:15:41Z",
+  "split_mode": "interleaved_month"
+}
