@@ -5,18 +5,19 @@
 # and request the GPU via --gres. Use `compute_dense` (max 7 days) instead if a
 # run could exceed 24h. Docs: https://cloud.watonomous.ca/docs/compute-cluster/slurm
 #
-# GPU options (pick ONE --gres line):
-#   IMPORTANT: pin a modern GPU type. A bare `shard:` / `gpu:1` can land you on
-#   an old GTX 1080 (Pascal, sm_61) whose kernels are NOT in modern PyTorch
-#   wheels -> "CUDA error: no kernel image is available for execution on the
-#   device". Request an Ampere-or-newer card by type instead.
-#   List available types + counts:  sinfo -o "%N %G"
-#
-#   whole GPU of a type:  --gres gpu:rtx_3090:1   (Ampere sm_86 — works)
-#   any whole GPU:        --gres gpu:1            (risks the 1080; not advised)
-#   fractional of a type: --gres shard:8192       (only if all shard GPUs are new)
+# GPU: use a TYPED SHARD (fractional GPU pinned to a model). Two reasons:
+#   1. Pin the type -> never land on the old GTX 1080 (Pascal sm_61), whose
+#      kernels are absent from modern PyTorch wheels ("CUDA error: no kernel
+#      image is available for execution on the device").
+#   2. Fractional -> schedules right away by packing onto a partially-used GPU.
+#      A whole-GPU request (gpu:rtx_3090:1) waits for a fully-free card and can
+#      sit PD/ReqNodeNotAvail for a long time. WATonomous docs recommend shard.
+#   This ~117k-param model on a 21x41 grid needs well under 4 GiB.
+#   List GPU types + VRAM:  scontrol show nodes | grep -i gres
+#   Alternatives:  --gres shard:rtx_3090:8192   (more headroom)
+#                  --gres gpu:rtx_3090:1        (whole card; only if you need it)
 #SBATCH --partition=compute
-#SBATCH --gres=gpu:rtx_3090:1
+#SBATCH --gres=shard:rtx_3090:4096
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=8
