@@ -25,8 +25,13 @@
 #SBATCH --gres=shard:rtx_2080_ti:4096
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
-#SBATCH --cpus-per-task=8
-#SBATCH --mem=32G
+# Keep CPUs <= the smallest matching GPU node. The rtx_2080_ti nodes have only
+# 6 cores (S:0-5), so cpus-per-task=8 gets the whole job REJECTED at submit
+# ("Requested node configuration is not available"). 4 fits and is plenty for a
+# ~117k-param model. Bump this (and the type) if you target a bigger node
+# (rtx_4090 = 40 cores, rtx_3090 = 80 cores).
+#SBATCH --cpus-per-task=4
+#SBATCH --mem=16G
 #SBATCH --time=12:00:00
 #SBATCH --output=/home/c52li/weatherloo-internal/models/unet/slurm_logs/%x-%j.out
 #SBATCH --error=/home/c52li/weatherloo-internal/models/unet/slurm_logs/%x-%j.err
