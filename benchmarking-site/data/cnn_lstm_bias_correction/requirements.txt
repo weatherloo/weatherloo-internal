@@ -1,0 +1,4 @@
+numpy>=1.26
+xarray>=2024.1
+zarr>=2.16
+tensorflow>=2.15
