@@ -6,18 +6,23 @@
 # run could exceed 24h. Docs: https://cloud.watonomous.ca/docs/compute-cluster/slurm
 #
 # GPU: use a TYPED SHARD (fractional GPU pinned to a model). Two reasons:
-#   1. Pin the type -> never land on the old GTX 1080 (Pascal sm_61), whose
+#   1. Pin a MODERN type -> never land on the old GTX 1080 (Pascal sm_61), whose
 #      kernels are absent from modern PyTorch wheels ("CUDA error: no kernel
 #      image is available for execution on the device").
-#   2. Fractional -> schedules right away by packing onto a partially-used GPU.
-#      A whole-GPU request (gpu:rtx_3090:1) waits for a fully-free card and can
-#      sit PD/ReqNodeNotAvail for a long time. WATonomous docs recommend shard.
+#   2. Fractional -> schedules right away by packing onto a partially-used GPU
+#      (WATonomous docs recommend shard over whole GPUs).
 #   This ~117k-param model on a 21x41 grid needs well under 4 GiB.
-#   List GPU types + VRAM:  scontrol show nodes | grep -i gres
-#   Alternatives:  --gres shard:rtx_3090:8192   (more headroom)
-#                  --gres gpu:rtx_3090:1        (whole card; only if you need it)
+#
+#   Pick a type that is (a) supported and (b) on an UP node. Check live state:
+#       sinfo -p compute -N -o "%N %t %G %E"
+#   As of last check: rtx_2080_ti (sm_75, delta-slurm1 up) and rtx_4090 (sm_89,
+#   trpro-slurm2 idle) work; rtx_3090's node was drained (SlurmdSpoolDir full);
+#   gtx_1080 is unsupported. 2080 Ti is the safest — sm_75 is in every modern
+#   torch build. Swap the type below if the node map changes.
+#   Alternatives:  --gres shard:rtx_4090:4096   (newest; needs torch w/ sm_89)
+#                  --gres shard:rtx_3090:4096   (once trpro-slurm1 is undrained)
 #SBATCH --partition=compute
-#SBATCH --gres=shard:rtx_3090:4096
+#SBATCH --gres=shard:rtx_2080_ti:4096
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=8
