@@ -57,9 +57,9 @@ def parse_utc(s: str) -> datetime:
     return datetime.fromisoformat(s.replace("Z", "+00:00")).astimezone(timezone.utc)
 
 
-def load_observations(station_id: str) -> dict[str, dict[str, float | None]]:
-    """Load 2025 observations for verification."""
-    path = OBS_ROOT / station_id / "observations_6h_2025.json"
+def load_observations(station_id: str, year: int) -> dict[str, dict[str, float | None]]:
+    """Load verification-year observations."""
+    path = OBS_ROOT / station_id / f"observations_6h_{year}.json"
     data = json.loads(path.read_text())
     return {
         row["valid_time"]: {
@@ -466,7 +466,7 @@ def main() -> None:
         )
 
     # Load verification-year observations
-    obs = {sid: load_observations(sid) for sid in STATIONS}
+    obs = {sid: load_observations(sid, args.year) for sid in STATIONS}
 
     cycle_hours = INIT_HOURS_UTC
     if args.cycles:
