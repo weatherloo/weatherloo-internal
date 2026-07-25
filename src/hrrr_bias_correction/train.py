@@ -13,14 +13,17 @@ from typing import Any
 
 import numpy as np
 
+# Allow direct script execution via: python src/hrrr_bias_correction/train.py
+THIS_DIR = Path(__file__).resolve().parent
+if str(THIS_DIR) not in sys.path:
+    sys.path.insert(0, str(THIS_DIR))
+
 try:
     from .config import ExperimentConfig, load_config, save_default_config
     from .data_loader import load_split_arrays, make_tf_dataset
-    from .model_arch import build_model
 except ImportError:
     from config import ExperimentConfig, load_config, save_default_config
     from data_loader import load_split_arrays, make_tf_dataset
-    from model_arch import build_model
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
@@ -49,7 +52,10 @@ def _import_tensorflow() -> Any:
     try:
         return importlib.import_module("tensorflow")
     except ModuleNotFoundError as exc:
-        raise RuntimeError("TensorFlow is required to run training.") from exc
+        raise RuntimeError(
+            "TensorFlow is required to run training. Install dependencies in a "
+            "Python 3.10-3.12 environment (3.11 recommended)."
+        ) from exc
 
 
 def _set_global_seed(tf: Any, seed: int) -> None:
@@ -103,6 +109,11 @@ def _build_callbacks(tf: Any, cfg: ExperimentConfig) -> list[Any]:
 
 def run_training(cfg: ExperimentConfig, *, dry_run: bool = False) -> int:
     tf = _import_tensorflow()
+
+    try:
+        from .model_arch import build_model
+    except ImportError:
+        from model_arch import build_model
 
     if cfg.runtime.mixed_precision:
         policy = tf.keras.mixed_precision.Policy("mixed_float16")
