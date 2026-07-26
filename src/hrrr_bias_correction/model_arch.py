@@ -1,5 +1,4 @@
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Input, TimeDistributed, Conv2D, MaxPooling2D, Flatten, LSTM, Dense
+import importlib
 
 N_LEADS = 49
 CROP = 30
@@ -24,19 +23,35 @@ def build_model(input_shape=input_shape, n_outputs: int = N_TARGETS):
             "(batch, lead, row, col, channel)."
         )
 
-    model = Sequential()
-    model.add(Input(shape=sample_shape))
+    try:
+        tf = importlib.import_module("tensorflow")
+    except ModuleNotFoundError as exc:
+        raise RuntimeError(
+            "TensorFlow is required to build the model. Install dependencies in a "
+            "Python 3.10-3.12 environment (3.11 recommended)."
+        ) from exc
 
-    model.add(TimeDistributed(Conv2D(filters=16, kernel_size=(3, 3), activation="relu", padding="same")))
-    model.add(TimeDistributed(MaxPooling2D(pool_size=(2, 2), padding="same")))
+    model = tf.keras.Sequential()
+    model.add(tf.keras.Input(shape=sample_shape))
 
-    model.add(TimeDistributed(Conv2D(filters=32, kernel_size=(3, 3), activation="relu", padding="same")))
-    model.add(TimeDistributed(MaxPooling2D(pool_size=(2, 2), padding="same")))
+    model.add(
+        tf.keras.layers.TimeDistributed(
+            tf.keras.layers.Conv2D(filters=16, kernel_size=(3, 3), activation="relu", padding="same")
+        )
+    )
+    model.add(tf.keras.layers.TimeDistributed(tf.keras.layers.MaxPooling2D(pool_size=(2, 2), padding="same")))
 
-    model.add(TimeDistributed(Flatten()))
+    model.add(
+        tf.keras.layers.TimeDistributed(
+            tf.keras.layers.Conv2D(filters=32, kernel_size=(3, 3), activation="relu", padding="same")
+        )
+    )
+    model.add(tf.keras.layers.TimeDistributed(tf.keras.layers.MaxPooling2D(pool_size=(2, 2), padding="same")))
 
-    model.add(LSTM(64, return_sequences=True))
+    model.add(tf.keras.layers.TimeDistributed(tf.keras.layers.Flatten()))
 
-    model.add(TimeDistributed(Dense(units=n_outputs, activation="linear")))
+    model.add(tf.keras.layers.LSTM(64, return_sequences=True))
+
+    model.add(tf.keras.layers.TimeDistributed(tf.keras.layers.Dense(units=n_outputs, activation="linear")))
 
     return model
