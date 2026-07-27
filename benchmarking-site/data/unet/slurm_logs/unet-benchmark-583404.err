@@ -1,0 +1,61 @@
+Exception in initializer:
+Traceback (most recent call last):
+  File "/usr/lib/python3.10/concurrent/futures/process.py", line 233, in _process_worker
+    initializer(*initargs)
+  File "/home/c52li/weatherloo-internal/benchmarking-site/data/unet/compute_benchmark.py", line 194, in init_worker
+    model.load_state_dict(ckpt["model_state"], strict=True)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/torch/nn/modules/module.py", line 2638, in load_state_dict
+    raise RuntimeError(
+RuntimeError: Error(s) in loading state_dict for ResidualUNet:
+	size mismatch for enc1.block.0.weight: copying a param with shape torch.Size([16, 4, 3, 3]) from checkpoint, the shape in current model is torch.Size([16, 3, 3, 3]).
+Exception in initializer:
+Traceback (most recent call last):
+  File "/usr/lib/python3.10/concurrent/futures/process.py", line 233, in _process_worker
+    initializer(*initargs)
+  File "/home/c52li/weatherloo-internal/benchmarking-site/data/unet/compute_benchmark.py", line 194, in init_worker
+    model.load_state_dict(ckpt["model_state"], strict=True)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/torch/nn/modules/module.py", line 2638, in load_state_dict
+    raise RuntimeError(
+RuntimeError: Error(s) in loading state_dict for ResidualUNet:
+	size mismatch for enc1.block.0.weight: copying a param with shape torch.Size([16, 4, 3, 3]) from checkpoint, the shape in current model is torch.Size([16, 3, 3, 3]).
+Exception in initializer:
+Traceback (most recent call last):
+  File "/usr/lib/python3.10/concurrent/futures/process.py", line 233, in _process_worker
+    initializer(*initargs)
+  File "/home/c52li/weatherloo-internal/benchmarking-site/data/unet/compute_benchmark.py", line 194, in init_worker
+    model.load_state_dict(ckpt["model_state"], strict=True)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/torch/nn/modules/module.py", line 2638, in load_state_dict
+    raise RuntimeError(
+RuntimeError: Error(s) in loading state_dict for ResidualUNet:
+	size mismatch for enc1.block.0.weight: copying a param with shape torch.Size([16, 4, 3, 3]) from checkpoint, the shape in current model is torch.Size([16, 3, 3, 3]).
+Exception in initializer:
+Traceback (most recent call last):
+  File "/usr/lib/python3.10/concurrent/futures/process.py", line 233, in _process_worker
+    initializer(*initargs)
+  File "/home/c52li/weatherloo-internal/benchmarking-site/data/unet/compute_benchmark.py", line 194, in init_worker
+    model.load_state_dict(ckpt["model_state"], strict=True)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/torch/nn/modules/module.py", line 2638, in load_state_dict
+    raise RuntimeError(
+RuntimeError: Error(s) in loading state_dict for ResidualUNet:
+	size mismatch for enc1.block.0.weight: copying a param with shape torch.Size([16, 4, 3, 3]) from checkpoint, the shape in current model is torch.Size([16, 3, 3, 3]).
+Exception in initializer:
+Traceback (most recent call last):
+  File "/usr/lib/python3.10/concurrent/futures/process.py", line 233, in _process_worker
+    initializer(*initargs)
+  File "/home/c52li/weatherloo-internal/benchmarking-site/data/unet/compute_benchmark.py", line 194, in init_worker
+    model.load_state_dict(ckpt["model_state"], strict=True)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/torch/nn/modules/module.py", line 2638, in load_state_dict
+    raise RuntimeError(
+RuntimeError: Error(s) in loading state_dict for ResidualUNet:
+	size mismatch for enc1.block.0.weight: copying a param with shape torch.Size([16, 4, 3, 3]) from checkpoint, the shape in current model is torch.Size([16, 3, 3, 3]).
+Exception in initializer:
+Traceback (most recent call last):
+  File "/usr/lib/python3.10/concurrent/futures/process.py", line 233, in _process_worker
+    initializer(*initargs)
+  File "/home/c52li/weatherloo-internal/benchmarking-site/data/unet/compute_benchmark.py", line 194, in init_worker
+    model.load_state_dict(ckpt["model_state"], strict=True)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/torch/nn/modules/module.py", line 2638, in load_state_dict
+    raise RuntimeError(
+RuntimeError: Error(s) in loading state_dict for ResidualUNet:
+	size mismatch for enc1.block.0.weight: copying a param with shape torch.Size([16, 4, 3, 3]) from checkpoint, the shape in current model is torch.Size([16, 3, 3, 3]).
+srun: error: tr-slurm2: task 0: Exited with exit code 1

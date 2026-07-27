@@ -4,8 +4,8 @@
   "objective": "network predicts (GFS - ERA5); corrected = GFS - predicted_residual",
   "baseline": "gfs_interpolated (same GFS input, no correction)",
   "checkpoint": "models/unet/checkpoints/best_model.pt",
-  "checkpoint_epoch": 15,
-  "checkpoint_val_loss": 0.554224113377751,
+  "checkpoint_epoch": 6,
+  "checkpoint_val_loss": 0.5548688737205466,
   "split_mode": "chronological",
   "channels": [
     "t2m",
