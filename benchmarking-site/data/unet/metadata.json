@@ -4,8 +4,8 @@
   "objective": "network predicts (GFS - ERA5); corrected = GFS - predicted_residual",
   "baseline": "gfs_interpolated (same GFS input, no correction)",
   "checkpoint": "models/unet/checkpoints/best_model.pt",
-  "checkpoint_epoch": 17,
-  "checkpoint_val_loss": 0.5119651293938133,
+  "checkpoint_epoch": 15,
+  "checkpoint_val_loss": 0.554224113377751,
   "split_mode": "chronological",
   "channels": [
     "t2m",
@@ -21,18 +21,26 @@
   },
   "trained_cycles_utc": [
     0,
-    12
+    6,
+    12,
+    18
   ],
   "trained_forecast_hours": [
     6,
     12,
     18,
-    24
+    24,
+    30,
+    36,
+    42,
+    48
   ],
   "coverage": "restricted to the checkpoint's trained cycles/leads; other cells null",
   "cycles": [
     "00Z",
-    "12Z"
+    "06Z",
+    "12Z",
+    "18Z"
   ],
   "grid": "0p25",
   "year": 2025,
