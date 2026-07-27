@@ -39,6 +39,7 @@ export const METHODS = [
   { id: "ecmwf_aifs", label: "ECMWF AIFS" },
   { id: "graphcast", label: "GraphCast" },
   { id: "pangu", label: "Pangu-Weather" },
+  { id: "unet", label: "UNet bias correction (GFS)" },
 ];
 
 export const METRIC_TITLES = {

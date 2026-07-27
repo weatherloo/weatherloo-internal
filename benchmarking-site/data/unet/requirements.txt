@@ -1,0 +1,7 @@
+numpy>=1.26
+scipy>=1.11
+xarray>=2024.1
+cfgrib>=0.9.14
+eccodes>=1.6.0
+# CPU-only is plenty: the checkpoint is ~117k params on a 15x19 patch.
+torch>=2.0

@@ -83,8 +83,40 @@ Rebuild NPZ from existing JSON without re-fetching:
 | `climatology` | `data/climatology/compute_benchmark.py` | Multi-year (2010-2024) DOY+UTC-hour station climatology; no GRIB needed. `--fetch-historical` downloads historical obs. ACC is always null (forecast = climatology). |
 | `ecmwf_aifs` | `data/ecmwf_aifs/compute_benchmark.py` | ECMWF AIFS Single 0.25° at **00/06/12/18Z** via [dynamical.org catalog](https://dynamical.org/catalog/ecmwf-aifs-single-forecast/) (`dynamical-catalog`); 6-hourly steps; bilinear interp of `temperature_2m` / `wind_u_10m` / `wind_v_10m`. Archive 2024-04-01–present includes full 2025. `--resume` skips existing init JSONs. |
 | `gefs_mean` | `data/gefs_mean/compute_benchmark.py` | GEFS **ensemble mean** (`geavg`) at **0.5°** from AWS `noaa-gefs-pds`; 00/06/12/18Z; bilinear interp; wind from 10 m u/v. Pre-averaged 21-member mean on grid — no per-member downloads. `--resume` skips existing init JSONs. |
+| `unet` | `data/unet/compute_benchmark.py` | **Our UNet bias correction applied to GFS.** Same GFS 0.25° input as `gfs_interpolated`, cropped to the KW bbox, corrected by `models/unet/`, then interpolated to the station — so the two methods are a direct uncorrected-vs-corrected pair. `--checkpoint` overrides the model. See **UNet bias correction** below. |
 
 Add a row here when implementing other methods.
+
+### UNet bias correction
+
+`models/unet/` holds the model definition (`model.py`) and the trained weights
+(`checkpoints/best_model.pt`). The network predicts a **residual** on a gridded
+forecast rather than the forecast itself:
+
+```
+x_norm    = (forecast − gfs.mean) / gfs.std
+r_norm    = unet(x_norm)
+corrected = forecast + (r_norm * residual.std + residual.mean)
+```
+
+- **Channels (fixed by the checkpoint):** `t2m` in **°C**, `u10`/`v10` in **m/s**.
+  GFS `TMP` is Kelvin, so the compute script subtracts 273.15 before inference.
+- **Wind:** `u10` and `v10` are corrected separately, then speed is derived as
+  `sqrt(u² + v²) * 3.6`. Never correct speed directly — that is not what the
+  model was trained on.
+- **Grid:** the KW bounding box from `scripts/weather_download_common.py`
+  (±0.5° padding) crops to **15 × 19** cells at 0.25°, with both stations
+  interior. The UNet pools twice, so `model.correct_fields` reflect-pads both
+  dims up to a multiple of 4 and crops the residual back before applying it.
+- **Interpolation order matters:** correct the *grid*, then bilinearly
+  interpolate the corrected grid to the station — not the other way round.
+- `load_checkpoint` uses `strict=True`; if `model.py` and the checkpoint ever
+  drift apart, the run fails loudly instead of silently mis-wiring weights.
+
+The current checkpoint is an early prototype: 24 training days / 80 samples,
+best val loss at **epoch 17**, with train loss still falling while val flattens
+(see `checkpoints/training_log.csv`). Treat its dashboard numbers as a baseline
+to beat, not a finished result.
 
 ### HRDPS analysis live GRIB archive
 
@@ -236,3 +268,4 @@ Full coverage below is the goal for a **finished** method; incomplete cycles, le
 | ECMWF AIFS | `ecmwf_aifs` |
 | GraphCast | `graphcast` |
 | Pangu-Weather | `pangu` |
+| UNet bias correction (GFS) | `unet` |

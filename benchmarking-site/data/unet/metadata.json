@@ -1,0 +1,36 @@
+{
+  "method_id": "unet",
+  "model": "UNet residual bias correction on GFS",
+  "input": "NOAA GFS 0.25\u00b0 (t2m, u10, v10) cropped to the KW bounding box",
+  "baseline": "gfs_interpolated (same input, no correction)",
+  "checkpoint": "models/unet/checkpoints/best_model.pt",
+  "checkpoint_epoch": 17,
+  "checkpoint_val_loss": 0.5119651293938133,
+  "train_days": 24,
+  "split_mode": "chronological",
+  "channels": [
+    "t2m",
+    "u10",
+    "v10"
+  ],
+  "bbox": {
+    "lat_min": 41.6175,
+    "lat_max": 45.3159,
+    "lon_min": -82.8481,
+    "lon_max": -78.1853
+  },
+  "cycles": [
+    "00Z",
+    "06Z",
+    "12Z",
+    "18Z"
+  ],
+  "grid": "0p25",
+  "year": 2025,
+  "interpolation": "bilinear, applied to the corrected grid",
+  "wind": "sqrt(u10^2 + v10^2) after correcting u/v separately, m/s to km/h",
+  "acc_climatology": "DOY + UTC-hour mean from 2025 station obs, \u00b115-day window",
+  "source": "https://registry.opendata.aws/noaa-gfs-bdp-pds/",
+  "npz_file": "unet_2025.npz",
+  "npz_schema": "see benchmarking-site/AGENTS.md"
+}
