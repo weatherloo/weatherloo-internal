@@ -70,4 +70,47 @@ ARGS=(
 # reads — roughly 1.8 MB/sample vs 21 KB.
 [[ "$PRUNE_GRIB" == "1" ]] && ARGS+=(--prune-grib)
 
-srun python3 models/unet/run_pipeline.py fetch "${ARGS[@]}"
+log="$(mktemp)"
+trap 'rm -f "$log"' EXIT
+set +e
+srun python3 models/unet/run_pipeline.py fetch "${ARGS[@]}" 2>&1 | tee "$log"
+rc=${PIPESTATUS[0]}
+set -e
+
+# run_pipeline exits 1 if *any* sample failed — including HTTP 404s on permanent
+# archive gaps, which its own output calls expected and which `train` skips
+# automatically. Across ~56k samples those are near-certain, so failing the task
+# on them would make the afterok chain unsatisfiable every time. Gate on how
+# much of this chunk actually cached instead.
+MIN_COVERAGE="${MIN_COVERAGE:-0.95}"
+
+if (( rc == 0 )); then
+  exit 0
+fi
+
+# An empty range is not a failure: the tail shard legitimately runs past the
+# ERA5 store's coverage end, and run_pipeline returns 1 for that too.
+if grep -q "no samples in range" "$log"; then
+  echo "shard $I/$N: nothing to do in $chunk_start .. $chunk_end (past ERA5 coverage) — OK"
+  exit 0
+fi
+
+in_range=$(grep -oP 'samples in range\s*:\s*\K[0-9]+' "$log" | tail -1 || true)
+ready=$(grep -oP 'cached and ready\s*:\s*\K[0-9]+' "$log" | tail -1 || true)
+
+if [[ -z "$in_range" || -z "$ready" || "$in_range" == "0" ]]; then
+  echo "shard $I/$N: fetch exited $rc and produced no usable summary — failing"
+  exit "$rc"
+fi
+
+awk -v r="$ready" -v n="$in_range" -v m="$MIN_COVERAGE" 'BEGIN{
+  cov = r / n
+  printf "shard: cached %d/%d = %.4f coverage (min %.4f)\n", r, n, cov, m
+  exit (cov >= m) ? 0 : 1
+}' && {
+  echo "shard $I/$N: below-100% coverage is expected (archive gaps); treating as success"
+  exit 0
+}
+
+echo "shard $I/$N: coverage below $MIN_COVERAGE — failing so the chain stops"
+exit 1

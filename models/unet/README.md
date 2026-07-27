@@ -234,7 +234,7 @@ Or submit stages individually:
 
 | Stage | Script | Notes |
 |---|---|---|
-| fetch | `models/unet/fetch.slurm` | `--array=1-N` splits `[START, END]` into contiguous date chunks. Resumable — cached samples are skipped. Prunes GRIB by default. |
+| fetch | `models/unet/fetch.slurm` | `--array=1-N` splits `[START, END]` into contiguous date chunks. Resumable — cached samples are skipped. Prunes GRIB by default. Succeeds when coverage ≥ `MIN_COVERAGE` (0.95). |
 | train | `models/unet/train.slurm` | Reads only cached `.npz`; no network. |
 | benchmark | `benchmarking-site/data/unet/run_benchmark.slurm` | Writes the dashboard JSON + NPZ and rebuilds the static aggregate. |
 
@@ -260,3 +260,26 @@ by small `.npz` reads, not compute.
 > `recompute_stats=False`, so the automatic sample-space invalidation in
 > `load_or_compute_stats` is what keeps `stats.json` honest when the cycle/lead
 > set changes. Deleting `<output-dir>/stats.json` forces it regardless.
+
+### Why the fetch stage tolerates failures
+
+`run_pipeline.py fetch` exits **1 if any single sample failed**, including HTTP
+404s on permanent archive gaps — which its own output calls expected, and which
+`train` skips automatically. Across ~56k samples at least one gap is close to
+certain, so gating the chain on a byte-perfect run makes `afterok` unsatisfiable
+essentially every time, leaving `train` and `benchmark` pending forever with
+`DependencyNeverSatisfied`.
+
+`fetch.slurm` therefore re-interprets the exit code:
+
+| Outcome | Task exit |
+|---|---|
+| Clean run | 0 |
+| Empty range (shard past the ERA5 store's coverage end) | 0 |
+| Coverage ≥ `MIN_COVERAGE` (default 0.95) | 0, with a note |
+| Coverage below that | 1 — the chain stops |
+| Crash with no summary to parse | the original code |
+
+Raise the bar with `MIN_COVERAGE=0.999` if a run should be near-complete; a
+genuinely broken fetch (disk full, credentials, network) lands far below any
+sane threshold and still stops the chain.
