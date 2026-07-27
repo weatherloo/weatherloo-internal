@@ -197,6 +197,11 @@ def init_json_paths(out_dir: Path, year: int) -> list[Path]:
     return sorted(out_dir.glob(f"{year}-*T*Z.json"))
 
 
+def all_init_json_paths(out_dir: Path) -> list[Path]:
+    """Per-init JSON files across all years (for index.json)."""
+    return sorted(out_dir.glob("????-??-??T??Z.json"))
+
+
 def build_init_json(
     init_dt: datetime,
     obs: dict[str, dict[str, dict[str, float | None]]],
@@ -476,7 +481,8 @@ def main() -> None:
     inits = [d for d in inits if d.hour in cycle_hours]
     if args.dry_run:
         inits = [
-            datetime(2025, 1, 15, hour, tzinfo=timezone.utc) for hour in cycle_hours
+            datetime(args.year, 1, 15, hour, tzinfo=timezone.utc)
+            for hour in cycle_hours
         ]
     if args.start_date:
         start = parse_utc(f"{args.start_date}T00:00:00Z")
@@ -512,7 +518,7 @@ def main() -> None:
                     raise
 
     write_metadata(out_dir, args.year, clim_years)
-    existing = sorted(p.name for p in init_json_paths(out_dir, args.year))
+    existing = sorted(p.name for p in all_init_json_paths(out_dir))
     write_index(out_dir, existing)
     export_npz(out_dir, args.year)
     print(f"Done. {len(existing)} init files, index.json updated.")

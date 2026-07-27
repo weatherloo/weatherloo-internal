@@ -73,8 +73,8 @@ def parse_utc(s: str) -> datetime:
     return datetime.fromisoformat(s.replace("Z", "+00:00")).astimezone(timezone.utc)
 
 
-def load_observations(station_id: str) -> dict[str, dict[str, float | None]]:
-    path = OBS_ROOT / station_id / "observations_6h_2025.json"
+def load_observations(station_id: str, year: int) -> dict[str, dict[str, float | None]]:
+    path = OBS_ROOT / station_id / f"observations_6h_{year}.json"
     data = json.loads(path.read_text())
     return {
         row["valid_time"]: {
@@ -252,6 +252,11 @@ def init_json_paths(out_dir: Path, year: int) -> list[Path]:
     return sorted(out_dir.glob(f"{year}-*T*Z.json"))
 
 
+def all_init_json_paths(out_dir: Path) -> list[Path]:
+    """Per-init JSON files across all years (for index.json)."""
+    return sorted(out_dir.glob("????-??-??T??Z.json"))
+
+
 def append_null_metrics(var_metrics: dict[str, dict[str, list]], var: str) -> None:
     for metric in METRICS:
         var_metrics[var][metric].append(None)
@@ -348,7 +353,7 @@ def write_metadata(out_dir: Path, year: int) -> None:
         "year": year,
         "interpolation": "bilinear",
         "wind": "sqrt(u10^2 + v10^2) from 10 m u/v components, m/s to km/h",
-        "acc_climatology": "DOY + UTC-hour mean from 2025 station obs, +/-15-day window",
+        "acc_climatology": f"DOY + UTC-hour mean from {year} station obs, +/-15-day window",
         "source": "https://dynamical.org/catalog/ecmwf-aifs-single-forecast/",
         "catalog_id": CATALOG_ID,
         "source_notes": [
@@ -476,7 +481,7 @@ def main() -> None:
         write_metadata(out_dir, args.year)
         return
 
-    obs = {sid: load_observations(sid) for sid in STATIONS}
+    obs = {sid: load_observations(sid, args.year) for sid in STATIONS}
     clim = {sid: build_climatology(obs[sid]) for sid in STATIONS}
 
     cycle_hours = INIT_HOURS_UTC
@@ -487,7 +492,8 @@ def main() -> None:
     inits = [d for d in inits if d.hour in cycle_hours]
     if args.dry_run:
         inits = [
-            datetime(2025, 1, 15, hour, tzinfo=timezone.utc) for hour in cycle_hours
+            datetime(args.year, 1, 15, hour, tzinfo=timezone.utc)
+            for hour in cycle_hours
         ]
     if args.start_date:
         start = parse_utc(f"{args.start_date}T00:00:00Z")
@@ -549,7 +555,7 @@ def main() -> None:
                     raise
 
     write_metadata(out_dir, args.year)
-    existing = sorted(p.name for p in init_json_paths(out_dir, args.year))
+    existing = sorted(p.name for p in all_init_json_paths(out_dir))
     if existing:
         write_index(out_dir, existing)
     export_npz(out_dir, args.year)

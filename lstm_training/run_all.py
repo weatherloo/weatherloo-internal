@@ -5,11 +5,14 @@ Sweeps run in parallel up to --workers processes.
 Usage:
     python lstm_training/run_all.py --variable t2m --workers 8
     python lstm_training/run_all.py --variable wind_speed --workers 4 --n_trials 50
+    python lstm_training/run_all.py --station eric_d_soulis --workers 8 --n_trials 50
 """
 import argparse
+import os
 import subprocess
 import sys
 from concurrent.futures import ProcessPoolExecutor, as_completed
+from itertools import product
 from pathlib import Path
 
 STATIONS = ["cyyz", "eric_d_soulis"]
@@ -26,6 +29,9 @@ METHODS  = {
     "persistence":       "benchmarking-site/data/persistence/persistence_2025.npz",
 }
 
+# Flat, deterministic 9x12 = 108 combos. Dict order is insertion order (py3.7+), so this is stable.
+COMBINATIONS = list(product(METHODS.items(), LEADS))
+
 
 def run_sweep(station, variable, method, npz, lead, n_trials, out_base):
     out_dir = f"{out_base}/{station}_{variable}/{method}_{lead}h"
@@ -37,7 +43,7 @@ def run_sweep(station, variable, method, npz, lead, n_trials, out_base):
 
     print(f"{tag} START", flush=True)
     cmd = [
-        sys.executable, "lstm_training/sweep.py",
+        sys.executable, str(Path(__file__).parent / "sweep.py"),
         "--npz",       npz,
         "--station",   station,
         "--variable",  variable,
@@ -65,17 +71,22 @@ def run_sweep(station, variable, method, npz, lead, n_trials, out_base):
 
 def main():
     p = argparse.ArgumentParser()
+    p.add_argument("--station",   nargs="+", default=STATIONS, choices=STATIONS,
+                   help="Limit to one or more stations (default: both)")
     p.add_argument("--variable",  default="t2m")
     p.add_argument("--workers",   type=int, default=4)
     p.add_argument("--n_trials",  type=int, default=100)
     p.add_argument("--out_dir",   default="lstm_training/output")
     args = p.parse_args()
 
+    task_id = int(os.environ.get("SLURM_ARRAY_TASK_ID", 1))
+    if not 1 <= task_id <= len(COMBINATIONS):
+        sys.exit(f"SLURM_ARRAY_TASK_ID={task_id} out of range (must be 1-{len(COMBINATIONS)})")
+    (method, npz), lead = COMBINATIONS[task_id - 1]
+
     jobs = [
         (station, args.variable, method, npz, lead, args.n_trials, args.out_dir)
-        for station in STATIONS
-        for method, npz in METHODS.items()
-        for lead in LEADS
+        for station in args.station
     ]
     total = len(jobs)
     print(f"Queuing {total} sweeps  workers={args.workers}  n_trials={args.n_trials}\n")

@@ -1,0 +1,39 @@
+{
+  "station": "cyyz",
+  "variable": "t2m",
+  "method": "graphcast",
+  "lead_time": 6,
+  "best_params": {
+    "seq_len": 24,
+    "hidden_size": 128,
+    "num_layers": 1,
+    "dropout": 0.09168589524477704,
+    "lr": 0.004247327340727255,
+    "batch_size": 16,
+    "patience": 25,
+    "max_norm": 2.0
+  },
+  "n_samples": 1456,
+  "n_sequences": 1432,
+  "split": {
+    "train": 1002,
+    "val": 214,
+    "test": 216
+  },
+  "epochs_trained": 43,
+  "best_val_loss": 0.5039356509658778,
+  "metrics_normalized": {
+    "rmse": 0.8634213805198669,
+    "mae": 0.6606823801994324,
+    "bias": 0.05861099064350128
+  },
+  "metrics_original": {
+    "rmse": 1.1523152589797974,
+    "mae": 0.8817413449287415,
+    "bias": 0.07822176814079285
+  },
+  "original_sweep_best_rmse": 1.1291862726211548,
+  "original_sweep_source": "graphcast.zip:graphcast_6h/sweep_results.json",
+  "device": "cpu",
+  "retrained_at": "2026-07-12T22:41:58Z"
+}

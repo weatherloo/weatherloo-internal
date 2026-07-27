@@ -1,0 +1,39 @@
+{
+  "station": "cyyz",
+  "variable": "t2m",
+  "method": "linear_regression",
+  "lead_time": 12,
+  "best_params": {
+    "seq_len": 12,
+    "hidden_size": 64,
+    "num_layers": 3,
+    "dropout": 0.000646428922653406,
+    "lr": 0.0032620135684516363,
+    "batch_size": 16,
+    "patience": 15,
+    "max_norm": 2.0
+  },
+  "n_samples": 1458,
+  "n_sequences": 1446,
+  "split": {
+    "train": 1012,
+    "val": 216,
+    "test": 218
+  },
+  "epochs_trained": 30,
+  "best_val_loss": 0.4002927111254798,
+  "metrics_normalized": {
+    "rmse": 0.7562481760978699,
+    "mae": 0.6015371680259705,
+    "bias": 0.03609815239906311
+  },
+  "metrics_original": {
+    "rmse": 1.2302364110946655,
+    "mae": 0.9785581827163696,
+    "bias": 0.058723125606775284
+  },
+  "original_sweep_best_rmse": 1.1443870067596436,
+  "original_sweep_source": "linear_regression.zip:linear_regression_12h/sweep_results.json",
+  "device": "cpu",
+  "retrained_at": "2026-07-12T22:43:40Z"
+}

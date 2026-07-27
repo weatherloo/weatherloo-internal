@@ -51,8 +51,8 @@ def parse_utc(s: str) -> datetime:
     return datetime.fromisoformat(s.replace("Z", "+00:00")).astimezone(timezone.utc)
 
 
-def load_observations(station_id: str) -> dict[str, dict[str, float | None]]:
-    path = OBS_ROOT / station_id / "observations_6h_2025.json"
+def load_observations(station_id: str, year: int) -> dict[str, dict[str, float | None]]:
+    path = OBS_ROOT / station_id / f"observations_6h_{year}.json"
     data = json.loads(path.read_text())
     return {
         row["valid_time"]: {
@@ -148,6 +148,11 @@ def init_json_paths(out_dir: Path, year: int) -> list[Path]:
     return sorted(out_dir.glob(f"{year}-*T*Z.json"))
 
 
+def all_init_json_paths(out_dir: Path) -> list[Path]:
+    """Per-init JSON files across all years (for index.json)."""
+    return sorted(out_dir.glob("????-??-??T??Z.json"))
+
+
 def build_init_json(
     init_dt: datetime,
     obs: dict[str, dict[str, dict[str, float | None]]],
@@ -230,8 +235,8 @@ def write_metadata(out_dir: Path, year: int) -> None:
         ),
         "cycles": ["00Z", "06Z", "12Z", "18Z"],
         "year": year,
-        "source": "data/observations/<station_id>/observations_6h_2025.json",
-        "acc_climatology": "DOY + UTC-hour mean from 2025 station obs, +/-15-day window",
+        "source": f"data/observations/<station_id>/observations_6h_{year}.json",
+        "acc_climatology": f"DOY + UTC-hour mean from {year} station obs, +/-15-day window",
         "npz_file": f"{METHOD_ID}_{year}.npz",
         "npz_schema": "see benchmarking-site/AGENTS.md",
     }
@@ -326,7 +331,7 @@ def main() -> None:
         write_metadata(out_dir, args.year)
         return
 
-    obs = {sid: load_observations(sid) for sid in STATIONS}
+    obs = {sid: load_observations(sid, args.year) for sid in STATIONS}
     clim = {sid: build_climatology(obs[sid]) for sid in STATIONS}
 
     cycle_hours = INIT_HOURS_UTC
@@ -359,7 +364,7 @@ def main() -> None:
             print(f"  [{i}/{len(inits)}] wrote {fname}")
 
     write_metadata(out_dir, args.year)
-    existing = sorted(p.name for p in init_json_paths(out_dir, args.year))
+    existing = sorted(p.name for p in all_init_json_paths(out_dir))
     write_index(out_dir, existing)
     export_npz(out_dir, args.year)
     print(

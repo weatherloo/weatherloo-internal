@@ -56,14 +56,21 @@ def make_sequences(features, seq_len):
     return np.array(X, dtype=np.float32), np.array(y, dtype=np.float32)
 
 
-def temporal_split(X, y, train_frac=0.70, val_frac=0.15):
+def temporal_split(X, y, timestamps=None, train_frac=0.70, val_frac=0.15):
     n = len(X)
     n_tr = int(n * train_frac)
     n_va = int(n * val_frac)
-    return (
+    parts = (
         X[:n_tr],          y[:n_tr],
         X[n_tr:n_tr+n_va], y[n_tr:n_tr+n_va],
         X[n_tr+n_va:],     y[n_tr+n_va:],
+    )
+    if timestamps is None:
+        return parts
+    return parts + (
+        timestamps[:n_tr],
+        timestamps[n_tr:n_tr+n_va],
+        timestamps[n_tr+n_va:],
     )
 
 
@@ -166,8 +173,13 @@ def main():
     X, y = make_sequences(features, args.seq_len)
     print(f"Sequences: {len(X)}  seq_len={args.seq_len}  features=5")
 
+    # y[i] is the bias at inits[i + seq_len], so target timestamps are inits shifted by seq_len
+    target_timestamps = inits[args.seq_len:]
+
     # Temporal split
-    X_tr, y_tr, X_va, y_va, X_te, y_te = temporal_split(X, y)
+    X_tr, y_tr, X_va, y_va, X_te, y_te, ts_tr, ts_va, ts_te = temporal_split(
+        X, y, timestamps=target_timestamps
+    )
     print(f"Split -- train: {len(X_tr)}  val: {len(X_va)}  test: {len(X_te)}")
 
     def make_loader(Xa, ya, shuffle=False):
@@ -296,6 +308,7 @@ def main():
         os.path.join(args.out_dir, "predictions.npz"),
         predictions=preds_orig,
         targets=targets_orig,
+        timestamps=ts_te,
         train_losses=np.array(train_losses, dtype=np.float32),
         val_losses=np.array(val_losses, dtype=np.float32),
     )
