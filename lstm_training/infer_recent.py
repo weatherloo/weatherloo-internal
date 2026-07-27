@@ -130,6 +130,25 @@ def raw_forecast_for_init(method, station, variable, lead_time, init_iso, obs_by
     return raw_forecast, obs_val
 
 
+def predict_range(
+    station, variable, method, lead_time, start_date, end_date,
+    verbose=True, retrain_root=None,
+):
+    """Corrected vs raw vs observed for every init in [start_date, end_date].
+
+    Returns (results, combo_dir). Importable so the hindcast builder that feeds
+    the comparison site does not have to shell out to this script.
+
+    `retrain_root` overrides where trained combos are read from, for building
+    against an alternate model set without disturbing retrain_output/.
+    """
+    args = argparse.Namespace(
+        station=station, variable=variable, method=method, lead_time=lead_time,
+        start_date=start_date, end_date=end_date, retrain_root=retrain_root,
+    )
+    return _run(args, verbose=verbose)
+
+
 def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--station", required=True)
@@ -139,10 +158,26 @@ def main():
     p.add_argument("--start-date", required=True, help="YYYY-MM-DD inclusive")
     p.add_argument("--end-date", required=True, help="YYYY-MM-DD inclusive")
     p.add_argument("--out", default=None, help="Output JSON path")
+    p.add_argument("--retrain-dir", dest="retrain_root", default=None,
+                   help="Alternate retrain_output root")
     args = p.parse_args()
 
+    results, combo_dir = _run(args)
+
+    out_path = args.out or os.path.join(
+        combo_dir, f"recent_{args.start_date}_{args.end_date}.json"
+    )
+    with open(out_path, "w") as f:
+        json.dump(results, f, indent=2)
+    print(f"Wrote {out_path}")
+
+
+def _run(args, verbose=True):
+    retrain_root = getattr(args, "retrain_root", None) or os.path.join(
+        LSTM_DIR, "retrain_output"
+    )
     combo_dir = os.path.join(
-        LSTM_DIR, "retrain_output", f"{args.station}_{args.variable}",
+        retrain_root, f"{args.station}_{args.variable}",
         f"{args.method}_{args.lead_time}h",
     )
     metrics = json.load(open(os.path.join(combo_dir, "metrics.json")))
@@ -152,7 +187,8 @@ def main():
     bias_mean, bias_std = training_normalization(
         args.method, args.station, args.variable, args.lead_time
     )
-    print(f"Training normalization: mean={bias_mean:.4f} std={bias_std:.4f}")
+    if verbose:
+        print(f"Training normalization: mean={bias_mean:.4f} std={bias_std:.4f}")
 
     bias_series, inits_series = load_combined_bias_series(
         args.method, args.station, args.variable, args.lead_time
@@ -225,29 +261,31 @@ def main():
             continue
 
         corrected = raw_forecast - pred_bias
+        valid_iso = (
+            target_dt + timedelta(hours=args.lead_time)
+        ).strftime("%Y-%m-%dT%H:%M:%SZ")
         results.append({
             "init": target_init_iso,
+            "valid_time": valid_iso,
             "actual": obs_val,
             "raw_forecast": raw_forecast,
             "lstm_corrected": corrected,
         })
 
-    print(
-        f"{len(results)} predictions in range, {skipped_gap} skipped (data gap in window), "
-        f"{skipped_short} skipped (insufficient history before the {args.lead_time}h cutoff)"
-    )
+    if verbose:
+        print(
+            f"{len(results)} predictions in range, {skipped_gap} skipped (data gap in window), "
+            f"{skipped_short} skipped (insufficient history before the {args.lead_time}h cutoff)"
+        )
 
-    if results:
-        errs_raw = [r["raw_forecast"] - r["actual"] for r in results]
-        errs_lstm = [r["lstm_corrected"] - r["actual"] for r in results]
-        rmse_raw = float(np.sqrt(np.mean(np.square(errs_raw))))
-        rmse_lstm = float(np.sqrt(np.mean(np.square(errs_lstm))))
-        print(f"This week -- raw RMSE: {rmse_raw:.4f}  LSTM-corrected RMSE: {rmse_lstm:.4f}")
+        if results:
+            errs_raw = [r["raw_forecast"] - r["actual"] for r in results]
+            errs_lstm = [r["lstm_corrected"] - r["actual"] for r in results]
+            rmse_raw = float(np.sqrt(np.mean(np.square(errs_raw))))
+            rmse_lstm = float(np.sqrt(np.mean(np.square(errs_lstm))))
+            print(f"raw RMSE: {rmse_raw:.4f}  LSTM-corrected RMSE: {rmse_lstm:.4f}")
 
-    out_path = args.out or os.path.join(combo_dir, f"recent_{args.start_date}_{args.end_date}.json")
-    with open(out_path, "w") as f:
-        json.dump(results, f, indent=2)
-    print(f"Wrote {out_path}")
+    return results, combo_dir
 
 
 if __name__ == "__main__":
