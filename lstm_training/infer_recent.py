@@ -32,6 +32,7 @@ Usage:
         --start-date 2026-07-19 --end-date 2026-07-25
 """
 import argparse
+import glob
 import json
 import os
 from datetime import datetime, timedelta, timezone
@@ -101,10 +102,23 @@ def window_is_contiguous(inits_window, seq_len, slack=3.0):
 
 
 def load_observed_and_raw(method, station, variable, lead_time, year):
-    """valid_time-keyed obs, and init-keyed (bias, raw_forecast) from per-init JSON."""
-    obs_path = os.path.join(DATA_ROOT, "observations", station, f"observations_6h_{year}.json")
-    obs_data = json.loads(open(obs_path).read())
-    obs_by_time = {row["valid_time"]: row.get(variable) for row in obs_data["observations"]}
+    """valid_time-keyed obs for `year` and every earlier year on disk.
+
+    The bias series spans 2025+2026, so restricting observations to a single
+    year silently drops every init whose valid time falls outside it.
+    """
+    obs_by_time = {}
+    obs_dir = os.path.join(DATA_ROOT, "observations", station)
+    for path in sorted(glob.glob(os.path.join(obs_dir, "observations_6h_*.json"))):
+        try:
+            file_year = int(os.path.basename(path).split("_")[-1].split(".")[0])
+        except ValueError:
+            continue
+        if file_year > year:
+            continue
+        obs_data = json.loads(open(path).read())
+        for row in obs_data["observations"]:
+            obs_by_time[row["valid_time"]] = row.get(variable)
     return obs_by_time
 
 

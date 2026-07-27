@@ -40,7 +40,7 @@ export const METHODS = [
   { id: "graphcast", label: "GraphCast" },
   { id: "pangu", label: "Pangu-Weather" },
   { id: "unet", label: "U-Net residual correction" },
-  { id: "cnn_lstm", label: "CNN-LSTM" },
+  { id: "lstm_ecmwf_aifs", label: "ECMWF AIFS + LSTM bias correction" },
 ];
 
 export const METRIC_TITLES = {
