@@ -1,0 +1,74 @@
+{
+  "schema_version": "1",
+  "model": "lstm",
+  "model_label": "LSTM",
+  "base_source": "ecmwf_aifs",
+  "station_id": "eric_d_soulis",
+  "variable": "t2m",
+  "units": "degC",
+  "init": "2026-07-20T00:00:00Z",
+  "cadence_hours": 6,
+  "provenance": {
+    "code": "lstm_training/infer_recent.py",
+    "checkpoints": "lstm_training/retrain_output/eric_d_soulis_t2m/ecmwf_aifs_<lead>h/best_model.pt",
+    "note": "One trained model per lead; leads without a checkpoint are null."
+  },
+  "steps": [
+    {
+      "lead_hours": 6,
+      "valid_time": "2026-07-20T06:00:00Z",
+      "value": 11.382555015943675,
+      "raw_source_value": 11.142099999999994,
+      "actual": 11.96
+    },
+    {
+      "lead_hours": 12,
+      "valid_time": "2026-07-20T12:00:00Z",
+      "value": 10.41753080709284,
+      "raw_source_value": 13.182855519999999,
+      "actual": 9.31
+    },
+    {
+      "lead_hours": 18,
+      "valid_time": "2026-07-20T18:00:00Z",
+      "value": 23.724846467431774,
+      "raw_source_value": 24.95168895999999,
+      "actual": 23.85
+    },
+    {
+      "lead_hours": 24,
+      "valid_time": "2026-07-21T00:00:00Z",
+      "value": 23.83860473996551,
+      "raw_source_value": 22.80899999999999,
+      "actual": 22.53
+    },
+    {
+      "lead_hours": 30,
+      "valid_time": "2026-07-21T06:00:00Z",
+      "value": 19.648362322839613,
+      "raw_source_value": 19.4166,
+      "actual": 18.82
+    },
+    {
+      "lead_hours": 36,
+      "valid_time": "2026-07-21T12:00:00Z",
+      "value": 17.449801661325903,
+      "raw_source_value": 19.5416,
+      "actual": 18.62
+    },
+    {
+      "lead_hours": 42,
+      "valid_time": "2026-07-21T18:00:00Z",
+      "value": 22.979774435329,
+      "raw_source_value": 24.041799999999995,
+      "actual": 21.4
+    },
+    {
+      "lead_hours": 48,
+      "valid_time": "2026-07-22T00:00:00Z",
+      "value": 21.524813377604588,
+      "raw_source_value": 21.04308895999999,
+      "actual": 21.71
+    }
+  ]
+}

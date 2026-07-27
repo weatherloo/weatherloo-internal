@@ -1,0 +1,73 @@
+{
+  "schema_version": "1",
+  "kind": "raw_nwp_baseline",
+  "model": "hrrr_interpolated",
+  "model_label": "HRRR",
+  "station_id": "eric_d_soulis",
+  "variable": "t2m",
+  "units": "degC",
+  "init": "2026-07-20T00:00:00Z",
+  "cadence_hours": 6,
+  "provenance": {
+    "source_file": "benchmarking-site/data/hrrr_interpolated/2026-07-20T00Z.json",
+    "reconstruction": "value = obs_6h(valid_time) + bias(lead); benchmark files store error, not forecast value"
+  },
+  "steps": [
+    {
+      "lead_hours": 6,
+      "valid_time": "2026-07-20T06:00:00Z",
+      "value": 12.9616,
+      "actual": 11.96,
+      "bias": 1.0016
+    },
+    {
+      "lead_hours": 12,
+      "valid_time": "2026-07-20T12:00:00Z",
+      "value": 14.048,
+      "actual": 9.31,
+      "bias": 4.738
+    },
+    {
+      "lead_hours": 18,
+      "valid_time": "2026-07-20T18:00:00Z",
+      "value": 25.8747,
+      "actual": 23.85,
+      "bias": 2.0247
+    },
+    {
+      "lead_hours": 24,
+      "valid_time": "2026-07-21T00:00:00Z",
+      "value": 23.1897,
+      "actual": 22.53,
+      "bias": 0.6597
+    },
+    {
+      "lead_hours": 30,
+      "valid_time": "2026-07-21T06:00:00Z",
+      "value": 17.6934,
+      "actual": 18.82,
+      "bias": -1.1266
+    },
+    {
+      "lead_hours": 36,
+      "valid_time": "2026-07-21T12:00:00Z",
+      "value": 20.1989,
+      "actual": 18.62,
+      "bias": 1.5789
+    },
+    {
+      "lead_hours": 42,
+      "valid_time": "2026-07-21T18:00:00Z",
+      "value": 22.094,
+      "actual": 21.4,
+      "bias": 0.694
+    },
+    {
+      "lead_hours": 48,
+      "valid_time": "2026-07-22T00:00:00Z",
+      "value": 21.9307,
+      "actual": 21.71,
+      "bias": 0.2207
+    }
+  ]
+}

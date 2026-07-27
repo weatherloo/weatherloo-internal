@@ -1,0 +1,3556 @@
+{
+  "schema_version": "1",
+  "title": "48-hour forecast showdown",
+  "station": {
+    "id": "eric_d_soulis",
+    "name": "Eric D. Soulis station",
+    "lat": 43.4668,
+    "lon": -80.5164,
+    "place": "University of Waterloo, ON"
+  },
+  "variable": "t2m",
+  "units": "degC",
+  "init": "2026-07-20T00:00:00Z",
+  "horizon_hours": 48,
+  "generated_at": "2026-07-27T19:48:08Z",
+  "scoring": {
+    "common_grid_leads": [
+      6,
+      12,
+      18,
+      24,
+      30,
+      36,
+      42,
+      48
+    ],
+    "note": "RMSE/MAE for the leaderboard use the leads every method has, so the hourly CNN-LSTM is not scored on different points than the 6-hourly models. Each method's native-grid score is also given."
+  },
+  "truth": {
+    "cadence_hours": 1,
+    "source": "raw 15-min HOBO archive, resampled to the hour (+/-30 min, no interpolation)",
+    "time_note": "Archive clock is local standard time (UTC-5, no DST); shifted to UTC.",
+    "steps": [
+      {
+        "lead_hours": 0,
+        "valid_time": "2026-07-20T00:00:00Z",
+        "value": 23.237
+      },
+      {
+        "lead_hours": 1,
+        "valid_time": "2026-07-20T01:00:00Z",
+        "value": 21.067
+      },
+      {
+        "lead_hours": 2,
+        "valid_time": "2026-07-20T02:00:00Z",
+        "value": 17.685
+      },
+      {
+        "lead_hours": 3,
+        "valid_time": "2026-07-20T03:00:00Z",
+        "value": 15.522
+      },
+      {
+        "lead_hours": 4,
+        "valid_time": "2026-07-20T04:00:00Z",
+        "value": 14.241
+      },
+      {
+        "lead_hours": 5,
+        "valid_time": "2026-07-20T05:00:00Z",
+        "value": 12.552
+      },
+      {
+        "lead_hours": 6,
+        "valid_time": "2026-07-20T06:00:00Z",
+        "value": 11.965
+      },
+      {
+        "lead_hours": 7,
+        "valid_time": "2026-07-20T07:00:00Z",
+        "value": 10.956
+      },
+      {
+        "lead_hours": 8,
+        "valid_time": "2026-07-20T08:00:00Z",
+        "value": 11.676
+      },
+      {
+        "lead_hours": 9,
+        "valid_time": "2026-07-20T09:00:00Z",
+        "value": 10.163
+      },
+      {
+        "lead_hours": 10,
+        "valid_time": "2026-07-20T10:00:00Z",
+        "value": 9.292
+      },
+      {
+        "lead_hours": 11,
+        "valid_time": "2026-07-20T11:00:00Z",
+        "value": 8.472
+      },
+      {
+        "lead_hours": 12,
+        "valid_time": "2026-07-20T12:00:00Z",
+        "value": 9.309
+      },
+      {
+        "lead_hours": 13,
+        "valid_time": "2026-07-20T13:00:00Z",
+        "value": 14.728
+      },
+      {
+        "lead_hours": 14,
+        "valid_time": "2026-07-20T14:00:00Z",
+        "value": 18.198
+      },
+      {
+        "lead_hours": 15,
+        "valid_time": "2026-07-20T15:00:00Z",
+        "value": 19.964
+      },
+      {
+        "lead_hours": 16,
+        "valid_time": "2026-07-20T16:00:00Z",
+        "value": 21.463
+      },
+      {
+        "lead_hours": 17,
+        "valid_time": "2026-07-20T17:00:00Z",
+        "value": 23.173
+      },
+      {
+        "lead_hours": 18,
+        "valid_time": "2026-07-20T18:00:00Z",
+        "value": 23.848
+      },
+      {
+        "lead_hours": 19,
+        "valid_time": "2026-07-20T19:00:00Z",
+        "value": 24.617
+      },
+      {
+        "lead_hours": 20,
+        "valid_time": "2026-07-20T20:00:00Z",
+        "value": 25.363
+      },
+      {
+        "lead_hours": 21,
+        "valid_time": "2026-07-20T21:00:00Z",
+        "value": 25.001
+      },
+      {
+        "lead_hours": 22,
+        "valid_time": "2026-07-20T22:00:00Z",
+        "value": 24.061
+      },
+      {
+        "lead_hours": 23,
+        "valid_time": "2026-07-20T23:00:00Z",
+        "value": 23.496
+      },
+      {
+        "lead_hours": 24,
+        "valid_time": "2026-07-21T00:00:00Z",
+        "value": 22.53
+      },
+      {
+        "lead_hours": 25,
+        "valid_time": "2026-07-21T01:00:00Z",
+        "value": 22.034
+      },
+      {
+        "lead_hours": 26,
+        "valid_time": "2026-07-21T02:00:00Z",
+        "value": 21.111
+      },
+      {
+        "lead_hours": 27,
+        "valid_time": "2026-07-21T03:00:00Z",
+        "value": 20.368
+      },
+      {
+        "lead_hours": 28,
+        "valid_time": "2026-07-21T04:00:00Z",
+        "value": 19.737
+      },
+      {
+        "lead_hours": 29,
+        "valid_time": "2026-07-21T05:00:00Z",
+        "value": 18.96
+      },
+      {
+        "lead_hours": 30,
+        "valid_time": "2026-07-21T06:00:00Z",
+        "value": 18.821
+      },
+      {
+        "lead_hours": 31,
+        "valid_time": "2026-07-21T07:00:00Z",
+        "value": 18.41
+      },
+      {
+        "lead_hours": 32,
+        "valid_time": "2026-07-21T08:00:00Z",
+        "value": 18.425
+      },
+      {
+        "lead_hours": 33,
+        "valid_time": "2026-07-21T09:00:00Z",
+        "value": 19.89
+      },
+      {
+        "lead_hours": 34,
+        "valid_time": "2026-07-21T10:00:00Z",
+        "value": 19.122
+      },
+      {
+        "lead_hours": 35,
+        "valid_time": "2026-07-21T11:00:00Z",
+        "value": 18.982
+      },
+      {
+        "lead_hours": 36,
+        "valid_time": "2026-07-21T12:00:00Z",
+        "value": 18.62
+      },
+      {
+        "lead_hours": 37,
+        "valid_time": "2026-07-21T13:00:00Z",
+        "value": 20.548
+      },
+      {
+        "lead_hours": 38,
+        "valid_time": "2026-07-21T14:00:00Z",
+        "value": 21.576
+      },
+      {
+        "lead_hours": 39,
+        "valid_time": "2026-07-21T15:00:00Z",
+        "value": 22.092
+      },
+      {
+        "lead_hours": 40,
+        "valid_time": "2026-07-21T16:00:00Z",
+        "value": 21.938
+      },
+      {
+        "lead_hours": 41,
+        "valid_time": "2026-07-21T17:00:00Z",
+        "value": 22.411
+      },
+      {
+        "lead_hours": 42,
+        "valid_time": "2026-07-21T18:00:00Z",
+        "value": 21.397
+      },
+      {
+        "lead_hours": 43,
+        "valid_time": "2026-07-21T19:00:00Z",
+        "value": 24.671
+      },
+      {
+        "lead_hours": 44,
+        "valid_time": "2026-07-21T20:00:00Z",
+        "value": 22.211
+      },
+      {
+        "lead_hours": 45,
+        "valid_time": "2026-07-21T21:00:00Z",
+        "value": 19.324
+      },
+      {
+        "lead_hours": 46,
+        "valid_time": "2026-07-21T22:00:00Z",
+        "value": 22.142
+      },
+      {
+        "lead_hours": 47,
+        "valid_time": "2026-07-21T23:00:00Z",
+        "value": 21.885
+      },
+      {
+        "lead_hours": 48,
+        "valid_time": "2026-07-22T00:00:00Z",
+        "value": 21.713
+      }
+    ]
+  },
+  "methods": [
+    {
+      "id": "unet",
+      "key": "unet",
+      "label": "U-Net",
+      "group": "ours",
+      "blurb": "Residual U-Net post-processing a GFS 0.25 deg grid, bilinear to the station.",
+      "base_source": "gfs",
+      "cadence_hours": 6,
+      "provenance": {
+        "code": "models/unet (evaluate.py inference path)",
+        "checkpoint": "models/unet/checkpoints/best_model.pt",
+        "trained_epoch": 6,
+        "val_loss_normalized_mse": 0.5548688737205466,
+        "input": "GFS 0.25deg t2m/u10/v10 over the southern Ontario box, AWS noaa-gfs-bdp-pds byte-range GRIB",
+        "correction": "corrected = GFS - predicted_residual, bilinear to station"
+      },
+      "series": [
+        {
+          "lead_hours": 0,
+          "valid_time": "2026-07-20T00:00:00Z",
+          "value": null,
+          "actual": 23.237,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 1,
+          "valid_time": "2026-07-20T01:00:00Z",
+          "value": null,
+          "actual": 21.067,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 2,
+          "valid_time": "2026-07-20T02:00:00Z",
+          "value": null,
+          "actual": 17.685,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 3,
+          "valid_time": "2026-07-20T03:00:00Z",
+          "value": null,
+          "actual": 15.522,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 4,
+          "valid_time": "2026-07-20T04:00:00Z",
+          "value": null,
+          "actual": 14.241,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 5,
+          "valid_time": "2026-07-20T05:00:00Z",
+          "value": null,
+          "actual": 12.552,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 6,
+          "valid_time": "2026-07-20T06:00:00Z",
+          "value": 10.644,
+          "actual": 11.965,
+          "delta": -1.321,
+          "raw_source_value": 11.166
+        },
+        {
+          "lead_hours": 7,
+          "valid_time": "2026-07-20T07:00:00Z",
+          "value": null,
+          "actual": 10.956,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 8,
+          "valid_time": "2026-07-20T08:00:00Z",
+          "value": null,
+          "actual": 11.676,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 9,
+          "valid_time": "2026-07-20T09:00:00Z",
+          "value": null,
+          "actual": 10.163,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 10,
+          "valid_time": "2026-07-20T10:00:00Z",
+          "value": null,
+          "actual": 9.292,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 11,
+          "valid_time": "2026-07-20T11:00:00Z",
+          "value": null,
+          "actual": 8.472,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 12,
+          "valid_time": "2026-07-20T12:00:00Z",
+          "value": 13.176,
+          "actual": 9.309,
+          "delta": 3.867,
+          "raw_source_value": 13.7176
+        },
+        {
+          "lead_hours": 13,
+          "valid_time": "2026-07-20T13:00:00Z",
+          "value": null,
+          "actual": 14.728,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 14,
+          "valid_time": "2026-07-20T14:00:00Z",
+          "value": null,
+          "actual": 18.198,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 15,
+          "valid_time": "2026-07-20T15:00:00Z",
+          "value": null,
+          "actual": 19.964,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 16,
+          "valid_time": "2026-07-20T16:00:00Z",
+          "value": null,
+          "actual": 21.463,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 17,
+          "valid_time": "2026-07-20T17:00:00Z",
+          "value": null,
+          "actual": 23.173,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 18,
+          "valid_time": "2026-07-20T18:00:00Z",
+          "value": 24.544,
+          "actual": 23.848,
+          "delta": 0.696,
+          "raw_source_value": 23.6132
+        },
+        {
+          "lead_hours": 19,
+          "valid_time": "2026-07-20T19:00:00Z",
+          "value": null,
+          "actual": 24.617,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 20,
+          "valid_time": "2026-07-20T20:00:00Z",
+          "value": null,
+          "actual": 25.363,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 21,
+          "valid_time": "2026-07-20T21:00:00Z",
+          "value": null,
+          "actual": 25.001,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 22,
+          "valid_time": "2026-07-20T22:00:00Z",
+          "value": null,
+          "actual": 24.061,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 23,
+          "valid_time": "2026-07-20T23:00:00Z",
+          "value": null,
+          "actual": 23.496,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 24,
+          "valid_time": "2026-07-21T00:00:00Z",
+          "value": 22.015,
+          "actual": 22.53,
+          "delta": -0.515,
+          "raw_source_value": 20.5672
+        },
+        {
+          "lead_hours": 25,
+          "valid_time": "2026-07-21T01:00:00Z",
+          "value": null,
+          "actual": 22.034,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 26,
+          "valid_time": "2026-07-21T02:00:00Z",
+          "value": null,
+          "actual": 21.111,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 27,
+          "valid_time": "2026-07-21T03:00:00Z",
+          "value": null,
+          "actual": 20.368,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 28,
+          "valid_time": "2026-07-21T04:00:00Z",
+          "value": null,
+          "actual": 19.737,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 29,
+          "valid_time": "2026-07-21T05:00:00Z",
+          "value": null,
+          "actual": 18.96,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 30,
+          "valid_time": "2026-07-21T06:00:00Z",
+          "value": 18.576,
+          "actual": 18.821,
+          "delta": -0.245,
+          "raw_source_value": 16.2947
+        },
+        {
+          "lead_hours": 31,
+          "valid_time": "2026-07-21T07:00:00Z",
+          "value": null,
+          "actual": 18.41,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 32,
+          "valid_time": "2026-07-21T08:00:00Z",
+          "value": null,
+          "actual": 18.425,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 33,
+          "valid_time": "2026-07-21T09:00:00Z",
+          "value": null,
+          "actual": 19.89,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 34,
+          "valid_time": "2026-07-21T10:00:00Z",
+          "value": null,
+          "actual": 19.122,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 35,
+          "valid_time": "2026-07-21T11:00:00Z",
+          "value": null,
+          "actual": 18.982,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 36,
+          "valid_time": "2026-07-21T12:00:00Z",
+          "value": 19.752,
+          "actual": 18.62,
+          "delta": 1.132,
+          "raw_source_value": 18.9131
+        },
+        {
+          "lead_hours": 37,
+          "valid_time": "2026-07-21T13:00:00Z",
+          "value": null,
+          "actual": 20.548,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 38,
+          "valid_time": "2026-07-21T14:00:00Z",
+          "value": null,
+          "actual": 21.576,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 39,
+          "valid_time": "2026-07-21T15:00:00Z",
+          "value": null,
+          "actual": 22.092,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 40,
+          "valid_time": "2026-07-21T16:00:00Z",
+          "value": null,
+          "actual": 21.938,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 41,
+          "valid_time": "2026-07-21T17:00:00Z",
+          "value": null,
+          "actual": 22.411,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 42,
+          "valid_time": "2026-07-21T18:00:00Z",
+          "value": 24.268,
+          "actual": 21.397,
+          "delta": 2.871,
+          "raw_source_value": 23.9118
+        },
+        {
+          "lead_hours": 43,
+          "valid_time": "2026-07-21T19:00:00Z",
+          "value": null,
+          "actual": 24.671,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 44,
+          "valid_time": "2026-07-21T20:00:00Z",
+          "value": null,
+          "actual": 22.211,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 45,
+          "valid_time": "2026-07-21T21:00:00Z",
+          "value": null,
+          "actual": 19.324,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 46,
+          "valid_time": "2026-07-21T22:00:00Z",
+          "value": null,
+          "actual": 22.142,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 47,
+          "valid_time": "2026-07-21T23:00:00Z",
+          "value": null,
+          "actual": 21.885,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 48,
+          "valid_time": "2026-07-22T00:00:00Z",
+          "value": 21.074,
+          "actual": 21.713,
+          "delta": -0.639,
+          "raw_source_value": 19.5041
+        }
+      ],
+      "scores": {
+        "grid": "common_6h",
+        "n": 8,
+        "rmse": 1.8521,
+        "mae": 1.4107,
+        "bias": 0.7308
+      },
+      "scores_native": {
+        "grid": "native_6h",
+        "n": 8,
+        "rmse": 1.8521,
+        "mae": 1.4108
+      },
+      "rank": 3
+    },
+    {
+      "id": "lstm",
+      "key": "lstm_ecmwf_aifs",
+      "label": "LSTM",
+      "group": "ours",
+      "blurb": "Per-lead LSTM correcting ECMWF AIFS bias from a sliding window of past errors.",
+      "base_source": "ecmwf_aifs",
+      "cadence_hours": 6,
+      "provenance": {
+        "code": "lstm_training/infer_recent.py",
+        "checkpoints": "lstm_training/retrain_output/eric_d_soulis_t2m/ecmwf_aifs_<lead>h/best_model.pt",
+        "note": "One trained model per lead; leads without a checkpoint are null."
+      },
+      "series": [
+        {
+          "lead_hours": 0,
+          "valid_time": "2026-07-20T00:00:00Z",
+          "value": null,
+          "actual": 23.237,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 1,
+          "valid_time": "2026-07-20T01:00:00Z",
+          "value": null,
+          "actual": 21.067,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 2,
+          "valid_time": "2026-07-20T02:00:00Z",
+          "value": null,
+          "actual": 17.685,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 3,
+          "valid_time": "2026-07-20T03:00:00Z",
+          "value": null,
+          "actual": 15.522,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 4,
+          "valid_time": "2026-07-20T04:00:00Z",
+          "value": null,
+          "actual": 14.241,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 5,
+          "valid_time": "2026-07-20T05:00:00Z",
+          "value": null,
+          "actual": 12.552,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 6,
+          "valid_time": "2026-07-20T06:00:00Z",
+          "value": 11.383,
+          "actual": 11.965,
+          "delta": -0.582,
+          "raw_source_value": 11.142099999999994
+        },
+        {
+          "lead_hours": 7,
+          "valid_time": "2026-07-20T07:00:00Z",
+          "value": null,
+          "actual": 10.956,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 8,
+          "valid_time": "2026-07-20T08:00:00Z",
+          "value": null,
+          "actual": 11.676,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 9,
+          "valid_time": "2026-07-20T09:00:00Z",
+          "value": null,
+          "actual": 10.163,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 10,
+          "valid_time": "2026-07-20T10:00:00Z",
+          "value": null,
+          "actual": 9.292,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 11,
+          "valid_time": "2026-07-20T11:00:00Z",
+          "value": null,
+          "actual": 8.472,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 12,
+          "valid_time": "2026-07-20T12:00:00Z",
+          "value": 10.418,
+          "actual": 9.309,
+          "delta": 1.109,
+          "raw_source_value": 13.182855519999999
+        },
+        {
+          "lead_hours": 13,
+          "valid_time": "2026-07-20T13:00:00Z",
+          "value": null,
+          "actual": 14.728,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 14,
+          "valid_time": "2026-07-20T14:00:00Z",
+          "value": null,
+          "actual": 18.198,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 15,
+          "valid_time": "2026-07-20T15:00:00Z",
+          "value": null,
+          "actual": 19.964,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 16,
+          "valid_time": "2026-07-20T16:00:00Z",
+          "value": null,
+          "actual": 21.463,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 17,
+          "valid_time": "2026-07-20T17:00:00Z",
+          "value": null,
+          "actual": 23.173,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 18,
+          "valid_time": "2026-07-20T18:00:00Z",
+          "value": 23.725,
+          "actual": 23.848,
+          "delta": -0.123,
+          "raw_source_value": 24.95168895999999
+        },
+        {
+          "lead_hours": 19,
+          "valid_time": "2026-07-20T19:00:00Z",
+          "value": null,
+          "actual": 24.617,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 20,
+          "valid_time": "2026-07-20T20:00:00Z",
+          "value": null,
+          "actual": 25.363,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 21,
+          "valid_time": "2026-07-20T21:00:00Z",
+          "value": null,
+          "actual": 25.001,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 22,
+          "valid_time": "2026-07-20T22:00:00Z",
+          "value": null,
+          "actual": 24.061,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 23,
+          "valid_time": "2026-07-20T23:00:00Z",
+          "value": null,
+          "actual": 23.496,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 24,
+          "valid_time": "2026-07-21T00:00:00Z",
+          "value": 23.839,
+          "actual": 22.53,
+          "delta": 1.309,
+          "raw_source_value": 22.80899999999999
+        },
+        {
+          "lead_hours": 25,
+          "valid_time": "2026-07-21T01:00:00Z",
+          "value": null,
+          "actual": 22.034,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 26,
+          "valid_time": "2026-07-21T02:00:00Z",
+          "value": null,
+          "actual": 21.111,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 27,
+          "valid_time": "2026-07-21T03:00:00Z",
+          "value": null,
+          "actual": 20.368,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 28,
+          "valid_time": "2026-07-21T04:00:00Z",
+          "value": null,
+          "actual": 19.737,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 29,
+          "valid_time": "2026-07-21T05:00:00Z",
+          "value": null,
+          "actual": 18.96,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 30,
+          "valid_time": "2026-07-21T06:00:00Z",
+          "value": 19.648,
+          "actual": 18.821,
+          "delta": 0.827,
+          "raw_source_value": 19.4166
+        },
+        {
+          "lead_hours": 31,
+          "valid_time": "2026-07-21T07:00:00Z",
+          "value": null,
+          "actual": 18.41,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 32,
+          "valid_time": "2026-07-21T08:00:00Z",
+          "value": null,
+          "actual": 18.425,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 33,
+          "valid_time": "2026-07-21T09:00:00Z",
+          "value": null,
+          "actual": 19.89,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 34,
+          "valid_time": "2026-07-21T10:00:00Z",
+          "value": null,
+          "actual": 19.122,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 35,
+          "valid_time": "2026-07-21T11:00:00Z",
+          "value": null,
+          "actual": 18.982,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 36,
+          "valid_time": "2026-07-21T12:00:00Z",
+          "value": 17.45,
+          "actual": 18.62,
+          "delta": -1.17,
+          "raw_source_value": 19.5416
+        },
+        {
+          "lead_hours": 37,
+          "valid_time": "2026-07-21T13:00:00Z",
+          "value": null,
+          "actual": 20.548,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 38,
+          "valid_time": "2026-07-21T14:00:00Z",
+          "value": null,
+          "actual": 21.576,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 39,
+          "valid_time": "2026-07-21T15:00:00Z",
+          "value": null,
+          "actual": 22.092,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 40,
+          "valid_time": "2026-07-21T16:00:00Z",
+          "value": null,
+          "actual": 21.938,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 41,
+          "valid_time": "2026-07-21T17:00:00Z",
+          "value": null,
+          "actual": 22.411,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 42,
+          "valid_time": "2026-07-21T18:00:00Z",
+          "value": 22.98,
+          "actual": 21.397,
+          "delta": 1.583,
+          "raw_source_value": 24.041799999999995
+        },
+        {
+          "lead_hours": 43,
+          "valid_time": "2026-07-21T19:00:00Z",
+          "value": null,
+          "actual": 24.671,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 44,
+          "valid_time": "2026-07-21T20:00:00Z",
+          "value": null,
+          "actual": 22.211,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 45,
+          "valid_time": "2026-07-21T21:00:00Z",
+          "value": null,
+          "actual": 19.324,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 46,
+          "valid_time": "2026-07-21T22:00:00Z",
+          "value": null,
+          "actual": 22.142,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 47,
+          "valid_time": "2026-07-21T23:00:00Z",
+          "value": null,
+          "actual": 21.885,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 48,
+          "valid_time": "2026-07-22T00:00:00Z",
+          "value": 21.525,
+          "actual": 21.713,
+          "delta": -0.188,
+          "raw_source_value": 21.04308895999999
+        }
+      ],
+      "scores": {
+        "grid": "common_6h",
+        "n": 8,
+        "rmse": 0.9931,
+        "mae": 0.8614,
+        "bias": 0.3454
+      },
+      "scores_native": {
+        "grid": "native_6h",
+        "n": 8,
+        "rmse": 0.9932,
+        "mae": 0.8614
+      },
+      "rank": 1
+    },
+    {
+      "id": "cnn_lstm",
+      "key": "cnn_lstm",
+      "label": "CNN-LSTM",
+      "group": "ours",
+      "blurb": "CNN-LSTM reading a 30x30 HRRR crop and predicting per-lead station bias.",
+      "base_source": "hrrr",
+      "cadence_hours": 1,
+      "provenance": {
+        "code": "src/hrrr_bias_correction (make_data.py tensor layout)",
+        "checkpoint": "artifacts/hrrr_bias_correction/final_model.keras",
+        "input": "HRRR 3km t2m/u10/v10, 30x30 crop centred on the station, native units",
+        "correction": "corrected = HRRR - predicted_bias (target is forecast - observation)"
+      },
+      "series": [
+        {
+          "lead_hours": 0,
+          "valid_time": "2026-07-20T00:00:00Z",
+          "value": 20.542,
+          "actual": 23.237,
+          "delta": -2.695,
+          "raw_source_value": 20.2963
+        },
+        {
+          "lead_hours": 1,
+          "valid_time": "2026-07-20T01:00:00Z",
+          "value": 18.404,
+          "actual": 21.067,
+          "delta": -2.663,
+          "raw_source_value": 18.0642
+        },
+        {
+          "lead_hours": 2,
+          "valid_time": "2026-07-20T02:00:00Z",
+          "value": 16.792,
+          "actual": 17.685,
+          "delta": -0.893,
+          "raw_source_value": 16.4381
+        },
+        {
+          "lead_hours": 3,
+          "valid_time": "2026-07-20T03:00:00Z",
+          "value": 15.678,
+          "actual": 15.522,
+          "delta": 0.156,
+          "raw_source_value": 15.3215
+        },
+        {
+          "lead_hours": 4,
+          "valid_time": "2026-07-20T04:00:00Z",
+          "value": 14.753,
+          "actual": 14.241,
+          "delta": 0.512,
+          "raw_source_value": 14.3968
+        },
+        {
+          "lead_hours": 5,
+          "valid_time": "2026-07-20T05:00:00Z",
+          "value": 13.921,
+          "actual": 12.552,
+          "delta": 1.369,
+          "raw_source_value": 13.5645
+        },
+        {
+          "lead_hours": 6,
+          "valid_time": "2026-07-20T06:00:00Z",
+          "value": 13.345,
+          "actual": 11.965,
+          "delta": 1.38,
+          "raw_source_value": 12.9887
+        },
+        {
+          "lead_hours": 7,
+          "valid_time": "2026-07-20T07:00:00Z",
+          "value": 12.485,
+          "actual": 10.956,
+          "delta": 1.529,
+          "raw_source_value": 12.1283
+        },
+        {
+          "lead_hours": 8,
+          "valid_time": "2026-07-20T08:00:00Z",
+          "value": 11.825,
+          "actual": 11.676,
+          "delta": 0.149,
+          "raw_source_value": 11.4685
+        },
+        {
+          "lead_hours": 9,
+          "valid_time": "2026-07-20T09:00:00Z",
+          "value": 11.319,
+          "actual": 10.163,
+          "delta": 1.156,
+          "raw_source_value": 10.963
+        },
+        {
+          "lead_hours": 10,
+          "valid_time": "2026-07-20T10:00:00Z",
+          "value": 11.011,
+          "actual": 9.292,
+          "delta": 1.719,
+          "raw_source_value": 10.6545
+        },
+        {
+          "lead_hours": 11,
+          "valid_time": "2026-07-20T11:00:00Z",
+          "value": 11.915,
+          "actual": 8.472,
+          "delta": 3.443,
+          "raw_source_value": 11.5588
+        },
+        {
+          "lead_hours": 12,
+          "valid_time": "2026-07-20T12:00:00Z",
+          "value": 14.377,
+          "actual": 9.309,
+          "delta": 5.068,
+          "raw_source_value": 14.0209
+        },
+        {
+          "lead_hours": 13,
+          "valid_time": "2026-07-20T13:00:00Z",
+          "value": 17.503,
+          "actual": 14.728,
+          "delta": 2.775,
+          "raw_source_value": 17.1465
+        },
+        {
+          "lead_hours": 14,
+          "valid_time": "2026-07-20T14:00:00Z",
+          "value": 19.823,
+          "actual": 18.198,
+          "delta": 1.625,
+          "raw_source_value": 19.467
+        },
+        {
+          "lead_hours": 15,
+          "valid_time": "2026-07-20T15:00:00Z",
+          "value": 21.574,
+          "actual": 19.964,
+          "delta": 1.61,
+          "raw_source_value": 21.2177
+        },
+        {
+          "lead_hours": 16,
+          "valid_time": "2026-07-20T16:00:00Z",
+          "value": 23.617,
+          "actual": 21.463,
+          "delta": 2.154,
+          "raw_source_value": 23.2604
+        },
+        {
+          "lead_hours": 17,
+          "valid_time": "2026-07-20T17:00:00Z",
+          "value": 25.152,
+          "actual": 23.173,
+          "delta": 1.979,
+          "raw_source_value": 24.7953
+        },
+        {
+          "lead_hours": 18,
+          "valid_time": "2026-07-20T18:00:00Z",
+          "value": 26.267,
+          "actual": 23.848,
+          "delta": 2.419,
+          "raw_source_value": 25.9107
+        },
+        {
+          "lead_hours": 19,
+          "valid_time": "2026-07-20T19:00:00Z",
+          "value": 26.915,
+          "actual": 24.617,
+          "delta": 2.298,
+          "raw_source_value": 26.5584
+        },
+        {
+          "lead_hours": 20,
+          "valid_time": "2026-07-20T20:00:00Z",
+          "value": 27.234,
+          "actual": 25.363,
+          "delta": 1.871,
+          "raw_source_value": 26.8778
+        },
+        {
+          "lead_hours": 21,
+          "valid_time": "2026-07-20T21:00:00Z",
+          "value": 27.006,
+          "actual": 25.001,
+          "delta": 2.005,
+          "raw_source_value": 26.6497
+        },
+        {
+          "lead_hours": 22,
+          "valid_time": "2026-07-20T22:00:00Z",
+          "value": 26.375,
+          "actual": 24.061,
+          "delta": 2.314,
+          "raw_source_value": 26.0186
+        },
+        {
+          "lead_hours": 23,
+          "valid_time": "2026-07-20T23:00:00Z",
+          "value": 25.006,
+          "actual": 23.496,
+          "delta": 1.51,
+          "raw_source_value": 24.6494
+        },
+        {
+          "lead_hours": 24,
+          "valid_time": "2026-07-21T00:00:00Z",
+          "value": 23.573,
+          "actual": 22.53,
+          "delta": 1.043,
+          "raw_source_value": 23.2168
+        },
+        {
+          "lead_hours": 25,
+          "valid_time": "2026-07-21T01:00:00Z",
+          "value": 22.207,
+          "actual": 22.034,
+          "delta": 0.173,
+          "raw_source_value": 21.8504
+        },
+        {
+          "lead_hours": 26,
+          "valid_time": "2026-07-21T02:00:00Z",
+          "value": 20.797,
+          "actual": 21.111,
+          "delta": -0.314,
+          "raw_source_value": 20.4409
+        },
+        {
+          "lead_hours": 27,
+          "valid_time": "2026-07-21T03:00:00Z",
+          "value": 20.596,
+          "actual": 20.368,
+          "delta": 0.228,
+          "raw_source_value": 20.2397
+        },
+        {
+          "lead_hours": 28,
+          "valid_time": "2026-07-21T04:00:00Z",
+          "value": 19.369,
+          "actual": 19.737,
+          "delta": -0.367,
+          "raw_source_value": 19.013
+        },
+        {
+          "lead_hours": 29,
+          "valid_time": "2026-07-21T05:00:00Z",
+          "value": 18.985,
+          "actual": 18.96,
+          "delta": 0.025,
+          "raw_source_value": 18.6289
+        },
+        {
+          "lead_hours": 30,
+          "valid_time": "2026-07-21T06:00:00Z",
+          "value": 18.041,
+          "actual": 18.821,
+          "delta": -0.78,
+          "raw_source_value": 17.6844
+        },
+        {
+          "lead_hours": 31,
+          "valid_time": "2026-07-21T07:00:00Z",
+          "value": 17.874,
+          "actual": 18.41,
+          "delta": -0.536,
+          "raw_source_value": 17.5175
+        },
+        {
+          "lead_hours": 32,
+          "valid_time": "2026-07-21T08:00:00Z",
+          "value": 17.677,
+          "actual": 18.425,
+          "delta": -0.748,
+          "raw_source_value": 17.3205
+        },
+        {
+          "lead_hours": 33,
+          "valid_time": "2026-07-21T09:00:00Z",
+          "value": 17.499,
+          "actual": 19.89,
+          "delta": -2.391,
+          "raw_source_value": 17.1428
+        },
+        {
+          "lead_hours": 34,
+          "valid_time": "2026-07-21T10:00:00Z",
+          "value": 18.524,
+          "actual": 19.122,
+          "delta": -0.598,
+          "raw_source_value": 18.1671
+        },
+        {
+          "lead_hours": 35,
+          "valid_time": "2026-07-21T11:00:00Z",
+          "value": 19.255,
+          "actual": 18.982,
+          "delta": 0.273,
+          "raw_source_value": 18.8985
+        },
+        {
+          "lead_hours": 36,
+          "valid_time": "2026-07-21T12:00:00Z",
+          "value": 20.528,
+          "actual": 18.62,
+          "delta": 1.908,
+          "raw_source_value": 20.1719
+        },
+        {
+          "lead_hours": 37,
+          "valid_time": "2026-07-21T13:00:00Z",
+          "value": 21.507,
+          "actual": 20.548,
+          "delta": 0.959,
+          "raw_source_value": 21.1507
+        },
+        {
+          "lead_hours": 38,
+          "valid_time": "2026-07-21T14:00:00Z",
+          "value": 21.751,
+          "actual": 21.576,
+          "delta": 0.175,
+          "raw_source_value": 21.3942
+        },
+        {
+          "lead_hours": 39,
+          "valid_time": "2026-07-21T15:00:00Z",
+          "value": 22.015,
+          "actual": 22.092,
+          "delta": -0.077,
+          "raw_source_value": 21.6587
+        },
+        {
+          "lead_hours": 40,
+          "valid_time": "2026-07-21T16:00:00Z",
+          "value": 21.243,
+          "actual": 21.938,
+          "delta": -0.695,
+          "raw_source_value": 20.8866
+        },
+        {
+          "lead_hours": 41,
+          "valid_time": "2026-07-21T17:00:00Z",
+          "value": 22.817,
+          "actual": 22.411,
+          "delta": 0.406,
+          "raw_source_value": 22.4606
+        },
+        {
+          "lead_hours": 42,
+          "valid_time": "2026-07-21T18:00:00Z",
+          "value": 22.396,
+          "actual": 21.397,
+          "delta": 0.999,
+          "raw_source_value": 22.0399
+        },
+        {
+          "lead_hours": 43,
+          "valid_time": "2026-07-21T19:00:00Z",
+          "value": 25.126,
+          "actual": 24.671,
+          "delta": 0.455,
+          "raw_source_value": 24.7698
+        },
+        {
+          "lead_hours": 44,
+          "valid_time": "2026-07-21T20:00:00Z",
+          "value": 26.0,
+          "actual": 22.211,
+          "delta": 3.789,
+          "raw_source_value": 25.6432
+        },
+        {
+          "lead_hours": 45,
+          "valid_time": "2026-07-21T21:00:00Z",
+          "value": 25.338,
+          "actual": 19.324,
+          "delta": 6.014,
+          "raw_source_value": 24.9811
+        },
+        {
+          "lead_hours": 46,
+          "valid_time": "2026-07-21T22:00:00Z",
+          "value": 23.736,
+          "actual": 22.142,
+          "delta": 1.594,
+          "raw_source_value": 23.3797
+        },
+        {
+          "lead_hours": 47,
+          "valid_time": "2026-07-21T23:00:00Z",
+          "value": 23.912,
+          "actual": 21.885,
+          "delta": 2.027,
+          "raw_source_value": 23.5559
+        },
+        {
+          "lead_hours": 48,
+          "valid_time": "2026-07-22T00:00:00Z",
+          "value": 22.296,
+          "actual": 21.713,
+          "delta": 0.583,
+          "raw_source_value": 21.9398
+        }
+      ],
+      "scores": {
+        "grid": "common_6h",
+        "n": 8,
+        "rmse": 2.2396,
+        "mae": 1.7728,
+        "bias": 1.5778
+      },
+      "scores_native": {
+        "grid": "native_1h",
+        "n": 48,
+        "rmse": 1.9197,
+        "mae": 1.4532
+      },
+      "rank": 5
+    },
+    {
+      "id": "ecmwf_aifs",
+      "key": "baseline_ecmwf_aifs",
+      "label": "ECMWF AIFS",
+      "group": "reference",
+      "blurb": "ECMWF AIFS as issued, no correction.",
+      "base_source": null,
+      "cadence_hours": 6,
+      "provenance": {
+        "source_file": "benchmarking-site/data/ecmwf_aifs/2026-07-20T00Z.json",
+        "reconstruction": "value = obs_6h(valid_time) + bias(lead); benchmark files store error, not forecast value"
+      },
+      "series": [
+        {
+          "lead_hours": 0,
+          "valid_time": "2026-07-20T00:00:00Z",
+          "value": null,
+          "actual": 23.237,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 1,
+          "valid_time": "2026-07-20T01:00:00Z",
+          "value": null,
+          "actual": 21.067,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 2,
+          "valid_time": "2026-07-20T02:00:00Z",
+          "value": null,
+          "actual": 17.685,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 3,
+          "valid_time": "2026-07-20T03:00:00Z",
+          "value": null,
+          "actual": 15.522,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 4,
+          "valid_time": "2026-07-20T04:00:00Z",
+          "value": null,
+          "actual": 14.241,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 5,
+          "valid_time": "2026-07-20T05:00:00Z",
+          "value": null,
+          "actual": 12.552,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 6,
+          "valid_time": "2026-07-20T06:00:00Z",
+          "value": 11.142,
+          "actual": 11.965,
+          "delta": -0.823,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 7,
+          "valid_time": "2026-07-20T07:00:00Z",
+          "value": null,
+          "actual": 10.956,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 8,
+          "valid_time": "2026-07-20T08:00:00Z",
+          "value": null,
+          "actual": 11.676,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 9,
+          "valid_time": "2026-07-20T09:00:00Z",
+          "value": null,
+          "actual": 10.163,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 10,
+          "valid_time": "2026-07-20T10:00:00Z",
+          "value": null,
+          "actual": 9.292,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 11,
+          "valid_time": "2026-07-20T11:00:00Z",
+          "value": null,
+          "actual": 8.472,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 12,
+          "valid_time": "2026-07-20T12:00:00Z",
+          "value": 13.183,
+          "actual": 9.309,
+          "delta": 3.874,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 13,
+          "valid_time": "2026-07-20T13:00:00Z",
+          "value": null,
+          "actual": 14.728,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 14,
+          "valid_time": "2026-07-20T14:00:00Z",
+          "value": null,
+          "actual": 18.198,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 15,
+          "valid_time": "2026-07-20T15:00:00Z",
+          "value": null,
+          "actual": 19.964,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 16,
+          "valid_time": "2026-07-20T16:00:00Z",
+          "value": null,
+          "actual": 21.463,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 17,
+          "valid_time": "2026-07-20T17:00:00Z",
+          "value": null,
+          "actual": 23.173,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 18,
+          "valid_time": "2026-07-20T18:00:00Z",
+          "value": 24.952,
+          "actual": 23.848,
+          "delta": 1.104,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 19,
+          "valid_time": "2026-07-20T19:00:00Z",
+          "value": null,
+          "actual": 24.617,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 20,
+          "valid_time": "2026-07-20T20:00:00Z",
+          "value": null,
+          "actual": 25.363,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 21,
+          "valid_time": "2026-07-20T21:00:00Z",
+          "value": null,
+          "actual": 25.001,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 22,
+          "valid_time": "2026-07-20T22:00:00Z",
+          "value": null,
+          "actual": 24.061,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 23,
+          "valid_time": "2026-07-20T23:00:00Z",
+          "value": null,
+          "actual": 23.496,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 24,
+          "valid_time": "2026-07-21T00:00:00Z",
+          "value": 22.809,
+          "actual": 22.53,
+          "delta": 0.279,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 25,
+          "valid_time": "2026-07-21T01:00:00Z",
+          "value": null,
+          "actual": 22.034,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 26,
+          "valid_time": "2026-07-21T02:00:00Z",
+          "value": null,
+          "actual": 21.111,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 27,
+          "valid_time": "2026-07-21T03:00:00Z",
+          "value": null,
+          "actual": 20.368,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 28,
+          "valid_time": "2026-07-21T04:00:00Z",
+          "value": null,
+          "actual": 19.737,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 29,
+          "valid_time": "2026-07-21T05:00:00Z",
+          "value": null,
+          "actual": 18.96,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 30,
+          "valid_time": "2026-07-21T06:00:00Z",
+          "value": 19.417,
+          "actual": 18.821,
+          "delta": 0.596,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 31,
+          "valid_time": "2026-07-21T07:00:00Z",
+          "value": null,
+          "actual": 18.41,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 32,
+          "valid_time": "2026-07-21T08:00:00Z",
+          "value": null,
+          "actual": 18.425,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 33,
+          "valid_time": "2026-07-21T09:00:00Z",
+          "value": null,
+          "actual": 19.89,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 34,
+          "valid_time": "2026-07-21T10:00:00Z",
+          "value": null,
+          "actual": 19.122,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 35,
+          "valid_time": "2026-07-21T11:00:00Z",
+          "value": null,
+          "actual": 18.982,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 36,
+          "valid_time": "2026-07-21T12:00:00Z",
+          "value": 19.542,
+          "actual": 18.62,
+          "delta": 0.922,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 37,
+          "valid_time": "2026-07-21T13:00:00Z",
+          "value": null,
+          "actual": 20.548,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 38,
+          "valid_time": "2026-07-21T14:00:00Z",
+          "value": null,
+          "actual": 21.576,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 39,
+          "valid_time": "2026-07-21T15:00:00Z",
+          "value": null,
+          "actual": 22.092,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 40,
+          "valid_time": "2026-07-21T16:00:00Z",
+          "value": null,
+          "actual": 21.938,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 41,
+          "valid_time": "2026-07-21T17:00:00Z",
+          "value": null,
+          "actual": 22.411,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 42,
+          "valid_time": "2026-07-21T18:00:00Z",
+          "value": 24.042,
+          "actual": 21.397,
+          "delta": 2.645,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 43,
+          "valid_time": "2026-07-21T19:00:00Z",
+          "value": null,
+          "actual": 24.671,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 44,
+          "valid_time": "2026-07-21T20:00:00Z",
+          "value": null,
+          "actual": 22.211,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 45,
+          "valid_time": "2026-07-21T21:00:00Z",
+          "value": null,
+          "actual": 19.324,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 46,
+          "valid_time": "2026-07-21T22:00:00Z",
+          "value": null,
+          "actual": 22.142,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 47,
+          "valid_time": "2026-07-21T23:00:00Z",
+          "value": null,
+          "actual": 21.885,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 48,
+          "valid_time": "2026-07-22T00:00:00Z",
+          "value": 21.043,
+          "actual": 21.713,
+          "delta": -0.67,
+          "raw_source_value": null
+        }
+      ],
+      "scores": {
+        "grid": "common_6h",
+        "n": 8,
+        "rmse": 1.7898,
+        "mae": 1.3639,
+        "bias": 0.9907
+      },
+      "scores_native": {
+        "grid": "native_6h",
+        "n": 8,
+        "rmse": 1.79,
+        "mae": 1.3641
+      },
+      "rank": 2
+    },
+    {
+      "id": "gfs_analysis",
+      "key": "baseline_gfs_analysis",
+      "label": "GFS",
+      "group": "reference",
+      "blurb": "NOAA GFS as issued, no correction.",
+      "base_source": null,
+      "cadence_hours": 6,
+      "provenance": {
+        "source_file": "benchmarking-site/data/gfs_analysis/2026-07-20T00Z.json",
+        "reconstruction": "value = obs_6h(valid_time) + bias(lead); benchmark files store error, not forecast value"
+      },
+      "series": [
+        {
+          "lead_hours": 0,
+          "valid_time": "2026-07-20T00:00:00Z",
+          "value": null,
+          "actual": 23.237,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 1,
+          "valid_time": "2026-07-20T01:00:00Z",
+          "value": null,
+          "actual": 21.067,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 2,
+          "valid_time": "2026-07-20T02:00:00Z",
+          "value": null,
+          "actual": 17.685,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 3,
+          "valid_time": "2026-07-20T03:00:00Z",
+          "value": null,
+          "actual": 15.522,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 4,
+          "valid_time": "2026-07-20T04:00:00Z",
+          "value": null,
+          "actual": 14.241,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 5,
+          "valid_time": "2026-07-20T05:00:00Z",
+          "value": null,
+          "actual": 12.552,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 6,
+          "valid_time": "2026-07-20T06:00:00Z",
+          "value": 18.314,
+          "actual": 11.965,
+          "delta": 6.349,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 7,
+          "valid_time": "2026-07-20T07:00:00Z",
+          "value": null,
+          "actual": 10.956,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 8,
+          "valid_time": "2026-07-20T08:00:00Z",
+          "value": null,
+          "actual": 11.676,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 9,
+          "valid_time": "2026-07-20T09:00:00Z",
+          "value": null,
+          "actual": 10.163,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 10,
+          "valid_time": "2026-07-20T10:00:00Z",
+          "value": null,
+          "actual": 9.292,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 11,
+          "valid_time": "2026-07-20T11:00:00Z",
+          "value": null,
+          "actual": 8.472,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 12,
+          "valid_time": "2026-07-20T12:00:00Z",
+          "value": 18.314,
+          "actual": 9.309,
+          "delta": 9.005,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 13,
+          "valid_time": "2026-07-20T13:00:00Z",
+          "value": null,
+          "actual": 14.728,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 14,
+          "valid_time": "2026-07-20T14:00:00Z",
+          "value": null,
+          "actual": 18.198,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 15,
+          "valid_time": "2026-07-20T15:00:00Z",
+          "value": null,
+          "actual": 19.964,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 16,
+          "valid_time": "2026-07-20T16:00:00Z",
+          "value": null,
+          "actual": 21.463,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 17,
+          "valid_time": "2026-07-20T17:00:00Z",
+          "value": null,
+          "actual": 23.173,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 18,
+          "valid_time": "2026-07-20T18:00:00Z",
+          "value": 18.314,
+          "actual": 23.848,
+          "delta": -5.534,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 19,
+          "valid_time": "2026-07-20T19:00:00Z",
+          "value": null,
+          "actual": 24.617,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 20,
+          "valid_time": "2026-07-20T20:00:00Z",
+          "value": null,
+          "actual": 25.363,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 21,
+          "valid_time": "2026-07-20T21:00:00Z",
+          "value": null,
+          "actual": 25.001,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 22,
+          "valid_time": "2026-07-20T22:00:00Z",
+          "value": null,
+          "actual": 24.061,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 23,
+          "valid_time": "2026-07-20T23:00:00Z",
+          "value": null,
+          "actual": 23.496,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 24,
+          "valid_time": "2026-07-21T00:00:00Z",
+          "value": 18.314,
+          "actual": 22.53,
+          "delta": -4.216,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 25,
+          "valid_time": "2026-07-21T01:00:00Z",
+          "value": null,
+          "actual": 22.034,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 26,
+          "valid_time": "2026-07-21T02:00:00Z",
+          "value": null,
+          "actual": 21.111,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 27,
+          "valid_time": "2026-07-21T03:00:00Z",
+          "value": null,
+          "actual": 20.368,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 28,
+          "valid_time": "2026-07-21T04:00:00Z",
+          "value": null,
+          "actual": 19.737,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 29,
+          "valid_time": "2026-07-21T05:00:00Z",
+          "value": null,
+          "actual": 18.96,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 30,
+          "valid_time": "2026-07-21T06:00:00Z",
+          "value": 18.314,
+          "actual": 18.821,
+          "delta": -0.507,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 31,
+          "valid_time": "2026-07-21T07:00:00Z",
+          "value": null,
+          "actual": 18.41,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 32,
+          "valid_time": "2026-07-21T08:00:00Z",
+          "value": null,
+          "actual": 18.425,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 33,
+          "valid_time": "2026-07-21T09:00:00Z",
+          "value": null,
+          "actual": 19.89,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 34,
+          "valid_time": "2026-07-21T10:00:00Z",
+          "value": null,
+          "actual": 19.122,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 35,
+          "valid_time": "2026-07-21T11:00:00Z",
+          "value": null,
+          "actual": 18.982,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 36,
+          "valid_time": "2026-07-21T12:00:00Z",
+          "value": 18.314,
+          "actual": 18.62,
+          "delta": -0.306,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 37,
+          "valid_time": "2026-07-21T13:00:00Z",
+          "value": null,
+          "actual": 20.548,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 38,
+          "valid_time": "2026-07-21T14:00:00Z",
+          "value": null,
+          "actual": 21.576,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 39,
+          "valid_time": "2026-07-21T15:00:00Z",
+          "value": null,
+          "actual": 22.092,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 40,
+          "valid_time": "2026-07-21T16:00:00Z",
+          "value": null,
+          "actual": 21.938,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 41,
+          "valid_time": "2026-07-21T17:00:00Z",
+          "value": null,
+          "actual": 22.411,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 42,
+          "valid_time": "2026-07-21T18:00:00Z",
+          "value": 18.314,
+          "actual": 21.397,
+          "delta": -3.083,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 43,
+          "valid_time": "2026-07-21T19:00:00Z",
+          "value": null,
+          "actual": 24.671,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 44,
+          "valid_time": "2026-07-21T20:00:00Z",
+          "value": null,
+          "actual": 22.211,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 45,
+          "valid_time": "2026-07-21T21:00:00Z",
+          "value": null,
+          "actual": 19.324,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 46,
+          "valid_time": "2026-07-21T22:00:00Z",
+          "value": null,
+          "actual": 22.142,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 47,
+          "valid_time": "2026-07-21T23:00:00Z",
+          "value": null,
+          "actual": 21.885,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 48,
+          "valid_time": "2026-07-22T00:00:00Z",
+          "value": 18.314,
+          "actual": 21.713,
+          "delta": -3.399,
+          "raw_source_value": null
+        }
+      ],
+      "scores": {
+        "grid": "common_6h",
+        "n": 8,
+        "rmse": 4.8889,
+        "mae": 4.0501,
+        "bias": -0.2118
+      },
+      "scores_native": {
+        "grid": "native_6h",
+        "n": 8,
+        "rmse": 4.8889,
+        "mae": 4.0499
+      },
+      "rank": 6
+    },
+    {
+      "id": "hrrr_interpolated",
+      "key": "baseline_hrrr_interpolated",
+      "label": "HRRR",
+      "group": "reference",
+      "blurb": "NOAA HRRR interpolated to the station, no correction.",
+      "base_source": null,
+      "cadence_hours": 6,
+      "provenance": {
+        "source_file": "benchmarking-site/data/hrrr_interpolated/2026-07-20T00Z.json",
+        "reconstruction": "value = obs_6h(valid_time) + bias(lead); benchmark files store error, not forecast value"
+      },
+      "series": [
+        {
+          "lead_hours": 0,
+          "valid_time": "2026-07-20T00:00:00Z",
+          "value": null,
+          "actual": 23.237,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 1,
+          "valid_time": "2026-07-20T01:00:00Z",
+          "value": null,
+          "actual": 21.067,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 2,
+          "valid_time": "2026-07-20T02:00:00Z",
+          "value": null,
+          "actual": 17.685,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 3,
+          "valid_time": "2026-07-20T03:00:00Z",
+          "value": null,
+          "actual": 15.522,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 4,
+          "valid_time": "2026-07-20T04:00:00Z",
+          "value": null,
+          "actual": 14.241,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 5,
+          "valid_time": "2026-07-20T05:00:00Z",
+          "value": null,
+          "actual": 12.552,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 6,
+          "valid_time": "2026-07-20T06:00:00Z",
+          "value": 12.962,
+          "actual": 11.965,
+          "delta": 0.997,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 7,
+          "valid_time": "2026-07-20T07:00:00Z",
+          "value": null,
+          "actual": 10.956,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 8,
+          "valid_time": "2026-07-20T08:00:00Z",
+          "value": null,
+          "actual": 11.676,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 9,
+          "valid_time": "2026-07-20T09:00:00Z",
+          "value": null,
+          "actual": 10.163,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 10,
+          "valid_time": "2026-07-20T10:00:00Z",
+          "value": null,
+          "actual": 9.292,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 11,
+          "valid_time": "2026-07-20T11:00:00Z",
+          "value": null,
+          "actual": 8.472,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 12,
+          "valid_time": "2026-07-20T12:00:00Z",
+          "value": 14.048,
+          "actual": 9.309,
+          "delta": 4.739,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 13,
+          "valid_time": "2026-07-20T13:00:00Z",
+          "value": null,
+          "actual": 14.728,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 14,
+          "valid_time": "2026-07-20T14:00:00Z",
+          "value": null,
+          "actual": 18.198,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 15,
+          "valid_time": "2026-07-20T15:00:00Z",
+          "value": null,
+          "actual": 19.964,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 16,
+          "valid_time": "2026-07-20T16:00:00Z",
+          "value": null,
+          "actual": 21.463,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 17,
+          "valid_time": "2026-07-20T17:00:00Z",
+          "value": null,
+          "actual": 23.173,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 18,
+          "valid_time": "2026-07-20T18:00:00Z",
+          "value": 25.875,
+          "actual": 23.848,
+          "delta": 2.027,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 19,
+          "valid_time": "2026-07-20T19:00:00Z",
+          "value": null,
+          "actual": 24.617,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 20,
+          "valid_time": "2026-07-20T20:00:00Z",
+          "value": null,
+          "actual": 25.363,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 21,
+          "valid_time": "2026-07-20T21:00:00Z",
+          "value": null,
+          "actual": 25.001,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 22,
+          "valid_time": "2026-07-20T22:00:00Z",
+          "value": null,
+          "actual": 24.061,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 23,
+          "valid_time": "2026-07-20T23:00:00Z",
+          "value": null,
+          "actual": 23.496,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 24,
+          "valid_time": "2026-07-21T00:00:00Z",
+          "value": 23.19,
+          "actual": 22.53,
+          "delta": 0.66,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 25,
+          "valid_time": "2026-07-21T01:00:00Z",
+          "value": null,
+          "actual": 22.034,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 26,
+          "valid_time": "2026-07-21T02:00:00Z",
+          "value": null,
+          "actual": 21.111,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 27,
+          "valid_time": "2026-07-21T03:00:00Z",
+          "value": null,
+          "actual": 20.368,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 28,
+          "valid_time": "2026-07-21T04:00:00Z",
+          "value": null,
+          "actual": 19.737,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 29,
+          "valid_time": "2026-07-21T05:00:00Z",
+          "value": null,
+          "actual": 18.96,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 30,
+          "valid_time": "2026-07-21T06:00:00Z",
+          "value": 17.693,
+          "actual": 18.821,
+          "delta": -1.128,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 31,
+          "valid_time": "2026-07-21T07:00:00Z",
+          "value": null,
+          "actual": 18.41,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 32,
+          "valid_time": "2026-07-21T08:00:00Z",
+          "value": null,
+          "actual": 18.425,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 33,
+          "valid_time": "2026-07-21T09:00:00Z",
+          "value": null,
+          "actual": 19.89,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 34,
+          "valid_time": "2026-07-21T10:00:00Z",
+          "value": null,
+          "actual": 19.122,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 35,
+          "valid_time": "2026-07-21T11:00:00Z",
+          "value": null,
+          "actual": 18.982,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 36,
+          "valid_time": "2026-07-21T12:00:00Z",
+          "value": 20.199,
+          "actual": 18.62,
+          "delta": 1.579,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 37,
+          "valid_time": "2026-07-21T13:00:00Z",
+          "value": null,
+          "actual": 20.548,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 38,
+          "valid_time": "2026-07-21T14:00:00Z",
+          "value": null,
+          "actual": 21.576,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 39,
+          "valid_time": "2026-07-21T15:00:00Z",
+          "value": null,
+          "actual": 22.092,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 40,
+          "valid_time": "2026-07-21T16:00:00Z",
+          "value": null,
+          "actual": 21.938,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 41,
+          "valid_time": "2026-07-21T17:00:00Z",
+          "value": null,
+          "actual": 22.411,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 42,
+          "valid_time": "2026-07-21T18:00:00Z",
+          "value": 22.094,
+          "actual": 21.397,
+          "delta": 0.697,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 43,
+          "valid_time": "2026-07-21T19:00:00Z",
+          "value": null,
+          "actual": 24.671,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 44,
+          "valid_time": "2026-07-21T20:00:00Z",
+          "value": null,
+          "actual": 22.211,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 45,
+          "valid_time": "2026-07-21T21:00:00Z",
+          "value": null,
+          "actual": 19.324,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 46,
+          "valid_time": "2026-07-21T22:00:00Z",
+          "value": null,
+          "actual": 22.142,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 47,
+          "valid_time": "2026-07-21T23:00:00Z",
+          "value": null,
+          "actual": 21.885,
+          "delta": null,
+          "raw_source_value": null
+        },
+        {
+          "lead_hours": 48,
+          "valid_time": "2026-07-22T00:00:00Z",
+          "value": 21.931,
+          "actual": 21.713,
+          "delta": 0.218,
+          "raw_source_value": null
+        }
+      ],
+      "scores": {
+        "grid": "common_6h",
+        "n": 8,
+        "rmse": 2.0091,
+        "mae": 1.5054,
+        "bias": 1.2235
+      },
+      "scores_native": {
+        "grid": "native_6h",
+        "n": 8,
+        "rmse": 2.0092,
+        "mae": 1.5056
+      },
+      "rank": 4
+    }
+  ],
+  "ranking": [
+    "lstm_ecmwf_aifs",
+    "baseline_ecmwf_aifs",
+    "unet",
+    "baseline_hrrr_interpolated",
+    "cnn_lstm",
+    "baseline_gfs_analysis"
+  ],
+  "per_lead_ranking": {
+    "0": [
+      {
+        "method": "cnn_lstm",
+        "value": 20.542,
+        "delta": -2.695,
+        "abs_error": 2.695,
+        "rank": 1
+      }
+    ],
+    "1": [
+      {
+        "method": "cnn_lstm",
+        "value": 18.404,
+        "delta": -2.663,
+        "abs_error": 2.663,
+        "rank": 1
+      }
+    ],
+    "2": [
+      {
+        "method": "cnn_lstm",
+        "value": 16.792,
+        "delta": -0.893,
+        "abs_error": 0.893,
+        "rank": 1
+      }
+    ],
+    "3": [
+      {
+        "method": "cnn_lstm",
+        "value": 15.678,
+        "delta": 0.156,
+        "abs_error": 0.156,
+        "rank": 1
+      }
+    ],
+    "4": [
+      {
+        "method": "cnn_lstm",
+        "value": 14.753,
+        "delta": 0.512,
+        "abs_error": 0.512,
+        "rank": 1
+      }
+    ],
+    "5": [
+      {
+        "method": "cnn_lstm",
+        "value": 13.921,
+        "delta": 1.369,
+        "abs_error": 1.369,
+        "rank": 1
+      }
+    ],
+    "6": [
+      {
+        "method": "lstm_ecmwf_aifs",
+        "value": 11.383,
+        "delta": -0.582,
+        "abs_error": 0.582,
+        "rank": 1
+      },
+      {
+        "method": "baseline_ecmwf_aifs",
+        "value": 11.142,
+        "delta": -0.823,
+        "abs_error": 0.823,
+        "rank": 2
+      },
+      {
+        "method": "baseline_hrrr_interpolated",
+        "value": 12.962,
+        "delta": 0.997,
+        "abs_error": 0.997,
+        "rank": 3
+      },
+      {
+        "method": "unet",
+        "value": 10.644,
+        "delta": -1.321,
+        "abs_error": 1.321,
+        "rank": 4
+      },
+      {
+        "method": "cnn_lstm",
+        "value": 13.345,
+        "delta": 1.38,
+        "abs_error": 1.38,
+        "rank": 5
+      },
+      {
+        "method": "baseline_gfs_analysis",
+        "value": 18.314,
+        "delta": 6.349,
+        "abs_error": 6.349,
+        "rank": 6
+      }
+    ],
+    "7": [
+      {
+        "method": "cnn_lstm",
+        "value": 12.485,
+        "delta": 1.529,
+        "abs_error": 1.529,
+        "rank": 1
+      }
+    ],
+    "8": [
+      {
+        "method": "cnn_lstm",
+        "value": 11.825,
+        "delta": 0.149,
+        "abs_error": 0.149,
+        "rank": 1
+      }
+    ],
+    "9": [
+      {
+        "method": "cnn_lstm",
+        "value": 11.319,
+        "delta": 1.156,
+        "abs_error": 1.156,
+        "rank": 1
+      }
+    ],
+    "10": [
+      {
+        "method": "cnn_lstm",
+        "value": 11.011,
+        "delta": 1.719,
+        "abs_error": 1.719,
+        "rank": 1
+      }
+    ],
+    "11": [
+      {
+        "method": "cnn_lstm",
+        "value": 11.915,
+        "delta": 3.443,
+        "abs_error": 3.443,
+        "rank": 1
+      }
+    ],
+    "12": [
+      {
+        "method": "lstm_ecmwf_aifs",
+        "value": 10.418,
+        "delta": 1.109,
+        "abs_error": 1.109,
+        "rank": 1
+      },
+      {
+        "method": "unet",
+        "value": 13.176,
+        "delta": 3.867,
+        "abs_error": 3.867,
+        "rank": 2
+      },
+      {
+        "method": "baseline_ecmwf_aifs",
+        "value": 13.183,
+        "delta": 3.874,
+        "abs_error": 3.874,
+        "rank": 3
+      },
+      {
+        "method": "baseline_hrrr_interpolated",
+        "value": 14.048,
+        "delta": 4.739,
+        "abs_error": 4.739,
+        "rank": 4
+      },
+      {
+        "method": "cnn_lstm",
+        "value": 14.377,
+        "delta": 5.068,
+        "abs_error": 5.068,
+        "rank": 5
+      },
+      {
+        "method": "baseline_gfs_analysis",
+        "value": 18.314,
+        "delta": 9.005,
+        "abs_error": 9.005,
+        "rank": 6
+      }
+    ],
+    "13": [
+      {
+        "method": "cnn_lstm",
+        "value": 17.503,
+        "delta": 2.775,
+        "abs_error": 2.775,
+        "rank": 1
+      }
+    ],
+    "14": [
+      {
+        "method": "cnn_lstm",
+        "value": 19.823,
+        "delta": 1.625,
+        "abs_error": 1.625,
+        "rank": 1
+      }
+    ],
+    "15": [
+      {
+        "method": "cnn_lstm",
+        "value": 21.574,
+        "delta": 1.61,
+        "abs_error": 1.61,
+        "rank": 1
+      }
+    ],
+    "16": [
+      {
+        "method": "cnn_lstm",
+        "value": 23.617,
+        "delta": 2.154,
+        "abs_error": 2.154,
+        "rank": 1
+      }
+    ],
+    "17": [
+      {
+        "method": "cnn_lstm",
+        "value": 25.152,
+        "delta": 1.979,
+        "abs_error": 1.979,
+        "rank": 1
+      }
+    ],
+    "18": [
+      {
+        "method": "lstm_ecmwf_aifs",
+        "value": 23.725,
+        "delta": -0.123,
+        "abs_error": 0.123,
+        "rank": 1
+      },
+      {
+        "method": "unet",
+        "value": 24.544,
+        "delta": 0.696,
+        "abs_error": 0.696,
+        "rank": 2
+      },
+      {
+        "method": "baseline_ecmwf_aifs",
+        "value": 24.952,
+        "delta": 1.104,
+        "abs_error": 1.104,
+        "rank": 3
+      },
+      {
+        "method": "baseline_hrrr_interpolated",
+        "value": 25.875,
+        "delta": 2.027,
+        "abs_error": 2.027,
+        "rank": 4
+      },
+      {
+        "method": "cnn_lstm",
+        "value": 26.267,
+        "delta": 2.419,
+        "abs_error": 2.419,
+        "rank": 5
+      },
+      {
+        "method": "baseline_gfs_analysis",
+        "value": 18.314,
+        "delta": -5.534,
+        "abs_error": 5.534,
+        "rank": 6
+      }
+    ],
+    "19": [
+      {
+        "method": "cnn_lstm",
+        "value": 26.915,
+        "delta": 2.298,
+        "abs_error": 2.298,
+        "rank": 1
+      }
+    ],
+    "20": [
+      {
+        "method": "cnn_lstm",
+        "value": 27.234,
+        "delta": 1.871,
+        "abs_error": 1.871,
+        "rank": 1
+      }
+    ],
+    "21": [
+      {
+        "method": "cnn_lstm",
+        "value": 27.006,
+        "delta": 2.005,
+        "abs_error": 2.005,
+        "rank": 1
+      }
+    ],
+    "22": [
+      {
+        "method": "cnn_lstm",
+        "value": 26.375,
+        "delta": 2.314,
+        "abs_error": 2.314,
+        "rank": 1
+      }
+    ],
+    "23": [
+      {
+        "method": "cnn_lstm",
+        "value": 25.006,
+        "delta": 1.51,
+        "abs_error": 1.51,
+        "rank": 1
+      }
+    ],
+    "24": [
+      {
+        "method": "baseline_ecmwf_aifs",
+        "value": 22.809,
+        "delta": 0.279,
+        "abs_error": 0.279,
+        "rank": 1
+      },
+      {
+        "method": "unet",
+        "value": 22.015,
+        "delta": -0.515,
+        "abs_error": 0.515,
+        "rank": 2
+      },
+      {
+        "method": "baseline_hrrr_interpolated",
+        "value": 23.19,
+        "delta": 0.66,
+        "abs_error": 0.66,
+        "rank": 3
+      },
+      {
+        "method": "cnn_lstm",
+        "value": 23.573,
+        "delta": 1.043,
+        "abs_error": 1.043,
+        "rank": 4
+      },
+      {
+        "method": "lstm_ecmwf_aifs",
+        "value": 23.839,
+        "delta": 1.309,
+        "abs_error": 1.309,
+        "rank": 5
+      },
+      {
+        "method": "baseline_gfs_analysis",
+        "value": 18.314,
+        "delta": -4.216,
+        "abs_error": 4.216,
+        "rank": 6
+      }
+    ],
+    "25": [
+      {
+        "method": "cnn_lstm",
+        "value": 22.207,
+        "delta": 0.173,
+        "abs_error": 0.173,
+        "rank": 1
+      }
+    ],
+    "26": [
+      {
+        "method": "cnn_lstm",
+        "value": 20.797,
+        "delta": -0.314,
+        "abs_error": 0.314,
+        "rank": 1
+      }
+    ],
+    "27": [
+      {
+        "method": "cnn_lstm",
+        "value": 20.596,
+        "delta": 0.228,
+        "abs_error": 0.228,
+        "rank": 1
+      }
+    ],
+    "28": [
+      {
+        "method": "cnn_lstm",
+        "value": 19.369,
+        "delta": -0.367,
+        "abs_error": 0.367,
+        "rank": 1
+      }
+    ],
+    "29": [
+      {
+        "method": "cnn_lstm",
+        "value": 18.985,
+        "delta": 0.025,
+        "abs_error": 0.025,
+        "rank": 1
+      }
+    ],
+    "30": [
+      {
+        "method": "unet",
+        "value": 18.576,
+        "delta": -0.245,
+        "abs_error": 0.245,
+        "rank": 1
+      },
+      {
+        "method": "baseline_gfs_analysis",
+        "value": 18.314,
+        "delta": -0.507,
+        "abs_error": 0.507,
+        "rank": 2
+      },
+      {
+        "method": "baseline_ecmwf_aifs",
+        "value": 19.417,
+        "delta": 0.596,
+        "abs_error": 0.596,
+        "rank": 3
+      },
+      {
+        "method": "cnn_lstm",
+        "value": 18.041,
+        "delta": -0.78,
+        "abs_error": 0.78,
+        "rank": 4
+      },
+      {
+        "method": "lstm_ecmwf_aifs",
+        "value": 19.648,
+        "delta": 0.827,
+        "abs_error": 0.827,
+        "rank": 5
+      },
+      {
+        "method": "baseline_hrrr_interpolated",
+        "value": 17.693,
+        "delta": -1.128,
+        "abs_error": 1.128,
+        "rank": 6
+      }
+    ],
+    "31": [
+      {
+        "method": "cnn_lstm",
+        "value": 17.874,
+        "delta": -0.536,
+        "abs_error": 0.536,
+        "rank": 1
+      }
+    ],
+    "32": [
+      {
+        "method": "cnn_lstm",
+        "value": 17.677,
+        "delta": -0.748,
+        "abs_error": 0.748,
+        "rank": 1
+      }
+    ],
+    "33": [
+      {
+        "method": "cnn_lstm",
+        "value": 17.499,
+        "delta": -2.391,
+        "abs_error": 2.391,
+        "rank": 1
+      }
+    ],
+    "34": [
+      {
+        "method": "cnn_lstm",
+        "value": 18.524,
+        "delta": -0.598,
+        "abs_error": 0.598,
+        "rank": 1
+      }
+    ],
+    "35": [
+      {
+        "method": "cnn_lstm",
+        "value": 19.255,
+        "delta": 0.273,
+        "abs_error": 0.273,
+        "rank": 1
+      }
+    ],
+    "36": [
+      {
+        "method": "baseline_gfs_analysis",
+        "value": 18.314,
+        "delta": -0.306,
+        "abs_error": 0.306,
+        "rank": 1
+      },
+      {
+        "method": "baseline_ecmwf_aifs",
+        "value": 19.542,
+        "delta": 0.922,
+        "abs_error": 0.922,
+        "rank": 2
+      },
+      {
+        "method": "unet",
+        "value": 19.752,
+        "delta": 1.132,
+        "abs_error": 1.132,
+        "rank": 3
+      },
+      {
+        "method": "lstm_ecmwf_aifs",
+        "value": 17.45,
+        "delta": -1.17,
+        "abs_error": 1.17,
+        "rank": 4
+      },
+      {
+        "method": "baseline_hrrr_interpolated",
+        "value": 20.199,
+        "delta": 1.579,
+        "abs_error": 1.579,
+        "rank": 5
+      },
+      {
+        "method": "cnn_lstm",
+        "value": 20.528,
+        "delta": 1.908,
+        "abs_error": 1.908,
+        "rank": 6
+      }
+    ],
+    "37": [
+      {
+        "method": "cnn_lstm",
+        "value": 21.507,
+        "delta": 0.959,
+        "abs_error": 0.959,
+        "rank": 1
+      }
+    ],
+    "38": [
+      {
+        "method": "cnn_lstm",
+        "value": 21.751,
+        "delta": 0.175,
+        "abs_error": 0.175,
+        "rank": 1
+      }
+    ],
+    "39": [
+      {
+        "method": "cnn_lstm",
+        "value": 22.015,
+        "delta": -0.077,
+        "abs_error": 0.077,
+        "rank": 1
+      }
+    ],
+    "40": [
+      {
+        "method": "cnn_lstm",
+        "value": 21.243,
+        "delta": -0.695,
+        "abs_error": 0.695,
+        "rank": 1
+      }
+    ],
+    "41": [
+      {
+        "method": "cnn_lstm",
+        "value": 22.817,
+        "delta": 0.406,
+        "abs_error": 0.406,
+        "rank": 1
+      }
+    ],
+    "42": [
+      {
+        "method": "baseline_hrrr_interpolated",
+        "value": 22.094,
+        "delta": 0.697,
+        "abs_error": 0.697,
+        "rank": 1
+      },
+      {
+        "method": "cnn_lstm",
+        "value": 22.396,
+        "delta": 0.999,
+        "abs_error": 0.999,
+        "rank": 2
+      },
+      {
+        "method": "lstm_ecmwf_aifs",
+        "value": 22.98,
+        "delta": 1.583,
+        "abs_error": 1.583,
+        "rank": 3
+      },
+      {
+        "method": "baseline_ecmwf_aifs",
+        "value": 24.042,
+        "delta": 2.645,
+        "abs_error": 2.645,
+        "rank": 4
+      },
+      {
+        "method": "unet",
+        "value": 24.268,
+        "delta": 2.871,
+        "abs_error": 2.871,
+        "rank": 5
+      },
+      {
+        "method": "baseline_gfs_analysis",
+        "value": 18.314,
+        "delta": -3.083,
+        "abs_error": 3.083,
+        "rank": 6
+      }
+    ],
+    "43": [
+      {
+        "method": "cnn_lstm",
+        "value": 25.126,
+        "delta": 0.455,
+        "abs_error": 0.455,
+        "rank": 1
+      }
+    ],
+    "44": [
+      {
+        "method": "cnn_lstm",
+        "value": 26.0,
+        "delta": 3.789,
+        "abs_error": 3.789,
+        "rank": 1
+      }
+    ],
+    "45": [
+      {
+        "method": "cnn_lstm",
+        "value": 25.338,
+        "delta": 6.014,
+        "abs_error": 6.014,
+        "rank": 1
+      }
+    ],
+    "46": [
+      {
+        "method": "cnn_lstm",
+        "value": 23.736,
+        "delta": 1.594,
+        "abs_error": 1.594,
+        "rank": 1
+      }
+    ],
+    "47": [
+      {
+        "method": "cnn_lstm",
+        "value": 23.912,
+        "delta": 2.027,
+        "abs_error": 2.027,
+        "rank": 1
+      }
+    ],
+    "48": [
+      {
+        "method": "lstm_ecmwf_aifs",
+        "value": 21.525,
+        "delta": -0.188,
+        "abs_error": 0.188,
+        "rank": 1
+      },
+      {
+        "method": "baseline_hrrr_interpolated",
+        "value": 21.931,
+        "delta": 0.218,
+        "abs_error": 0.218,
+        "rank": 2
+      },
+      {
+        "method": "cnn_lstm",
+        "value": 22.296,
+        "delta": 0.583,
+        "abs_error": 0.583,
+        "rank": 3
+      },
+      {
+        "method": "unet",
+        "value": 21.074,
+        "delta": -0.639,
+        "abs_error": 0.639,
+        "rank": 4
+      },
+      {
+        "method": "baseline_ecmwf_aifs",
+        "value": 21.043,
+        "delta": -0.67,
+        "abs_error": 0.67,
+        "rank": 5
+      },
+      {
+        "method": "baseline_gfs_analysis",
+        "value": 18.314,
+        "delta": -3.399,
+        "abs_error": 3.399,
+        "rank": 6
+      }
+    ]
+  },
+  "unavailable": [
+    {
+      "id": "open_meteo",
+      "label": "Open-Meteo",
+      "group": "reference",
+      "reason": "api.open-meteo.com, previous-runs-api.open-meteo.com and archive-api.open-meteo.com are all refused by this environment's egress policy (403 on CONNECT), and no Open-Meteo response is cached in the repo.",
+      "unblock": "Allowlist api.open-meteo.com, then run scripts/fetch_openmeteo_previous.py --lead 24/48 and re-run this combiner."
+    }
+  ]
+}
