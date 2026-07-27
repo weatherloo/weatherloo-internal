@@ -35,6 +35,7 @@
     42,
     48
   ],
+  "lead_channel": true,
   "coverage": "restricted to the checkpoint's trained cycles/leads; other cells null",
   "cycles": [
     "00Z",

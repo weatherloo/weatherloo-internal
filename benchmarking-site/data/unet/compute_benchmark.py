@@ -18,10 +18,14 @@ Per initialization and lead time it:
 (see ``models/unet/model/unet.py``). Adding it doubles the error instead of
 removing it.
 
-**Coverage.** The checkpoint only ever saw ``init_hours_utc`` and
-``forecast_hours`` from ``models/unet/config.yaml`` — by default 00/12Z at
-f006–f024. Cells outside that window are written as ``null`` rather than
-silently extrapolated; pass ``--all-cells`` to run them anyway.
+**Coverage.** Taken from the checkpoint's recorded ``sample_space`` (falling
+back to ``config.yaml`` for older checkpoints) — currently all four cycles at
+f006–f048. Cells outside it, including the site's f054–f072, are written as
+``null`` rather than silently extrapolated; ``--all-cells`` runs them anyway.
+
+**Lead time** is an input channel for checkpoints trained with one
+(``lead_channel``), built via ``dataset.build_model_input`` so the encoding
+matches training exactly. Older 3-channel checkpoints still load and run.
 
 ACC anomaly baseline: DOY + UTC-hour climatology from station observations with
 a ±15-day calendar window — identical to ``gfs_interpolated`` so ACC stays
@@ -180,18 +184,15 @@ def init_worker(checkpoint: Path, data_dir: Path | None, all_cells: bool) -> Non
     torch.set_num_threads(1)
     _bootstrap(data_dir)
 
-    from dataset import _cache_path, denormalize_residual  # noqa: E402
+    from dataset import (  # noqa: E402
+        _cache_path, build_model_input, denormalize_residual)
     from fetch_era5 import load_config  # noqa: E402
     from fetch_gfs import gfs_region_grid  # noqa: E402
-    from unet import ResidualUNet  # noqa: E402
+    from unet import model_from_checkpoint, uses_lead_channel  # noqa: E402
 
     cfg = load_config()
     ckpt = torch.load(checkpoint, map_location="cpu", weights_only=True)
-    model = ResidualUNet(
-        in_channels=len(ckpt.get("channels", ("t2m", "u10", "v10"))),
-        out_channels=len(ckpt.get("channels", ("t2m", "u10", "v10"))),
-    )
-    model.load_state_dict(ckpt["model_state"], strict=True)
+    model = model_from_checkpoint(ckpt)
     model.eval()
 
     _W.update(
@@ -203,12 +204,15 @@ def init_worker(checkpoint: Path, data_dir: Path | None, all_cells: bool) -> Non
         region_grid=gfs_region_grid,
         obs={sid: load_observations(sid) for sid in STATION_IDS},
         all_cells=all_cells,
+        lead_channel=uses_lead_channel(ckpt),
+        build_input=build_model_input,
     )
     _W["clim"] = {sid: build_climatology(_W["obs"][sid]) for sid in STATION_IDS}
     _W["stations"] = cfg["stations"]
-    gfs_cfg = cfg["data"]["gfs"]
-    _W["trained_cycles"] = set(gfs_cfg["init_hours_utc"])
-    _W["trained_leads"] = set(gfs_cfg["forecast_hours"])
+    space = trained_space({k: v for k, v in ckpt.items()
+                           if k not in ("model_state", "stats")}, cfg)
+    _W["trained_cycles"] = set(space["cycles"])
+    _W["trained_leads"] = set(space["leads"])
 
 
 def load_gfs_grid(init_dt: datetime, lead: int):
@@ -236,12 +240,16 @@ def load_gfs_grid(init_dt: datetime, lead: int):
     return lats, lons, gfs
 
 
-def correct_grid(gfs: np.ndarray) -> np.ndarray:
+def correct_grid(gfs: np.ndarray, lead: int) -> np.ndarray:
     """``corrected = GFS - predicted_residual`` (see models/unet/model/unet.py)."""
     stats = _W["stats"]
     mean = np.asarray(stats["gfs"]["mean"], dtype=np.float32).reshape(-1, 1, 1)
     std = np.asarray(stats["gfs"]["std"], dtype=np.float32).reshape(-1, 1, 1)
-    x = torch.from_numpy((gfs - mean) / std).unsqueeze(0)
+    x = ((gfs - mean) / std).astype(np.float32)
+    if _W["lead_channel"]:
+        # Same builder training used, so the encoding cannot drift.
+        x = _W["build_input"](x, lead)
+    x = torch.from_numpy(x).unsqueeze(0)
     with torch.no_grad():
         pred = _W["model"](x).squeeze(0).numpy()
     return gfs - np.asarray(_W["denorm"](pred, stats), dtype=np.float32)
@@ -292,7 +300,7 @@ def build_init_json(init_dt: datetime) -> dict:
             fill_nulls()
             continue
 
-        corrected = correct_grid(gfs)
+        corrected = correct_grid(gfs, lead)
         for sid in STATION_IDS:
             coords = _W["stations"][sid]
             fcst_t2m, fcst_wind = station_values(
@@ -347,27 +355,59 @@ def format_eta(seconds: float) -> str:
     return f"{h}h{m:02d}m" if h else f"{m}m{s:02d}s"
 
 
+def trained_space(meta: dict, cfg: dict) -> dict:
+    """The cycles/leads the checkpoint actually saw.
+
+    Prefers the checkpoint's own recorded ``sample_space`` over config.yaml:
+    config describes the *next* training run, so after widening it a checkpoint
+    trained on the old, narrower set would otherwise be scored across cells it
+    has never seen. Falls back to config for checkpoints predating the record.
+    """
+    space = meta.get("sample_space")
+    if space:
+        return {"cycles": sorted(int(c) for c in space["cycles"]),
+                "leads": sorted(int(f) for f in space["leads"])}
+    gfs = cfg["data"]["gfs"]
+    return {"cycles": sorted(int(c) for c in gfs["init_hours_utc"]),
+            "leads": sorted(int(f) for f in gfs["forecast_hours"])}
+
+
+def _repo_relative(path: Path) -> str:
+    """Repo-relative path when possible, else absolute.
+
+    Checkpoints often live outside the repo (e.g. on /mnt/wato-drive), and a
+    bare relative_to() would abort the whole run at the metadata step — after
+    every init had already been computed.
+    """
+    resolved = Path(path).resolve()
+    try:
+        return str(resolved.relative_to(REPO_ROOT))
+    except ValueError:
+        return str(resolved)
+
+
 def write_metadata(out_dir: Path, year: int, checkpoint: Path, meta: dict, cfg: dict, all_cells: bool) -> None:
-    gfs_cfg = cfg["data"]["gfs"]
+    space = trained_space(meta, cfg)
     payload = {
         "method_id": METHOD_ID,
         "model": "U-Net residual post-processing of GFS (models/unet)",
         "objective": "network predicts (GFS - ERA5); corrected = GFS - predicted_residual",
         "baseline": "gfs_interpolated (same GFS input, no correction)",
-        "checkpoint": str(Path(checkpoint).resolve().relative_to(REPO_ROOT)),
+        "checkpoint": _repo_relative(checkpoint),
         "checkpoint_epoch": meta.get("epoch"),
         "checkpoint_val_loss": meta.get("val_loss"),
         "split_mode": meta.get("split_mode"),
         "channels": list(meta.get("channels", ("t2m", "u10", "v10"))),
         "region": cfg["region"],
-        "trained_cycles_utc": gfs_cfg["init_hours_utc"],
-        "trained_forecast_hours": gfs_cfg["forecast_hours"],
+        "trained_cycles_utc": space["cycles"],
+        "trained_forecast_hours": space["leads"],
+        "lead_channel": bool(meta.get("lead_channel", False)),
         "coverage": (
             "all cycles/leads (extrapolated beyond training window)"
             if all_cells
             else "restricted to the checkpoint's trained cycles/leads; other cells null"
         ),
-        "cycles": [f"{h:02d}Z" for h in gfs_cfg["init_hours_utc"]],
+        "cycles": [f"{h:02d}Z" for h in space["cycles"]],
         "grid": "0p25",
         "year": year,
         "interpolation": "bilinear (scipy RegularGridInterpolator) on the corrected region grid",
@@ -470,7 +510,16 @@ def main() -> None:
         write_metadata(out_dir, args.year, args.checkpoint, meta, cfg, args.all_cells)
         return
 
-    trained_cycles = set(cfg["data"]["gfs"]["init_hours_utc"])
+    space = trained_space(meta, cfg)
+    trained_cycles = set(space["cycles"])
+    cfg_space = {"cycles": sorted(int(c) for c in cfg["data"]["gfs"]["init_hours_utc"]),
+                 "leads": sorted(int(f) for f in cfg["data"]["gfs"]["forecast_hours"])}
+    if meta.get("sample_space") and space != cfg_space:
+        print(f"NOTE: checkpoint trained on {space}, config.yaml now says "
+              f"{cfg_space}; scoring the checkpoint's range. Retrain to widen.")
+    elif not meta.get("sample_space"):
+        print(f"NOTE: checkpoint predates sample-space recording; assuming "
+              f"config.yaml {cfg_space}. Verify this matches how it was trained.")
     inits = init_datetimes(args.year)
     if not args.all_cells:
         inits = [d for d in inits if d.hour in trained_cycles]
@@ -494,7 +543,7 @@ def main() -> None:
     print(f"Region {cfg['region']['lat_min']}..{cfg['region']['lat_max']}N, "
           f"{cfg['region']['lon_min']}..{cfg['region']['lon_max']}E")
     print(f"Trained cycles {sorted(trained_cycles)}Z, leads "
-          f"{cfg['data']['gfs']['forecast_hours']}h"
+          f"{space['leads']}h"
           f"{' (IGNORED: --all-cells)' if args.all_cells else ''}")
 
     # A mis-pointed --data-dir is invisible otherwise: every lookup just misses
