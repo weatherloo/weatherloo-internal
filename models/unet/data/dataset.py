@@ -61,6 +61,34 @@ STATS_PATH = Path(__file__).resolve().parent / "stats.json"
 
 CHANNELS = ("t2m", "u10", "v10")
 
+# Forecast lead is fed to the network as an extra, spatially-constant input
+# channel. The residual the model has to predict grows with lead, and the grid
+# alone does not say whether it is an f006 or an f048 field — without this one
+# network trained across leads can only learn a single blended correction,
+# over-correcting short leads and under-correcting long ones.
+#
+# Scaled by the longest configured lead so the channel lands in ~(0, 1], the
+# same order as the z-scored physical channels.
+LEAD_SCALE_HOURS = 48.0
+
+
+def lead_plane(fxx: float, height: int, width: int,
+               dtype=np.float32) -> np.ndarray:
+    """Constant ``(1, H, W)`` plane encoding forecast lead in hours."""
+    return np.full((1, height, width), float(fxx) / LEAD_SCALE_HOURS, dtype=dtype)
+
+
+def build_model_input(gfs_norm: np.ndarray, fxx: float) -> np.ndarray:
+    """Normalized GFS grid ``(C,H,W)`` + lead -> ``(C+1,H,W)`` network input.
+
+    The single definition of the input layout: training, station evaluation and
+    the dashboard benchmark all build their tensors through here so the lead
+    encoding cannot drift between them.
+    """
+    h, w = gfs_norm.shape[-2:]
+    return np.concatenate(
+        [gfs_norm, lead_plane(fxx, h, w, gfs_norm.dtype)], axis=0)
+
 # Usable overlap of the two archives (see README): GFS 0.25° AWS start ..
 # the old 6-hourly ERA5 store's end. Kept as defaults for backwards compat;
 # with the full_37-1h store the real end is read from the store's time axis.
@@ -247,12 +275,29 @@ def compute_stats(cfg: dict, train_samples: list[dict], era5_ds=None,
     }
 
 
+def sample_space(cfg: dict) -> dict:
+    """The (cycles, leads) the stats were computed over — see load_or_compute_stats."""
+    gfs = cfg["data"]["gfs"]
+    return {"cycles": sorted(int(c) for c in gfs["init_hours_utc"]),
+            "leads": sorted(int(f) for f in gfs["forecast_hours"])}
+
+
 def load_or_compute_stats(cfg: dict, train_samples: list[dict], era5_ds=None,
                           stats_path: Path = STATS_PATH, recompute: bool = False) -> dict:
+    want = sample_space(cfg)
     if stats_path.exists() and not recompute:
         with open(stats_path) as f:
-            return json.load(f)
+            cached = json.load(f)
+        # Residual magnitude scales with forecast lead, so stats computed over a
+        # narrower cycle/lead set mis-scale a wider one — and the arrays stay
+        # (3,) either way, so nothing would fail loudly. Recompute instead of
+        # silently normalizing f048 residuals with f006-f024 statistics.
+        if cached.get("sample_space") == want:
+            return cached
+        print(f"[stats] {stats_path.name}: sample space changed "
+              f"{cached.get('sample_space')} -> {want}; recomputing")
     stats = compute_stats(cfg, train_samples, era5_ds)
+    stats["sample_space"] = want
     stats_path.parent.mkdir(parents=True, exist_ok=True)
     with open(stats_path, "w") as f:
         json.dump(stats, f, indent=2)
@@ -332,9 +377,10 @@ class GFSResidualDataset(Dataset):
         gfs, era5 = load_sample_grids(self.cfg, sample, self._era5_ds)
         residual = gfs - era5
 
-        gfs_norm = (gfs - self._gfs_mean) / self._gfs_std
+        gfs_norm = ((gfs - self._gfs_mean) / self._gfs_std).astype(np.float32)
+        x = build_model_input(gfs_norm, sample["fxx"])
         res_norm = (residual - self._res_mean) / self._res_std
-        return (torch.from_numpy(gfs_norm.astype(np.float32)),
+        return (torch.from_numpy(x),
                 torch.from_numpy(res_norm.astype(np.float32)))
 
 

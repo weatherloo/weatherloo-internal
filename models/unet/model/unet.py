@@ -64,9 +64,15 @@ class ConvBlock(nn.Module):
 
 
 class ResidualUNet(nn.Module):
-    """Small 2-level U-Net: (B,3,21,41) GFS grid -> (B,3,21,41) predicted residual."""
+    """Small 2-level U-Net: (B,4,21,41) input -> (B,3,21,41) predicted residual.
 
-    def __init__(self, in_channels: int = 3, out_channels: int = 3,
+    Inputs are the three normalized GFS channels (``t2m``, ``u10``, ``v10``)
+    plus a constant plane carrying the forecast lead (see
+    ``dataset.build_model_input``); outputs are the residual for the three
+    physical channels only, so ``in_channels`` is one more than ``out_channels``.
+    """
+
+    def __init__(self, in_channels: int = 4, out_channels: int = 3,
                  base_features: int = 16):
         super().__init__()
         f1, f2, f3 = base_features, base_features * 2, base_features * 4  # 16, 32, 64
@@ -109,6 +115,30 @@ class ResidualUNet(nn.Module):
 
 
 # ---------------------------------------------------------------------------
+# Checkpoint -> model
+# ---------------------------------------------------------------------------
+def uses_lead_channel(ckpt: dict) -> bool:
+    """Whether a checkpoint's network expects the lead-time input channel."""
+    return bool(ckpt.get("lead_channel", False))
+
+
+def model_from_checkpoint(ckpt: dict, strict: bool = True) -> "ResidualUNet":
+    """Build the network a checkpoint was trained as, and load its weights.
+
+    Reads the channel layout from the checkpoint rather than assuming the
+    current defaults, so pre-lead-channel checkpoints (3 in / 3 out, no
+    ``lead_channel`` key) still load. ``strict=True`` means a checkpoint whose
+    layout disagrees with the architecture fails loudly instead of silently
+    mis-wiring weights.
+    """
+    out_ch = int(ckpt.get("out_channels", len(ckpt.get("channels", ("t2m", "u10", "v10")))))
+    in_ch = int(ckpt.get("in_channels", out_ch + (1 if uses_lead_channel(ckpt) else 0)))
+    model = ResidualUNet(in_channels=in_ch, out_channels=out_ch)
+    model.load_state_dict(ckpt["model_state"], strict=strict)
+    return model
+
+
+# ---------------------------------------------------------------------------
 # Standalone self-test
 # ---------------------------------------------------------------------------
 def _selftest() -> None:
@@ -121,13 +151,14 @@ def _selftest() -> None:
     print(f"  total parameters: {n_params:,}")
 
     # --- Dummy batch ---
-    print("\n=== Dummy batch (8, 3, 21, 41) ===")
-    x = torch.randn(8, 3, GRID_H, GRID_W)
+    print("\n=== Dummy batch (8, 4, 21, 41) -> (8, 3, 21, 41) ===")
+    x = torch.randn(8, 4, GRID_H, GRID_W)
     with torch.no_grad():
         y = model(x)
     print(f"  input  shape: {tuple(x.shape)}")
     print(f"  output shape: {tuple(y.shape)}")
     assert tuple(y.shape) == (8, 3, GRID_H, GRID_W), "output spatial shape mismatch!"
+    assert model.enc1.block[0].in_channels == 4, "expected the lead-time input channel!"
     n_nan, n_inf = int(torch.isnan(y).sum()), int(torch.isinf(y).sum())
     print(f"  NaN={n_nan}  Inf={n_inf}  min={y.min():+.3f} max={y.max():+.3f} mean={y.mean():+.3f}")
     assert n_nan == 0 and n_inf == 0, "dummy output has NaN/Inf!"

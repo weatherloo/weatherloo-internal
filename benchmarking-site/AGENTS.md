@@ -87,7 +87,7 @@ Rebuild NPZ from existing JSON without re-fetching:
 | `climatology` | `data/climatology/compute_benchmark.py` | Multi-year (2010-2024) DOY+UTC-hour station climatology; no GRIB needed. `--fetch-historical` downloads historical obs. ACC is always null (forecast = climatology). |
 | `ecmwf_aifs` | `data/ecmwf_aifs/compute_benchmark.py` | ECMWF AIFS Single 0.25° at **00/06/12/18Z** via [dynamical.org catalog](https://dynamical.org/catalog/ecmwf-aifs-single-forecast/) (`dynamical-catalog`); 6-hourly steps; bilinear interp of `temperature_2m` / `wind_u_10m` / `wind_v_10m`. Archive 2024-04-01–present includes full 2025. `--resume` skips existing init JSONs. |
 | `gefs_mean` | `data/gefs_mean/compute_benchmark.py` | GEFS **ensemble mean** (`geavg`) at **0.5°** from AWS `noaa-gefs-pds`; 00/06/12/18Z; bilinear interp; wind from 10 m u/v. Pre-averaged 21-member mean on grid — no per-member downloads. `--resume` skips existing init JSONs. |
-| `unet` | `data/unet/compute_benchmark.py` | **U-Net post-processing of GFS** (`models/unet/`). Thin adapter over the real model code; `corrected = GFS − predicted_residual` on the 21×41 southern Ontario grid, then interpolated to the station. Restricted to the checkpoint’s trained cycles/leads (00/12Z, f006–f024) unless `--all-cells`. Reuses `run_pipeline.py fetch` output via `--data-dir`. See **U-Net post-processing** below. |
+| `unet` | `data/unet/compute_benchmark.py` | **U-Net post-processing of GFS** (`models/unet/`). Thin adapter over the real model code; `corrected = GFS − predicted_residual` on the 21×41 southern Ontario grid, then interpolated to the station. Scored over the checkpoint’s recorded `sample_space` (now 00/06/12/18Z, f006–f048); other cells null unless `--all-cells`. Reuses `run_pipeline.py fetch` output via `--data-dir`. See **U-Net post-processing** below. |
 
 Add a row here when implementing other methods.
 
@@ -140,11 +140,20 @@ otherwise race and each publish a partial index. Failed inits land in
 `failures.json` rather than killing the job; re-run with `--resume` to retry
 just those.
 
-**Coverage.** The checkpoint only ever saw `init_hours_utc` and
-`forecast_hours` from `config.yaml` — **00/12Z at f006–f024**. The other cells
-of the site's 00/06/12/18Z × 6–72 h matrix are written as `null` rather than
-silently extrapolated. `--all-cells` runs them anyway, at the cost of feeding
-the model inputs far outside its training distribution.
+- **Lead time is an input channel.** The network takes **4** channels — the
+  three normalized GFS fields plus a constant plane encoding the lead — so one
+  model covers f006–f048 without over-correcting short leads. Build the tensor
+  with `dataset.build_model_input`, never by hand.
+
+**Coverage.** Currently **00/06/12/18Z at f006–f048**. The remaining cells of
+the site's 00/06/12/18Z × 6–72 h matrix (f054–f072) are written as `null`
+rather than silently extrapolated. `--all-cells` runs them anyway, at the cost
+of feeding the model inputs far outside its training distribution.
+
+The range comes from the **checkpoint's** recorded `sample_space`, not from
+`config.yaml` — config describes the next training run, so after widening it a
+checkpoint trained on the old set would otherwise be scored on cells it never
+saw. Checkpoints predating that record fall back to config and say so.
 
 > **Not yet a win.** `models/unet/README.md` records a held-out 2021 evaluation
 > where this model *loses* to raw GFS on t2m (CYYZ RMSE 1.289 → 1.404) and to a

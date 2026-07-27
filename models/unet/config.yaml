@@ -40,8 +40,13 @@ data:
   gfs:
     aws_base: "https://noaa-gfs-bdp-pds.s3.amazonaws.com"
     # NOTE: the 0.25° pgrb2 archive on this bucket begins ~2021-03-23.
-    init_hours_utc: [0, 12]                  # 00Z and 12Z cycles
-    forecast_hours: [6, 12, 18, 24]          # f006 .. f024
+    # All four synoptic cycles. Restricting to 00/12Z aliases the diurnal error
+    # cycle onto the lead axis (each lead then sees only two valid hours), which
+    # shows up as a sawtooth in the dashboard's RMSE-vs-lead curve.
+    init_hours_utc: [0, 6, 12, 18]                        # 00/06/12/18Z cycles
+    # f006 .. f048. Lead is an input channel (dataset.build_model_input), so one
+    # network covers the whole range; LEAD_SCALE_HOURS must match the max here.
+    forecast_hours: [6, 12, 18, 24, 30, 36, 42, 48]
     # GRIB .idx needles for byte-range extraction.
     grib_needles:
       t2m_k: ":TMP:2 m above ground:"        # Kelvin

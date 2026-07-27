@@ -38,8 +38,8 @@ sys.path.insert(0, str(HERE / "data"))
 sys.path.insert(0, str(HERE / "model"))
 
 from dataset import (  # noqa: E402
-    GFSResidualDataset, CACHE_DIR, STATS_PATH, CHANNELS,
-    DEFAULT_START, DEFAULT_END, denormalize_residual, load_config,
+    GFSResidualDataset, CACHE_DIR, STATS_PATH, CHANNELS, LEAD_SCALE_HOURS,
+    DEFAULT_START, DEFAULT_END, denormalize_residual, load_config, sample_space,
 )
 from unet import ResidualUNet  # noqa: E402
 
@@ -168,7 +168,9 @@ def train(args) -> None:
                             num_workers=args.workers,
                             persistent_workers=args.workers > 0)
 
-    model = ResidualUNet().to(device)
+    # in = physical channels + the lead-time plane; out = physical channels only.
+    model = ResidualUNet(in_channels=len(CHANNELS) + 1,
+                         out_channels=len(CHANNELS)).to(device)
     n_params = sum(p.numel() for p in model.parameters())
     print(f"model params: {n_params:,}")
 
@@ -194,9 +196,17 @@ def train(args) -> None:
         if val_loss < best_val - 1e-6:
             best_val = val_loss
             epochs_no_improve = 0
+            # Record the channel layout and sample space so evaluation can
+            # rebuild the exact network (see unet.model_from_checkpoint) instead
+            # of assuming the architecture defaults of whatever code loads it.
             torch.save({"model_state": model.state_dict(), "stats": train_ds.stats,
                         "epoch": epoch, "val_loss": val_loss,
                         "channels": list(CHANNELS),
+                        "in_channels": len(CHANNELS) + 1,
+                        "out_channels": len(CHANNELS),
+                        "lead_channel": True,
+                        "lead_scale_hours": LEAD_SCALE_HOURS,
+                        "sample_space": sample_space(cfg),
                         "split_mode": args.split_mode, "train_days": args.train_days},
                        ckpt_path)
             flag = "  *best"

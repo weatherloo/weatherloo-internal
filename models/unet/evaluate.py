@@ -42,8 +42,9 @@ sys.path.insert(0, str(HERE / "model"))
 from dataset import (  # noqa: E402
     GFSResidualDataset, load_sample_grids, gfs_region_grid, _valid_time,
     CHANNELS, DEFAULT_START, DEFAULT_END, denormalize_residual, load_config,
+    build_model_input,
 )
-from unet import ResidualUNet  # noqa: E402
+from unet import model_from_checkpoint, uses_lead_channel  # noqa: E402
 
 CKPT_PATH = HERE / "checkpoints" / "best_model.pt"
 OUT_DIR = HERE / "eval_results"
@@ -182,8 +183,10 @@ def main(args) -> None:
 
     # Load model.
     ckpt = torch.load(ckpt_path, map_location=device, weights_only=False)
-    model = ResidualUNet().to(device)
-    model.load_state_dict(ckpt["model_state"])
+    # Rebuild the architecture the checkpoint was trained as (3-in legacy or
+    # 4-in with the lead channel) rather than assuming today's defaults.
+    model = model_from_checkpoint(ckpt).to(device)
+    lead_channel = uses_lead_channel(ckpt)
     model.eval()
     print(f"checkpoint: epoch {ckpt['epoch']}, val_loss {ckpt['val_loss']:.5f}")
 
@@ -217,7 +220,11 @@ def main(args) -> None:
         grids = [load_sample_grids(cfg, s, val_ds._era5_ds) for s in chunk]
         gfs_arrs = np.stack([g for g, _ in grids])          # (B,3,H,W) real units
         era5_arrs = np.stack([e for _, e in grids])         # ERA5 = perfect corrected
-        x = (gfs_arrs - gfs_mean) / gfs_std
+        x = ((gfs_arrs - gfs_mean) / gfs_std).astype(np.float32)
+        if lead_channel:
+            # Same builder training used, so the encoding cannot drift.
+            x = np.stack([build_model_input(xi, s["fxx"])
+                          for xi, s in zip(x, chunk)])
         with torch.no_grad():
             pred = model(torch.from_numpy(x.astype(np.float32)).to(device)).cpu().numpy()
         pred_res = denormalize_residual(pred, stats)        # (B,3,H,W) real units

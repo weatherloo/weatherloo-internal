@@ -43,8 +43,8 @@ ERA5 and GFS share the same 0.25° / 1440×721 global grid, so the two region sl
 |---|---|---|
 | Host | AWS Open Data `s3://noaa-gfs-bdp-pds` (public) | GCP `gs://gcp-public-data-arco-era5/ar/1959-2022-6h-1440x721.zarr` (`token="anon"`) |
 | Access | byte-range GRIB via `.idx` + `cfgrib` | `xarray` + `gcsfs` (zarr v2) |
-| Cycles / cadence | 00Z & 12Z init | 6-hourly analysis |
-| Leads used | f006, f012, f018, f024 | valid time = init + lead |
+| Cycles / cadence | 00/06/12/18Z init | 6-hourly analysis |
+| Leads used | f006 .. f048 (6-hourly) | valid time = init + lead |
 | Variables | `TMP:2m`, `UGRD:10m`, `VGRD:10m` | `2m_temperature`, `10m_u/v_component_of_wind` |
 | Cache | `.cache/gfs_grib/` (gitignored) | none (lazy zarr reads) |
 
@@ -117,7 +117,7 @@ python3 -m venv .venv
    grids as input channels, target = `GFS − ERA5` residual; per-channel z-score normalization
    (stats cached to `data/stats.json`), un-normalized grids cached under `.cache/unet_training/`,
    chronological 80/20 train/val split. Self-test: `.venv/bin/python models/unet/data/dataset.py`.
-2. ~~`model/unet.py`~~ **[DONE]** — small 2-level U-Net (`ResidualUNet`, 3→3 channels, 16→32→64
+2. ~~`model/unet.py`~~ **[DONE]** — small 2-level U-Net (`ResidualUNet`, 4→3 channels, 16→32→64
    features, ~117k params). Reflect-pads 21×41→24×48 internally so downsampling stays clean, crops
    back to 21×41. Self-test: `.venv/bin/python models/unet/model/unet.py`.
 3. ~~`train.py`~~ **[DONE]** — residual regression (MSE on the normalized correction), Adam +
@@ -178,3 +178,42 @@ both raw and the baseline (−5.2%).** Post-processing helps where raw GFS is wo
 the sole winter month present anywhere is December (DJF train=192, val=56); Jan/Feb do not exist in this
 window (GFS 0.25° starts 2021-03-23, ERA5 ends 2021-12-31). Cross-split numbers aren't comparable (different
 val populations). Verdict: encouraging at one station, not yet a clean dashboard add.
+
+## Forecast lead as an input channel
+
+The network input is **4 channels**: the three normalized GFS fields (`t2m`,
+`u10`, `v10`) plus a spatially-constant plane carrying the forecast lead,
+scaled by `LEAD_SCALE_HOURS` (48 h) so it lands in ~(0, 1]. The output stays
+3 channels — the residual for the physical fields only.
+
+Without it, one network trained across f006–f048 can only learn a single
+blended correction: the residual it must predict grows with lead, but the grid
+alone does not say whether it is a 6-hour or a 48-hour forecast. The result is
+systematic over-correction at short leads and under-correction at long ones.
+
+`dataset.build_model_input` is the single definition of that layout. Training,
+`evaluate.py`, and the dashboard benchmark all build their tensors through it,
+so the encoding cannot drift between them.
+
+### Checkpoint compatibility
+
+Checkpoints record `in_channels`, `out_channels`, `lead_channel`,
+`lead_scale_hours`, and `sample_space` (the cycles/leads actually trained on).
+`unet.model_from_checkpoint` rebuilds the matching architecture from those,
+so pre-lead-channel checkpoints (3→3, no `lead_channel`) still load and run.
+
+`sample_space` is what consumers should trust for coverage — **not
+`config.yaml`**, which describes the *next* training run. After widening the
+config, a checkpoint trained on the old narrower set would otherwise be scored
+across cells it has never seen.
+
+### Widening the cycle/lead range
+
+1. Edit `init_hours_utc` / `forecast_hours` in `config.yaml` (keep
+   `LEAD_SCALE_HOURS` equal to the longest lead).
+2. `run_pipeline.py fetch` — enumeration is config-driven, so only the new
+   cells download.
+3. Retrain. `stats.json` records its own `sample_space` and **auto-recomputes**
+   when it no longer matches: residual magnitude scales with lead, and the
+   arrays stay `(3,)` either way, so a stale file would silently mis-scale
+   rather than fail.
