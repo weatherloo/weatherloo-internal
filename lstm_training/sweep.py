@@ -22,7 +22,9 @@ from train import (
 )
 
 
-def make_objective(bias, bias_mean, bias_std, hours, doys, device, max_epochs=200):
+def make_objective(
+    bias, bias_mean, bias_std, hours, doys, device, inits, lead_time, max_epochs=200
+):
     bias_norm = ((bias - bias_mean) / bias_std).astype("float32")
     features_full = build_features(bias_norm, hours, doys)
 
@@ -36,7 +38,9 @@ def make_objective(bias, bias_mean, bias_std, hours, doys, device, max_epochs=20
         patience    = trial.suggest_categorical("patience",    [10, 15, 20, 25])
         max_norm    = trial.suggest_categorical("max_norm",    [0.5, 1.0, 2.0])
 
-        X, y = make_sequences(features_full, seq_len)
+        X, y, _ = make_sequences(features_full, seq_len, inits, lead_time)
+        if len(X) == 0:
+            raise optuna.TrialPruned()
         X_tr, y_tr, X_va, y_va, X_te, y_te = temporal_split(X, y)
 
         def loader(Xa, ya, shuffle=False):
@@ -120,7 +124,9 @@ def main():
     def callback(study, trial):
         print(f"Trial {trial.number:3d}  RMSE={trial.value:.4f}  best={study.best_value:.4f}  {trial.params}")
 
-    objective = make_objective(bias, bias_mean, bias_std, hours, doys, device)
+    objective = make_objective(
+        bias, bias_mean, bias_std, hours, doys, device, inits, args.lead_time
+    )
     study.optimize(objective, n_trials=args.n_trials, callbacks=[callback])
 
     best = study.best_trial

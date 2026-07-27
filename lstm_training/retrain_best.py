@@ -201,10 +201,9 @@ def retrain_one(combo, data_dir, out_root, device, tag=""):
 
     hours, doys = parse_timestamps(inits)
     features = build_features(bias_norm, hours, doys)
-    X, y = make_sequences(features, params["seq_len"])
+    X, y, target_idx = make_sequences(features, params["seq_len"], inits, lead)
 
-    # y[i] is the bias at inits[i + seq_len], so target timestamps are inits shifted by seq_len
-    target_timestamps = inits[params["seq_len"]:]
+    target_timestamps = inits[target_idx]
 
     X_tr, y_tr, X_va, y_va, X_te, y_te, ts_tr, ts_va, ts_te = temporal_split(
         X, y, timestamps=target_timestamps

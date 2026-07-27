@@ -2,9 +2,14 @@
 Run a trained LSTM bias-correction model on real recent data to compare
 predicted vs actual temperature for a date range (e.g. "the past week").
 
-The model predicts the *next* bias (forecast - obs) from a sliding window of
-the seq_len most recent biases + time-of-day/day-of-year features (same
-feature engineering as train.py / retrain_best.py). For each target init T:
+The model predicts the bias (forecast - obs) at a target init from a sliding
+window of seq_len earlier biases + time-of-day/day-of-year features (same
+feature engineering as train.py / retrain_best.py).
+
+The window stops lead_time hours short of the target init: bias at init I is
+only knowable at I + lead_time, so a correction issued at T can only use inits
+up to T - lead_time. At a 48h lead that is 8 six-hourly steps of separation,
+not the adjacent step. For each target init T:
 
     corrected_prediction(T) = raw_forecast(T) - predicted_bias(T)
 
@@ -180,19 +185,32 @@ def main():
         for s in inits_series
     ]
 
+    # bias at init I is only observable at I + lead_time, so the window feeding a
+    # correction issued at target init T must end at the latest init <= T - lead_time.
+    init_hours = np.array([dt.timestamp() / 3600.0 for dt in inits_dt], dtype=np.float64)
+
     results = []
     skipped_gap = 0
-    for target_idx in range(seq_len, len(inits_series)):
+    skipped_short = 0
+    for target_idx in range(len(inits_series)):
         target_dt = inits_dt[target_idx]
         if not (start <= target_dt <= end):
             continue
 
-        window_inits = inits_series[target_idx - seq_len : target_idx]
+        end_idx = int(
+            np.searchsorted(init_hours, init_hours[target_idx] - args.lead_time, side="right")
+        ) - 1
+        start_idx = end_idx - seq_len + 1
+        if start_idx < 0:
+            skipped_short += 1
+            continue
+
+        window_inits = inits_series[start_idx : end_idx + 1]
         if not window_is_contiguous(window_inits, seq_len):
             skipped_gap += 1
             continue
 
-        window_feats = features[target_idx - seq_len : target_idx]
+        window_feats = features[start_idx : end_idx + 1]
         x = torch.from_numpy(window_feats).unsqueeze(0)  # (1, seq_len, 5)
         with torch.no_grad():
             pred_bias_norm = model(x).item()
@@ -214,7 +232,10 @@ def main():
             "lstm_corrected": corrected,
         })
 
-    print(f"{len(results)} predictions in range, {skipped_gap} skipped (data gap in window)")
+    print(
+        f"{len(results)} predictions in range, {skipped_gap} skipped (data gap in window), "
+        f"{skipped_short} skipped (insufficient history before the {args.lead_time}h cutoff)"
+    )
 
     if results:
         errs_raw = [r["raw_forecast"] - r["actual"] for r in results]

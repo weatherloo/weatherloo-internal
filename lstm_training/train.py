@@ -47,13 +47,48 @@ def build_features(bias_norm, hours, doys):
     return np.stack([bias_norm, sin_hour, cos_hour, sin_doy, cos_doy], axis=1)
 
 
-def make_sequences(features, seq_len):
-    """Sliding window. X: (N, seq_len, 5)  y: (N,) next-step bias (normalized)."""
-    X, y = [], []
-    for i in range(len(features) - seq_len):
-        X.append(features[i : i + seq_len])
-        y.append(features[i + seq_len, 0])
-    return np.array(X, dtype=np.float32), np.array(y, dtype=np.float32)
+def init_epoch_hours(inits):
+    """Initialization timestamps as float hours since epoch (for lead-time math)."""
+    out = []
+    for s in inits:
+        dt = datetime.strptime(s.rstrip("Z"), "%Y-%m-%dT%H:%M:%S").replace(tzinfo=timezone.utc)
+        out.append(dt.timestamp() / 3600.0)
+    return np.array(out, dtype=np.float64)
+
+
+def make_sequences(features, seq_len, inits, lead_time):
+    """Sliding window respecting when each bias actually became knowable.
+
+    bias[i] = forecast(init_i, lead_time) - obs(init_i + lead_time), so it is
+    not observable until lead_time hours *after* init_i. A correction applied
+    at target init T may therefore only use a window ending at the latest init
+    j with init_j + lead_time <= T -- using the immediately preceding init
+    instead would feed the model observations from the target's own future.
+
+    At lead_time=6 the cutoff lands exactly one step back, which is the naive
+    "next-step" window; at 48h it is 8 six-hourly steps back.
+
+    NaN-dropped series are not evenly spaced, so the cutoff is resolved against
+    real timestamps rather than a fixed index offset.
+
+    Returns X, y and the index of each target within `features`.
+    """
+    t = init_epoch_hours(inits)
+    X, y, target_idx = [], [], []
+    for k in range(len(features)):
+        # latest init whose bias is known by the time we forecast at inits[k]
+        j = int(np.searchsorted(t, t[k] - lead_time, side="right")) - 1
+        start = j - seq_len + 1
+        if start < 0:
+            continue
+        X.append(features[start : j + 1])
+        y.append(features[k, 0])
+        target_idx.append(k)
+    return (
+        np.array(X, dtype=np.float32),
+        np.array(y, dtype=np.float32),
+        np.array(target_idx, dtype=np.int64),
+    )
 
 
 def temporal_split(X, y, timestamps=None, train_frac=0.70, val_frac=0.15):
@@ -170,11 +205,15 @@ def main():
     # Features and sequences
     hours, doys = parse_timestamps(inits)
     features = build_features(bias_norm, hours, doys)
-    X, y = make_sequences(features, args.seq_len)
+    X, y, target_idx = make_sequences(features, args.seq_len, inits, args.lead_time)
     print(f"Sequences: {len(X)}  seq_len={args.seq_len}  features=5")
+    if len(X) == 0:
+        raise ValueError(
+            f"No sequences: seq_len={args.seq_len} plus a {args.lead_time}h lead cutoff "
+            f"exceeds the {len(features)} available samples"
+        )
 
-    # y[i] is the bias at inits[i + seq_len], so target timestamps are inits shifted by seq_len
-    target_timestamps = inits[args.seq_len:]
+    target_timestamps = inits[target_idx]
 
     # Temporal split
     X_tr, y_tr, X_va, y_va, X_te, y_te, ts_tr, ts_va, ts_te = temporal_split(
