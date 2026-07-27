@@ -83,6 +83,7 @@ Rebuild NPZ from existing JSON without re-fetching:
 | `climatology` | `data/climatology/compute_benchmark.py` | Multi-year (2010-2024) DOY+UTC-hour station climatology; no GRIB needed. `--fetch-historical` downloads historical obs. ACC is always null (forecast = climatology). |
 | `ecmwf_aifs` | `data/ecmwf_aifs/compute_benchmark.py` | ECMWF AIFS Single 0.25° at **00/06/12/18Z** via [dynamical.org catalog](https://dynamical.org/catalog/ecmwf-aifs-single-forecast/) (`dynamical-catalog`); 6-hourly steps; bilinear interp of `temperature_2m` / `wind_u_10m` / `wind_v_10m`. Archive 2024-04-01–present includes full 2025. `--resume` skips existing init JSONs. |
 | `gefs_mean` | `data/gefs_mean/compute_benchmark.py` | GEFS **ensemble mean** (`geavg`) at **0.5°** from AWS `noaa-gefs-pds`; 00/06/12/18Z; bilinear interp; wind from 10 m u/v. Pre-averaged 21-member mean on grid — no per-member downloads. `--resume` skips existing init JSONs. |
+| `cnn_lstm_bias_correction` | `data/cnn_lstm_bias_correction/compute_benchmark.py` | Scores the trained CNN-LSTM (`src/hrrr_bias_correction`) on the 2025 **test** split. Predicts HRRR-minus-obs bias; scores `corrected = HRRR − bias`. Reads the Keras model + Zarr store — no GRIB download. **eric_d_soulis only** (model is Soulis-trained; `cyyz` null by design); horizon **f48** (leads 54–72h null by design). Needs the model trained first (`scripts/submit_training_slurm.sh`). `--model-path`/`--zarr-store` override defaults; `--resume`/`--export-npz-only` as usual. |
 
 Add a row here when implementing other methods.
 
@@ -233,6 +234,7 @@ Full coverage below is the goal for a **finished** method; incomplete cycles, le
 | HRDPS analysis | `hrdps_analysis` |
 | HRRR interpolated | `hrrr_interpolated` |
 | HRRR analysis | `hrrr_analysis` |
+| CNN-LSTM bias correction | `cnn_lstm_bias_correction` |
 | ECMWF AIFS | `ecmwf_aifs` |
 | GraphCast | `graphcast` |
 | Pangu-Weather | `pangu` |

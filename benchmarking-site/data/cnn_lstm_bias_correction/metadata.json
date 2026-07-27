@@ -1,0 +1,53 @@
+{
+  "method_id": "cnn_lstm_bias_correction",
+  "model": "CNN-LSTM HRRR bias correction (src/hrrr_bias_correction)",
+  "predicts": "HRRR-minus-observation bias per lead (t2m degC, wind_speed km/h)",
+  "scored_quantity": "bias-corrected forecast = HRRR - predicted_bias",
+  "model_path": "/home/c52li/weatherloo-internal/artifacts/hrrr_bias_correction/final_model.keras",
+  "zarr_store": "/mnt/wato-drive/gguirgui/weatherloo-data/hrrr_bias_correction/hrrr",
+  "cycles": [
+    "00Z",
+    "06Z",
+    "12Z",
+    "18Z"
+  ],
+  "year": 2025,
+  "stations": {
+    "eric_d_soulis": "scored (model trained here)",
+    "cyyz": "null by design (model not trained for this station)"
+  },
+  "lead_times_hours": [
+    6,
+    12,
+    18,
+    24,
+    30,
+    36,
+    42,
+    48,
+    54,
+    60,
+    66,
+    72
+  ],
+  "available_lead_times_hours": [
+    6,
+    12,
+    18,
+    24,
+    30,
+    36,
+    42,
+    48
+  ],
+  "unavailable_lead_times_hours": [
+    54,
+    60,
+    66,
+    72
+  ],
+  "lead_time_note": "CNN-LSTM horizon is f48. Leads 54/60/66/72 h are null by design, the same limitation as hrrr_interpolated.",
+  "acc_climatology": "DOY + UTC-hour mean from station obs, +/-15-day window",
+  "npz_file": "cnn_lstm_bias_correction_2025.npz",
+  "npz_schema": "see benchmarking-site/AGENTS.md"
+}

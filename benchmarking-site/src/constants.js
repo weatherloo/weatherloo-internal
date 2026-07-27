@@ -36,6 +36,7 @@ export const METHODS = [
   { id: "gfs_analysis", label: "GFS analysis" },
   { id: "hrdps_analysis", label: "HRDPS analysis" },
   { id: "hrrr_interpolated", label: "HRRR interpolated at station" },
+  { id: "cnn_lstm_bias_correction", label: "CNN-LSTM bias correction (HRRR)" },
   { id: "ecmwf_aifs", label: "ECMWF AIFS" },
   { id: "graphcast", label: "GraphCast" },
   { id: "pangu", label: "Pangu-Weather" },
