@@ -1,0 +1,13 @@
+job 583401 on tr-slurm2
+=== U-Net pipeline: train ===
+  data dir   : /mnt/wato-drive/c52li/weatherloo-data/unet  (55831 cached samples, 2021-03-23 .. 2025-12-31)
+  output dir : /home/c52li/weatherloo-internal/models/unet/checkpoints
+
+device: cpu
+range: 2021-03-23 .. 2025-12-31   epochs: 50   batch: 16   workers: 4
+split: chronological
+samples: train 44665  /  val 11166
+stats file: /home/c52li/weatherloo-internal/models/unet/checkpoints/stats.json   checkpoint: best_model.pt
+model params: 117,539
+
+epoch  train_loss   val_loss        lr
