@@ -305,7 +305,7 @@ def run_cache_only(
 
     if computed:
         write_metadata(out_dir, year)
-        existing = sorted(p.name for p in init_json_paths(out_dir, year))
+        existing = sorted(p.name for p in all_init_json_paths(out_dir))
         write_index(out_dir, existing)
         export_npz(out_dir, year)
     print(f"Computed {computed} init JSON file(s) for {year}.")
@@ -400,6 +400,11 @@ def init_filename(init_dt: datetime) -> str:
 
 def init_json_paths(out_dir: Path, year: int) -> list[Path]:
     return sorted(out_dir.glob(f"{year}-*T*Z.json"))
+
+
+def all_init_json_paths(out_dir: Path) -> list[Path]:
+    """Per-init JSON files across all years (for index.json)."""
+    return sorted(out_dir.glob("????-??-??T??Z.json"))
 
 
 def build_init_json(
@@ -626,6 +631,8 @@ def main() -> None:
     if args.export_npz_only:
         export_npz(out_dir, args.year)
         write_metadata(out_dir, args.year)
+        existing = sorted(p.name for p in all_init_json_paths(out_dir))
+        write_index(out_dir, existing)
         return
 
     if args.cache_only:
@@ -687,7 +694,7 @@ def main() -> None:
                     raise
 
     write_metadata(out_dir, args.year)
-    existing = sorted(p.name for p in init_json_paths(out_dir, args.year))
+    existing = sorted(p.name for p in all_init_json_paths(out_dir))
     write_index(out_dir, existing)
     export_npz(out_dir, args.year)
     print(f"Done. {len(existing)} init files, index.json updated.")

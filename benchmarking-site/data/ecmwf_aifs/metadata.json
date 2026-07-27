@@ -8,10 +8,10 @@
     "18Z"
   ],
   "grid": "0.25 degree regular lat/lon (dynamical.org regridded archive)",
-  "year": 2025,
+  "year": 2026,
   "interpolation": "bilinear",
   "wind": "sqrt(u10^2 + v10^2) from 10 m u/v components, m/s to km/h",
-  "acc_climatology": "DOY + UTC-hour mean from 2025 station obs, +/-15-day window",
+  "acc_climatology": "DOY + UTC-hour mean from 2026 station obs, +/-15-day window",
   "source": "https://dynamical.org/catalog/ecmwf-aifs-single-forecast/",
   "catalog_id": "ecmwf-aifs-single-forecast",
   "source_notes": [
@@ -24,6 +24,6 @@
     "u10": "wind_u_10m",
     "v10": "wind_v_10m"
   },
-  "npz_file": "ecmwf_aifs_2025.npz",
+  "npz_file": "ecmwf_aifs_2026.npz",
   "npz_schema": "see benchmarking-site/AGENTS.md"
 }

@@ -8,9 +8,9 @@
     "12Z",
     "18Z"
   ],
-  "year": 2025,
-  "source": "data/observations/<station_id>/observations_6h_2025.json",
-  "acc_climatology": "DOY + UTC-hour mean from 2025 station obs, +/-15-day window",
-  "npz_file": "persistence_2025.npz",
+  "year": 2026,
+  "source": "data/observations/<station_id>/observations_6h_2026.json",
+  "acc_climatology": "DOY + UTC-hour mean from 2026 station obs, +/-15-day window",
+  "npz_file": "persistence_2026.npz",
   "npz_schema": "see benchmarking-site/AGENTS.md"
 }

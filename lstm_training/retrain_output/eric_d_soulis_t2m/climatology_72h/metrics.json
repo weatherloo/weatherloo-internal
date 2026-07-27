@@ -1,0 +1,39 @@
+{
+  "station": "eric_d_soulis",
+  "variable": "t2m",
+  "method": "climatology",
+  "lead_time": 72,
+  "best_params": {
+    "seq_len": 12,
+    "hidden_size": 32,
+    "num_layers": 1,
+    "dropout": 0.23041853615792973,
+    "lr": 0.00021142494632211498,
+    "batch_size": 16,
+    "patience": 10,
+    "max_norm": 1.0
+  },
+  "n_samples": 1239,
+  "n_sequences": 1227,
+  "split": {
+    "train": 858,
+    "val": 184,
+    "test": 185
+  },
+  "epochs_trained": 116,
+  "best_val_loss": 0.17900295928120613,
+  "metrics_normalized": {
+    "rmse": 0.4888280928134918,
+    "mae": 0.36931779980659485,
+    "bias": -0.05265156552195549
+  },
+  "metrics_original": {
+    "rmse": 3.526901960372925,
+    "mae": 2.66463303565979,
+    "bias": -0.3798818290233612
+  },
+  "original_sweep_best_rmse": 3.4003746509552,
+  "original_sweep_source": "output\\eric_d_soulis_t2m\\climatology_72h\\sweep_results.json",
+  "device": "cpu",
+  "retrained_at": "2026-07-15T23:45:38Z"
+}

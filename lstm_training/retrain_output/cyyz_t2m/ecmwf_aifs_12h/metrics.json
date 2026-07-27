@@ -1,0 +1,39 @@
+{
+  "station": "cyyz",
+  "variable": "t2m",
+  "method": "ecmwf_aifs",
+  "lead_time": 12,
+  "best_params": {
+    "seq_len": 24,
+    "hidden_size": 128,
+    "num_layers": 1,
+    "dropout": 0.014163441779687345,
+    "lr": 0.0032352659636577367,
+    "batch_size": 32,
+    "patience": 15,
+    "max_norm": 2.0
+  },
+  "n_samples": 1450,
+  "n_sequences": 1426,
+  "split": {
+    "train": 998,
+    "val": 213,
+    "test": 215
+  },
+  "epochs_trained": 25,
+  "best_val_loss": 0.6409624037048627,
+  "metrics_normalized": {
+    "rmse": 0.834112823009491,
+    "mae": 0.6254505515098572,
+    "bias": 0.025373458862304688
+  },
+  "metrics_original": {
+    "rmse": 1.0860910415649414,
+    "mae": 0.8143936991691589,
+    "bias": 0.03303855285048485
+  },
+  "original_sweep_best_rmse": 1.077919840812683,
+  "original_sweep_source": "ecmwf_aifs.zip:ecmwf_aifs_12h/sweep_results.json",
+  "device": "cpu",
+  "retrained_at": "2026-07-12T22:40:43Z"
+}

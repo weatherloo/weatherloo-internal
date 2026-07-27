@@ -1,0 +1,39 @@
+{
+  "station": "cyyz",
+  "variable": "t2m",
+  "method": "climatology",
+  "lead_time": 12,
+  "best_params": {
+    "seq_len": 48,
+    "hidden_size": 256,
+    "num_layers": 2,
+    "dropout": 0.0845031766515205,
+    "lr": 0.003958392338815193,
+    "batch_size": 16,
+    "patience": 10,
+    "max_norm": 2.0
+  },
+  "n_samples": 1458,
+  "n_sequences": 1410,
+  "split": {
+    "train": 986,
+    "val": 211,
+    "test": 213
+  },
+  "epochs_trained": 15,
+  "best_val_loss": 0.24838723842566612,
+  "metrics_normalized": {
+    "rmse": 0.5828505158424377,
+    "mae": 0.45566025376319885,
+    "bias": -0.2096398025751114
+  },
+  "metrics_original": {
+    "rmse": 2.4739816188812256,
+    "mae": 1.934106707572937,
+    "bias": -0.8898424506187439
+  },
+  "original_sweep_best_rmse": 2.167647361755371,
+  "original_sweep_source": "climatology.zip:climatology_12h/sweep_results.json",
+  "device": "cpu",
+  "retrained_at": "2026-07-12T22:40:35Z"
+}

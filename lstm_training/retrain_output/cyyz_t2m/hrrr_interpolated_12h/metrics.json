@@ -1,0 +1,39 @@
+{
+  "station": "cyyz",
+  "variable": "t2m",
+  "method": "hrrr_interpolated",
+  "lead_time": 12,
+  "best_params": {
+    "seq_len": 12,
+    "hidden_size": 32,
+    "num_layers": 3,
+    "dropout": 0.08318870722350212,
+    "lr": 0.0027694138353161085,
+    "batch_size": 16,
+    "patience": 20,
+    "max_norm": 1.0
+  },
+  "n_samples": 1458,
+  "n_sequences": 1446,
+  "split": {
+    "train": 1012,
+    "val": 216,
+    "test": 218
+  },
+  "epochs_trained": 36,
+  "best_val_loss": 0.47295405136214363,
+  "metrics_normalized": {
+    "rmse": 0.8094080090522766,
+    "mae": 0.613291323184967,
+    "bias": -0.14437425136566162
+  },
+  "metrics_original": {
+    "rmse": 1.3888535499572754,
+    "mae": 1.0523391962051392,
+    "bias": -0.2477300465106964
+  },
+  "original_sweep_best_rmse": 1.3128911256790161,
+  "original_sweep_source": "hrrr_interpolated.zip:hrrr_interpolated_12h/sweep_results.json",
+  "device": "cpu",
+  "retrained_at": "2026-07-12T22:42:33Z"
+}

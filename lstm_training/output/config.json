@@ -1,0 +1,45 @@
+{
+  "npz": "benchmarking-site/data/gfs_interpolated/gfs_interpolated_2025.npz",
+  "station": "cyyz",
+  "variable": "t2m",
+  "lead_time": 6,
+  "seq_len": 24,
+  "hidden_size": 64,
+  "num_layers": 2,
+  "dropout": 0.1,
+  "lr": 0.001,
+  "batch_size": 32,
+  "max_epochs": 200,
+  "patience": 15,
+  "max_norm": 1.0,
+  "normalization": {
+    "mean": -0.7753114700317383,
+    "std": 1.547493577003479
+  },
+  "n_samples": 1459,
+  "n_sequences": 1435,
+  "split": {
+    "train": 1004,
+    "val": 215,
+    "test": 216
+  },
+  "epochs_trained": 20,
+  "best_val_loss": 0.5599345057509666,
+  "device": "cpu",
+  "metrics_normalized": {
+    "rmse": 0.7740639448165894,
+    "mae": 0.5982643365859985,
+    "bias": 0.08567622303962708
+  },
+  "metrics_original": {
+    "rmse": 1.1978590488433838,
+    "mae": 0.9258102178573608,
+    "bias": 0.1325834095478058
+  },
+  "baseline_metrics": {
+    "rmse": 1.34149169921875,
+    "mae": 1.0164285898208618,
+    "bias": 0.5450769066810608
+  },
+  "trained_at": "2026-06-25T21:04:07Z"
+}

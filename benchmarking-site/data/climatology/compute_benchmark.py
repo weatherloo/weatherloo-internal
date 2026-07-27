@@ -57,9 +57,9 @@ def parse_utc(s: str) -> datetime:
     return datetime.fromisoformat(s.replace("Z", "+00:00")).astimezone(timezone.utc)
 
 
-def load_observations(station_id: str) -> dict[str, dict[str, float | None]]:
-    """Load 2025 observations for verification."""
-    path = OBS_ROOT / station_id / "observations_6h_2025.json"
+def load_observations(station_id: str, year: int) -> dict[str, dict[str, float | None]]:
+    """Load verification-year observations."""
+    path = OBS_ROOT / station_id / f"observations_6h_{year}.json"
     data = json.loads(path.read_text())
     return {
         row["valid_time"]: {
@@ -195,6 +195,11 @@ def init_filename(init_dt: datetime) -> str:
 def init_json_paths(out_dir: Path, year: int) -> list[Path]:
     """Per-init JSON files for the current naming scheme."""
     return sorted(out_dir.glob(f"{year}-*T*Z.json"))
+
+
+def all_init_json_paths(out_dir: Path) -> list[Path]:
+    """Per-init JSON files across all years (for index.json)."""
+    return sorted(out_dir.glob("????-??-??T??Z.json"))
 
 
 def build_init_json(
@@ -466,7 +471,7 @@ def main() -> None:
         )
 
     # Load verification-year observations
-    obs = {sid: load_observations(sid) for sid in STATIONS}
+    obs = {sid: load_observations(sid, args.year) for sid in STATIONS}
 
     cycle_hours = INIT_HOURS_UTC
     if args.cycles:
@@ -476,7 +481,8 @@ def main() -> None:
     inits = [d for d in inits if d.hour in cycle_hours]
     if args.dry_run:
         inits = [
-            datetime(2025, 1, 15, hour, tzinfo=timezone.utc) for hour in cycle_hours
+            datetime(args.year, 1, 15, hour, tzinfo=timezone.utc)
+            for hour in cycle_hours
         ]
     if args.start_date:
         start = parse_utc(f"{args.start_date}T00:00:00Z")
@@ -512,7 +518,7 @@ def main() -> None:
                     raise
 
     write_metadata(out_dir, args.year, clim_years)
-    existing = sorted(p.name for p in init_json_paths(out_dir, args.year))
+    existing = sorted(p.name for p in all_init_json_paths(out_dir))
     write_index(out_dir, existing)
     export_npz(out_dir, args.year)
     print(f"Done. {len(existing)} init files, index.json updated.")
