@@ -41,40 +41,6 @@ export const METHODS = [
   { id: "pangu", label: "Pangu-Weather" },
 ];
 
-/**
- * Series shown in the retrospective hindcast view, in fixed draw order.
- * `actual` is ground truth rather than a peer forecast, so it carries neutral
- * ink and a heavier stroke; the three forecasts take categorical slots 1-3.
- * Colors resolve from CSS custom properties so light/dark swap in one place.
- */
-export const HINDCAST_SERIES = [
-  {
-    key: "actual",
-    label: "What actually happened",
-    varName: "--viz-actual",
-    fallback: "#0b0b0b",
-    emphasis: true,
-  },
-  {
-    key: "reference",
-    label: "Forecast you'd have seen",
-    varName: "--viz-series-1",
-    fallback: "#2a78d6",
-  },
-  {
-    key: "ours",
-    label: "What we'd have predicted",
-    varName: "--viz-series-2",
-    fallback: "#eb6834",
-  },
-  {
-    key: "raw_model",
-    label: "Raw model (uncorrected)",
-    varName: "--viz-series-3",
-    fallback: "#1baf7a",
-  },
-];
-
 export const METRIC_TITLES = {
   rmse: "RMSE",
   mae: "MAE",

@@ -1,16 +1,10 @@
 import { useCallback, useState } from "react";
 import DetailPanel from "./components/DetailPanel.jsx";
-import HindcastPanel from "./components/HindcastPanel.jsx";
 import StationMap from "./components/StationMap.jsx";
 import { LOCATION_LABELS } from "./constants.js";
 
-/** Whole-day leads only -- the public-forecast archive has no sub-daily offsets. */
-const HINDCAST_LEADS = [24, 48, 72];
-const HINDCAST_METHOD = "ecmwf_aifs";
-
 export default function App() {
   const [locationId, setLocationId] = useState(null);
-  const [lead, setLead] = useState(48);
 
   const selectLocation = useCallback((id) => {
     setLocationId(id);
@@ -41,30 +35,7 @@ export default function App() {
           <p id="selected-location">{selectedLabel}</p>
         </section>
 
-        {locationId ? (
-          <>
-            <div className="hindcast-controls">
-              <label htmlFor="hindcast-lead">Lead time</label>
-              <select
-                id="hindcast-lead"
-                value={lead}
-                onChange={(e) => setLead(Number(e.target.value))}
-              >
-                {HINDCAST_LEADS.map((h) => (
-                  <option key={h} value={h}>
-                    {h}h
-                  </option>
-                ))}
-              </select>
-            </div>
-            <HindcastPanel
-              locationId={locationId}
-              method={HINDCAST_METHOD}
-              lead={lead}
-            />
-            <DetailPanel locationId={locationId} />
-          </>
-        ) : null}
+        {locationId ? <DetailPanel locationId={locationId} /> : null}
       </main>
     </>
   );
