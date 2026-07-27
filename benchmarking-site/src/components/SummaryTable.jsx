@@ -8,10 +8,19 @@ import {
 } from "../constants.js";
 import { loadMethodData } from "../lib/benchmarkData.js";
 
+/** Match linear_regression MIN_PAIRS — low-n scores must not enter the ranking. */
+const MIN_SAMPLES_FOR_RANK = 30;
+
 function formatValue(metric, value) {
   if (value === null || value === undefined) return "—";
   if (metric === "acc") return (value === null ? "—" : value.toFixed(2));
   return Number.isFinite(value) ? value.toFixed(2) : "—";
+}
+
+function statusLabel(status) {
+  if (status === "insufficient") return "Insufficient data";
+  if (status === "unavailable") return "Unavailable";
+  return null;
 }
 
 export default function SummaryTable({ locationId, filters = {} }) {
@@ -51,20 +60,29 @@ export default function SummaryTable({ locationId, filters = {} }) {
           if (arr && typeof arr[leadIndex] === "number") value = arr[leadIndex];
           if (agg.n_samples && Array.isArray(agg.n_samples)) sample = agg.n_samples[leadIndex] ?? null;
         }
-        return { id: r.id, label: r.label, value, sample, nInits };
+        // Prefer per-lead n_samples; fall back to nInits (same column as Samples).
+        const sampleCount = typeof sample === "number" ? sample : nInits;
+        let status = "unavailable";
+        if (typeof value === "number") {
+          status =
+            typeof sampleCount === "number" && sampleCount < MIN_SAMPLES_FOR_RANK
+              ? "insufficient"
+              : "ok";
+        }
+        return { id: r.id, label: r.label, value, sample, nInits, status };
       });
 
       // Sorting per metric semantics
       const cmp = (a, b) => {
-        const av = a.value;
-        const bv = b.value;
-        // Unavailable values go last
-        const aAvail = typeof av === "number";
-        const bAvail = typeof bv === "number";
+        const aAvail = a.status === "ok";
+        const bAvail = b.status === "ok";
+        // Non-rankable (unavailable / insufficient data) go last
         if (aAvail && !bAvail) return -1;
         if (!aAvail && bAvail) return 1;
         if (!aAvail && !bAvail) return a.label.localeCompare(b.label);
 
+        const av = a.value;
+        const bv = b.value;
         if (metric === "rmse" || metric === "mae") {
           return av - bv;
         }
@@ -130,10 +148,10 @@ export default function SummaryTable({ locationId, filters = {} }) {
             <tr><td colSpan={4}>Loading…</td></tr>
           )}
           {!loading && rows.map((r, i) => (
-            <tr key={r.id} className={r.value === null ? "unavailable" : "available"}>
-              <td>{r.value === null ? "—" : i + 1}</td>
+            <tr key={r.id} className={r.status === "ok" ? "available" : "unavailable"}>
+              <td>{r.status === "ok" ? i + 1 : "—"}</td>
               <td>{r.label}</td>
-              <td>{r.value === null ? "Unavailable" : formatValue(metric, r.value)}</td>
+              <td>{r.status === "ok" ? formatValue(metric, r.value) : statusLabel(r.status)}</td>
               <td>{r.sample ?? r.nInits ?? "—"}</td>
             </tr>
           ))}
