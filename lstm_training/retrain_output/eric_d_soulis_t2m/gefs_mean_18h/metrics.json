@@ -14,26 +14,26 @@
     "max_norm": 2.0
   },
   "n_samples": 1248,
-  "n_sequences": 1236,
+  "n_sequences": 1234,
   "split": {
-    "train": 865,
+    "train": 863,
     "val": 185,
     "test": 186
   },
-  "epochs_trained": 25,
-  "best_val_loss": 0.5707097515866563,
+  "epochs_trained": 29,
+  "best_val_loss": 0.560466809047235,
   "metrics_normalized": {
-    "rmse": 0.8729693293571472,
-    "mae": 0.6036427617073059,
-    "bias": -0.0044059292413294315
+    "rmse": 0.942890465259552,
+    "mae": 0.5887141227722168,
+    "bias": -0.07776656001806259
   },
   "metrics_original": {
-    "rmse": 2.1404919624328613,
-    "mae": 1.4801124334335327,
-    "bias": -0.01080323290079832
+    "rmse": 2.311936140060425,
+    "mae": 1.4435076713562012,
+    "bias": -0.1906810700893402
   },
   "original_sweep_best_rmse": 2.038790702819824,
-  "original_sweep_source": "output\\eric_d_soulis_t2m\\gefs_mean_18h\\sweep_results.json",
+  "original_sweep_source": "output/eric_d_soulis_t2m/gefs_mean_18h/sweep_results.json",
   "device": "cpu",
-  "retrained_at": "2026-07-16T00:02:27Z"
+  "retrained_at": "2026-07-27T09:07:27Z"
 }
