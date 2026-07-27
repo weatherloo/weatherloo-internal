@@ -120,7 +120,25 @@ Adding it roughly doubles the error instead of removing it.
   corrected grid to the station — not the other way round.
 - **Reusing fetched data:** pass `--data-dir` (or set `$UNET_DATA_DIR`) to the
   cache built by `models/unet/run_pipeline.py fetch`; cached samples need no
-  download.
+  download. Either the parent or the `unet_training/` directory itself works.
+  The run prints its cache-hit count on startup — if that says `0`, the
+  `--data-dir` is wrong and the job is about to re-download the year from AWS.
+
+**Running a full year on WATcloud Slurm:**
+
+```bash
+sbatch benchmarking-site/data/unet/run_benchmark.slurm            # single node
+sbatch --array=1-8 benchmarking-site/data/unet/run_benchmark.slurm  # sharded
+sbatch --dependency=afterok:<jobid> \
+    benchmarking-site/data/unet/finalize_benchmark.slurm
+```
+
+`DATA_DIR`, `YEAR`, and `WORKERS` are overridable (`--export=ALL,YEAR=2024`).
+Array tasks pass `--shard i/N --no-export`, so they take disjoint slices and
+leave `index.json` / the NPZ to the finalize job — concurrent shards would
+otherwise race and each publish a partial index. Failed inits land in
+`failures.json` rather than killing the job; re-run with `--resume` to retry
+just those.
 
 **Coverage.** The checkpoint only ever saw `init_hours_utc` and
 `forecast_hours` from `config.yaml` — **00/12Z at f006–f024**. The other cells

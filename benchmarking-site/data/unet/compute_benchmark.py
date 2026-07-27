@@ -70,7 +70,14 @@ def _bootstrap(data_dir: Path | None) -> None:
     script reuse whatever ``run_pipeline.py fetch`` already downloaded.
     """
     if data_dir is not None:
-        os.environ["UNET_DATA_DIR"] = str(data_dir)
+        d = Path(data_dir).expanduser().resolve()
+        # dataset.py appends "unet_training" to $UNET_DATA_DIR. Pointing --data-dir
+        # straight at the sample directory is the obvious thing to do and would
+        # otherwise resolve to <dir>/unet_training, miss every cached sample, and
+        # silently re-download the whole year — so accept either form.
+        if d.name == "unet_training":
+            d = d.parent
+        os.environ["UNET_DATA_DIR"] = str(d)
     for sub in ("data", "model", "."):
         p = str((MODEL_DIR / sub).resolve())
         if p not in sys.path:
@@ -436,6 +443,13 @@ def main() -> None:
     )
     parser.add_argument("--shard", type=str, default=None, metavar="I/N")
     parser.add_argument("--export-npz-only", action="store_true")
+    parser.add_argument(
+        "--no-export",
+        action="store_true",
+        help="Skip the index/NPZ write at the end. Use for concurrent shards, "
+        "which would otherwise race and each publish a partial index; run one "
+        "--export-npz-only pass afterwards.",
+    )
     args = parser.parse_args()
 
     out_dir = OUT_DIR
@@ -482,6 +496,17 @@ def main() -> None:
     print(f"Trained cycles {sorted(trained_cycles)}Z, leads "
           f"{cfg['data']['gfs']['forecast_hours']}h"
           f"{' (IGNORED: --all-cells)' if args.all_cells else ''}")
+
+    # A mis-pointed --data-dir is invisible otherwise: every lookup just misses
+    # and the run quietly re-downloads the year from AWS at ~100x the runtime.
+    from dataset import CACHE_DIR  # noqa: E402
+
+    n_cached = sum(1 for _ in CACHE_DIR.glob(f"{args.year}-*.npz")) if CACHE_DIR.is_dir() else 0
+    print(f"Sample cache {CACHE_DIR}: {n_cached} cached {args.year} sample(s)")
+    if n_cached == 0:
+        print("  WARNING: no cached samples for this year — every lead will be "
+              "downloaded from AWS. Check --data-dir / $UNET_DATA_DIR.")
+
     print(f"Processing {len(inits)} initializations -> {out_dir}")
 
     started, done, skipped = time.monotonic(), 0, 0
@@ -525,8 +550,12 @@ def main() -> None:
 
     write_metadata(out_dir, args.year, args.checkpoint, meta, cfg, args.all_cells)
     existing = sorted(p.name for p in init_json_paths(out_dir, args.year))
-    write_index(out_dir, existing)
-    export_npz(out_dir, args.year)
+    if args.no_export:
+        print(f"--no-export: wrote init JSON only ({len(existing)} present). "
+              f"Finalize with --export-npz-only once all shards are done.")
+    else:
+        write_index(out_dir, existing)
+        export_npz(out_dir, args.year)
 
     if skipped:
         print(f"Skipped {skipped} existing init(s) (--resume).")

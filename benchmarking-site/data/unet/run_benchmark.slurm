@@ -1,0 +1,61 @@
+#!/bin/bash
+# U-Net dashboard benchmark over a full year, on WATcloud Slurm.
+#
+#   sbatch benchmarking-site/data/unet/run_benchmark.slurm
+#
+# Shard across nodes with a job array (each task takes a disjoint slice of the
+# initializations; --no-export keeps them from racing on index.json/NPZ):
+#
+#   sbatch --array=1-8 benchmarking-site/data/unet/run_benchmark.slurm
+#
+# then finalize once, after the array finishes:
+#
+#   sbatch --dependency=afterok:<array_jobid> \
+#       benchmarking-site/data/unet/finalize_benchmark.slurm
+#
+# Tunables (all overridable via --export, e.g. --export=ALL,YEAR=2024):
+#   DATA_DIR  cache from `run_pipeline.py fetch` (parent of unet_training/)
+#   YEAR      benchmark year (default 2025)
+#   WORKERS   worker processes; keep <= --cpus-per-task
+#
+#SBATCH --job-name=unet-benchmark
+#SBATCH --partition=compute
+#SBATCH --nodes=1
+#SBATCH --ntasks=1
+#SBATCH --cpus-per-task=6
+#SBATCH --mem=16G
+#SBATCH --time=08:00:00
+#SBATCH --output=/home/c52li/weatherloo-internal/benchmarking-site/data/unet/slurm_logs/%x-%A_%a.out
+#SBATCH --error=/home/c52li/weatherloo-internal/benchmarking-site/data/unet/slurm_logs/%x-%A_%a.err
+
+set -euo pipefail
+
+REPO=/home/c52li/weatherloo-internal
+cd "$REPO"
+mkdir -p benchmarking-site/data/unet/slurm_logs
+
+DATA_DIR="${DATA_DIR:-/mnt/wato-drive/c52li/weatherloo-data/unet}"
+YEAR="${YEAR:-2025}"
+WORKERS="${WORKERS:-${SLURM_CPUS_PER_TASK:-6}}"
+
+source "$REPO/.venv/bin/activate"
+
+# Each worker is a process; without this, BLAS spawns a thread pool per worker
+# and they fight over the allocated cores.
+export OMP_NUM_THREADS=1
+export MKL_NUM_THREADS=1
+
+ARGS=(
+  --year "$YEAR"
+  --data-dir "$DATA_DIR"
+  --workers "$WORKERS"
+  --resume
+)
+
+# In an array job take this task's slice and leave publishing to the finalize
+# step; a lone job does the whole year and publishes itself.
+if [[ -n "${SLURM_ARRAY_TASK_ID:-}" ]]; then
+  ARGS+=(--shard "${SLURM_ARRAY_TASK_ID}/${SLURM_ARRAY_TASK_COUNT}" --no-export)
+fi
+
+srun python3 benchmarking-site/data/unet/compute_benchmark.py "${ARGS[@]}"
