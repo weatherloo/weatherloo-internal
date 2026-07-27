@@ -64,3 +64,10 @@ fi
 echo "job ${SLURM_JOB_ID} on $(hostname) | log: ${SLURM_SUBMIT_DIR:-$REPO}/benchmarking-site/data/unet/slurm_logs/${SLURM_JOB_NAME}-${SLURM_JOB_ID}.out"
 
 srun python3 benchmarking-site/data/unet/compute_benchmark.py "${ARGS[@]}"
+
+# The dashboard reads aggregate.json in preference to the per-init JSON, so a
+# run that stops after writing the NPZ still shows the previous run's numbers.
+# Array tasks leave this to finalize_benchmark.slurm; a lone job finishes here.
+if [[ -z "${SLURM_ARRAY_TASK_ID:-}" ]]; then
+  bash benchmarking-site/scripts/build_static_aggregates.sh --methods unet
+fi
