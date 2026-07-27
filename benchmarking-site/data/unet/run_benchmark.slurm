@@ -25,8 +25,11 @@
 #SBATCH --cpus-per-task=6
 #SBATCH --mem=16G
 #SBATCH --time=08:00:00
-#SBATCH --output=/home/c52li/weatherloo-internal/benchmarking-site/data/unet/slurm_logs/%x-%A_%a.out
-#SBATCH --error=/home/c52li/weatherloo-internal/benchmarking-site/data/unet/slurm_logs/%x-%A_%a.err
+# %j, not %A_%a: for a non-array job %a expands to the NO_VAL sentinel and you
+# get "...-12345_4294967294.out". %j is the per-task job id, so array tasks
+# still land in separate files; the script logs its own shard index below.
+#SBATCH --output=/home/c52li/weatherloo-internal/benchmarking-site/data/unet/slurm_logs/%x-%j.out
+#SBATCH --error=/home/c52li/weatherloo-internal/benchmarking-site/data/unet/slurm_logs/%x-%j.err
 
 set -euo pipefail
 
@@ -56,6 +59,8 @@ ARGS=(
 # step; a lone job does the whole year and publishes itself.
 if [[ -n "${SLURM_ARRAY_TASK_ID:-}" ]]; then
   ARGS+=(--shard "${SLURM_ARRAY_TASK_ID}/${SLURM_ARRAY_TASK_COUNT}" --no-export)
+  echo "shard ${SLURM_ARRAY_TASK_ID}/${SLURM_ARRAY_TASK_COUNT} (array ${SLURM_ARRAY_JOB_ID})"
 fi
+echo "job ${SLURM_JOB_ID} on $(hostname) | log: ${SLURM_SUBMIT_DIR:-$REPO}/benchmarking-site/data/unet/slurm_logs/${SLURM_JOB_NAME}-${SLURM_JOB_ID}.out"
 
 srun python3 benchmarking-site/data/unet/compute_benchmark.py "${ARGS[@]}"
