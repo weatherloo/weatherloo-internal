@@ -1,0 +1,39 @@
+{
+  "station": "cyyz",
+  "variable": "t2m",
+  "method": "gfs_interpolated",
+  "lead_time": 6,
+  "best_params": {
+    "seq_len": 12,
+    "hidden_size": 128,
+    "num_layers": 1,
+    "dropout": 0.17615322504233458,
+    "lr": 0.00546201783332159,
+    "batch_size": 32,
+    "patience": 20,
+    "max_norm": 0.5
+  },
+  "n_samples": 1459,
+  "n_sequences": 1447,
+  "split": {
+    "train": 1012,
+    "val": 217,
+    "test": 218
+  },
+  "epochs_trained": 31,
+  "best_val_loss": 0.4924344255627575,
+  "metrics_normalized": {
+    "rmse": 0.7473801970481873,
+    "mae": 0.5798033475875854,
+    "bias": 0.006749415770173073
+  },
+  "metrics_original": {
+    "rmse": 1.1565660238265991,
+    "mae": 0.89724200963974,
+    "bias": 0.010444702580571175
+  },
+  "original_sweep_best_rmse": 1.1116299629211426,
+  "original_sweep_source": "gfs_interpolated.zip:gfs_interpolated_6h/sweep_results.json",
+  "device": "cpu",
+  "retrained_at": "2026-07-12T22:41:42Z"
+}

@@ -1,0 +1,39 @@
+{
+  "station": "eric_d_soulis",
+  "variable": "t2m",
+  "method": "gfs_interpolated",
+  "lead_time": 72,
+  "best_params": {
+    "seq_len": 24,
+    "hidden_size": 256,
+    "num_layers": 1,
+    "dropout": 0.13893176966630089,
+    "lr": 0.007162517010262425,
+    "batch_size": 64,
+    "patience": 15,
+    "max_norm": 1.0
+  },
+  "n_samples": 1239,
+  "n_sequences": 1204,
+  "split": {
+    "train": 842,
+    "val": 180,
+    "test": 182
+  },
+  "epochs_trained": 18,
+  "best_val_loss": 0.7187117146121131,
+  "metrics_normalized": {
+    "rmse": 1.0419635772705078,
+    "mae": 0.7103821635246277,
+    "bias": -0.24309313297271729
+  },
+  "metrics_original": {
+    "rmse": 3.120637893676758,
+    "mae": 2.127565383911133,
+    "bias": -0.7280538082122803
+  },
+  "original_sweep_best_rmse": 2.638803243637085,
+  "original_sweep_source": "output/eric_d_soulis_t2m/gfs_interpolated_72h/sweep_results.json",
+  "device": "cpu",
+  "retrained_at": "2026-07-27T09:14:05Z"
+}

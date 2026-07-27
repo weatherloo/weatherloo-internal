@@ -1,0 +1,39 @@
+{
+  "station": "cyyz",
+  "variable": "t2m",
+  "method": "gefs_mean",
+  "lead_time": 6,
+  "best_params": {
+    "seq_len": 12,
+    "hidden_size": 32,
+    "num_layers": 1,
+    "dropout": 0.18276390747963073,
+    "lr": 0.0010337863079288615,
+    "batch_size": 64,
+    "patience": 25,
+    "max_norm": 2.0
+  },
+  "n_samples": 1459,
+  "n_sequences": 1447,
+  "split": {
+    "train": 1012,
+    "val": 217,
+    "test": 218
+  },
+  "epochs_trained": 54,
+  "best_val_loss": 0.4286248939377921,
+  "metrics_normalized": {
+    "rmse": 0.6632938385009766,
+    "mae": 0.5181494951248169,
+    "bias": -0.10783561319112778
+  },
+  "metrics_original": {
+    "rmse": 1.1425926685333252,
+    "mae": 0.892566442489624,
+    "bias": -0.1857580691576004
+  },
+  "original_sweep_best_rmse": 1.114027976989746,
+  "original_sweep_source": "gefs_mean.zip:gefs_mean_6h/sweep_results.json",
+  "device": "cpu",
+  "retrained_at": "2026-07-12T22:40:57Z"
+}

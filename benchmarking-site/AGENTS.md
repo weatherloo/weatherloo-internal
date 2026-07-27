@@ -17,7 +17,7 @@ npm run dev
 
 Open http://localhost:5173 — click a station on the map, pick a method, view RMSE / MAE / bias / ACC vs lead time. The UI **averages** metrics across all loaded init files for the selected location.
 
-When a method has a consolidated `<method_id>_2025.npz`, the dashboard loads its precomputed **static aggregate** (`data/<method_id>/aggregate.json`, built by `scripts/build_static_aggregates.py` — run automatically by `npm run build`, or manually via `bash scripts/build_static_aggregates.sh`). There is no API server; cycle/month filters recombine the aggregate's per-(month × cycle) partial sums client-side. Without NPZ (or for non-month-aligned custom ranges), it falls back to per-init JSON (via `index.json` or sample file).
+When a method has a consolidated `<method_id>_2025.npz`, the dashboard loads its precomputed **site aggregate** (`data/aggregates/<method_id>.json`, built by `scripts/build_site_aggregates.py` at the **repo root** — also `npm run build:data`). Cycle/month filters recombine its per-(month × cycle) partial sums client-side, so the site needs no backend. Without an aggregate it falls back to per-init JSON (via `index.json` or sample file), which is hundreds of sequential fetches — always build the aggregate.
 
 Rebuild the consolidated NPZ from existing JSON without re-fetching:
 
@@ -28,7 +28,7 @@ python3 data/gfs_interpolated/compute_benchmark.py --export-npz-only
 After (re)building an NPZ, refresh the static aggregate:
 
 ```bash
-bash scripts/build_static_aggregates.sh --methods <method_id>
+npm run build:data       # or: python3 ../scripts/build_site_aggregates.py
 ```
 
 Production build (bundles `dist/` with `aggregate.json` files copied in; see `DEPLOY.md` for Vercel):
@@ -88,6 +88,7 @@ Rebuild NPZ from existing JSON without re-fetching:
 | `ecmwf_aifs` | `data/ecmwf_aifs/compute_benchmark.py` | ECMWF AIFS Single 0.25° at **00/06/12/18Z** via [dynamical.org catalog](https://dynamical.org/catalog/ecmwf-aifs-single-forecast/) (`dynamical-catalog`); 6-hourly steps; bilinear interp of `temperature_2m` / `wind_u_10m` / `wind_v_10m`. Archive 2024-04-01–present includes full 2025. `--resume` skips existing init JSONs. |
 | `gefs_mean` | `data/gefs_mean/compute_benchmark.py` | GEFS **ensemble mean** (`geavg`) at **0.5°** from AWS `noaa-gefs-pds`; 00/06/12/18Z; bilinear interp; wind from 10 m u/v. Pre-averaged 21-member mean on grid — no per-member downloads. `--resume` skips existing init JSONs. |
 | `unet` | `data/unet/compute_benchmark.py` | **U-Net post-processing of GFS** (`models/unet/`). Thin adapter over the real model code; `corrected = GFS − predicted_residual` on the 21×41 southern Ontario grid, then interpolated to the station. Scored over the checkpoint’s recorded `sample_space` (now 00/06/12/18Z, f006–f048); other cells null unless `--all-cells`. Reuses `run_pipeline.py fetch` output via `--data-dir`. See **U-Net post-processing** below. |
+| `cnn_lstm_bias_correction` | `data/cnn_lstm_bias_correction/compute_benchmark.py` | Scores the trained CNN-LSTM (`src/hrrr_bias_correction`) on the 2025 **test** split. Predicts HRRR-minus-obs bias; scores `corrected = HRRR − bias`. Reads the Keras model + Zarr store — no GRIB download. **eric_d_soulis only** (model is Soulis-trained; `cyyz` null by design); horizon **f48** (leads 54–72h null by design). Needs the model trained first (`scripts/submit_training_slurm.sh`). `--model-path`/`--zarr-store` override defaults; `--resume`/`--export-npz-only` as usual. |
 
 Add a row here when implementing other methods.
 
@@ -241,7 +242,7 @@ The dashboard **averages over whatever loads**; sparse or in-progress datasets a
 
 ### NPZ export
 
-Compute scripts write a **single consolidated NPZ** alongside the per-init JSON files. The dashboard reads NPZ **indirectly via the static aggregate** `data/<method_id>/aggregate.json` built from it by `scripts/build_static_aggregates.py` (part of `npm run build`); without NPZ it falls back to per-init JSON. `server/npz_api.py` is a legacy local tool (run manually with `bash server/run_api.sh`) kept for ad-hoc NPZ inspection; nothing in the site calls it anymore.
+Compute scripts write a **single consolidated NPZ** alongside the per-init JSON files. The dashboard reads NPZ **indirectly via the site aggregate** `data/aggregates/<method_id>.json`, built from it by `scripts/build_site_aggregates.py` (repo root); without NPZ it falls back to per-init JSON. `server/npz_api.py` is a legacy local tool (run manually with `bash server/run_api.sh`) kept for ad-hoc NPZ inspection; nothing in the site calls it anymore.
 
 - **Filename:** `data/<method_id>/<method_id>_<year>.npz` (e.g. `gfs_interpolated_2025.npz`).
 - **Document in** `data/<method_id>/metadata.json` via `"npz_file"` and `"npz_schema": "see benchmarking-site/AGENTS.md"`.
@@ -307,6 +308,7 @@ Full coverage below is the goal for a **finished** method; incomplete cycles, le
 | HRDPS analysis | `hrdps_analysis` |
 | HRRR interpolated | `hrrr_interpolated` |
 | HRRR analysis | `hrrr_analysis` |
+| CNN-LSTM bias correction | `cnn_lstm_bias_correction` |
 | ECMWF AIFS | `ecmwf_aifs` |
 | GraphCast | `graphcast` |
 | Pangu-Weather | `pangu` |

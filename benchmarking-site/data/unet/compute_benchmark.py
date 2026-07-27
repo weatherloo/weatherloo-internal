@@ -609,7 +609,7 @@ def main() -> None:
     if skipped:
         print(f"Skipped {skipped} existing init(s) (--resume).")
     print(f"Done in {format_eta(time.monotonic() - started)}. {len(existing)} init files.")
-    print("Next: bash benchmarking-site/scripts/build_static_aggregates.sh --methods unet")
+    print("Next: python3 scripts/build_site_aggregates.py  (writes benchmarking-site/data/aggregates/unet.json)")
 
     if failures:
         (out_dir / "failures.json").write_text(json.dumps(failures, indent=2) + "\n")

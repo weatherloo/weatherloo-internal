@@ -1,0 +1,39 @@
+{
+  "station": "cyyz",
+  "variable": "t2m",
+  "method": "persistence",
+  "lead_time": 12,
+  "best_params": {
+    "seq_len": 48,
+    "hidden_size": 128,
+    "num_layers": 1,
+    "dropout": 0.03593611002187638,
+    "lr": 0.003945367746768184,
+    "batch_size": 64,
+    "patience": 20,
+    "max_norm": 2.0
+  },
+  "n_samples": 1458,
+  "n_sequences": 1410,
+  "split": {
+    "train": 986,
+    "val": 211,
+    "test": 213
+  },
+  "epochs_trained": 59,
+  "best_val_loss": 0.16627108824761558,
+  "metrics_normalized": {
+    "rmse": 0.4257517457008362,
+    "mae": 0.33520761132240295,
+    "bias": 0.030439717695116997
+  },
+  "metrics_original": {
+    "rmse": 2.2403509616851807,
+    "mae": 1.763898253440857,
+    "bias": 0.16017699241638184
+  },
+  "original_sweep_best_rmse": 2.194803237915039,
+  "original_sweep_source": "persistence.zip:persistence_12h/sweep_results.json",
+  "device": "cpu",
+  "retrained_at": "2026-07-12T22:43:59Z"
+}

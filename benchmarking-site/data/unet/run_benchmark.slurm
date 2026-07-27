@@ -69,5 +69,5 @@ srun python3 benchmarking-site/data/unet/compute_benchmark.py "${ARGS[@]}"
 # run that stops after writing the NPZ still shows the previous run's numbers.
 # Array tasks leave this to finalize_benchmark.slurm; a lone job finishes here.
 if [[ -z "${SLURM_ARRAY_TASK_ID:-}" ]]; then
-  bash benchmarking-site/scripts/build_static_aggregates.sh --methods unet
+  python3 scripts/build_site_aggregates.py
 fi

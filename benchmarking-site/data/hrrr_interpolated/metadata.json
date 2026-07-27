@@ -8,7 +8,7 @@
     "18Z"
   ],
   "grid": "3km CONUS Lambert conformal",
-  "year": 2025,
+  "year": 2026,
   "interpolation": "bilinear on projected LCC x/y axes (pyproj)",
   "wind": "sqrt(u10^2 + v10^2) from 10 m u/v components, m/s to km/h",
   "lead_times_hours": [
@@ -42,8 +42,8 @@
     72
   ],
   "lead_time_note": "HRRR forecasts for the 00/06/12/18Z cycles only extend to f48. Leads 54/60/66/72 h are null by design in every file -- a known HRRR limitation, NOT missing data to backfill later.",
-  "acc_climatology": "DOY + UTC-hour mean from 2025 station obs, \u00b115-day window",
+  "acc_climatology": "DOY + UTC-hour mean from 2026 station obs, \u00b115-day window",
   "source": "https://registry.opendata.aws/noaa-hrrr-pds/",
-  "npz_file": "hrrr_interpolated_2025.npz",
+  "npz_file": "hrrr_interpolated_2026.npz",
   "npz_schema": "see benchmarking-site/AGENTS.md"
 }

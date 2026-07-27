@@ -30,6 +30,6 @@ source "$REPO/.venv/bin/activate"
 python3 benchmarking-site/data/unet/compute_benchmark.py \
   --year "$YEAR" --data-dir "$DATA_DIR" --export-npz-only
 
-bash benchmarking-site/scripts/build_static_aggregates.sh --methods unet
+python3 scripts/build_site_aggregates.py
 
-echo "Commit benchmarking-site/data/unet/ to publish."
+echo "Commit benchmarking-site/data/unet/ and benchmarking-site/data/aggregates/ to publish."

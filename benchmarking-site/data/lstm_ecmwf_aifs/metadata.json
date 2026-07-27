@@ -1,0 +1,7 @@
+{
+  "method_id": "lstm_ecmwf_aifs",
+  "base_method": "ecmwf_aifs",
+  "description": "ecmwf_aifs after LSTM bias correction. Per-init value is actual_bias - predicted_bias, i.e. the error remaining after the correction.",
+  "coverage": "t2m only; leads limited to combos with a trained model",
+  "generated_from": "lstm_training/retrain_output"
+}

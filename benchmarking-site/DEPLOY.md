@@ -16,7 +16,7 @@ npm run build
 
 `npm run build` runs two steps:
 
-1. **`npm run build:aggregates`** — `scripts/build_static_aggregates.py`
+1. **`npm run build:data`** — `scripts/build_site_aggregates.py` (repo root)
    (via a wrapper that picks the repo `.venv` Python or any `python3` with
    numpy) reads each method's consolidated `<method_id>_<year>.npz` and
    writes `data/<method_id>/aggregate.json`: the mean across all inits per
@@ -52,14 +52,14 @@ After a method pipeline updates its per-init JSON + NPZ (e.g.
 ```bash
 cd benchmarking-site
 npm run build          # regenerates data/<method_id>/aggregate.json + dist/
-git add data/*/aggregate.json && git commit -m "chore: refresh static aggregates"
+git add data/aggregates/ && git commit -m "chore: refresh static aggregates"
 vercel --prod
 ```
 
 Only rebuild one method's aggregate if you prefer:
 
 ```bash
-bash scripts/build_static_aggregates.sh --methods gfs_interpolated
+python3 ../scripts/build_site_aggregates.py
 ```
 
 ## What works where

@@ -36,10 +36,12 @@ export const METHODS = [
   { id: "gfs_analysis", label: "GFS analysis" },
   { id: "hrdps_analysis", label: "HRDPS analysis" },
   { id: "hrrr_interpolated", label: "HRRR interpolated at station" },
+  { id: "cnn_lstm_bias_correction", label: "CNN-LSTM bias correction (HRRR)" },
   { id: "ecmwf_aifs", label: "ECMWF AIFS" },
   { id: "graphcast", label: "GraphCast" },
   { id: "pangu", label: "Pangu-Weather" },
-  { id: "unet", label: "U-Net post-processing (GFS)" },
+  { id: "unet", label: "U-Net residual correction" },
+  { id: "lstm_ecmwf_aifs", label: "ECMWF AIFS + LSTM bias correction" },
 ];
 
 export const METRIC_TITLES = {
@@ -53,6 +55,7 @@ export const METRIC_TITLES = {
 export const SOUTH_ONTARIO_EXTENT_4326 = [-84.85, 41.85, -77.75, 44.95];
 
 export const DATA_DIR = "/data";
+export const API_DIR = "/api/benchmark";
 
 export const TIME_PRESETS = [
   { value: "all", label: "All data" },

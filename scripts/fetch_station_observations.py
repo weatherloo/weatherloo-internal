@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import math
 import urllib.parse
 import urllib.request
 from datetime import datetime, timedelta, timezone
@@ -65,7 +66,10 @@ def six_hourly_targets(year: int) -> list[datetime]:
 
 
 def clean_metric(val: float | None, *, non_negative: bool = False) -> float | None:
-    if val is None or is_missing(val):
+    # NaN compares False against every threshold, so it slips past is_missing()
+    # and the non_negative guard alike; json.dump would then emit a bare NaN
+    # literal, which is invalid JSON and throws in JSON.parse.
+    if val is None or not math.isfinite(val) or is_missing(val):
         return None
     if non_negative and val < 0:
         return None
@@ -273,8 +277,11 @@ def load_soulis_hobo_csv(path: Path) -> list[tuple[datetime, dict[str, float | N
 
 
 def write_json(path: Path, doc: dict) -> None:
+    # newline="" pins LF regardless of platform; the default would emit CRLF on
+    # Windows and turn every regeneration into a whole-file diff.
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(doc, indent=2) + "\n")
+    with path.open("w", newline="") as f:
+        f.write(json.dumps(doc, indent=2) + "\n")
 
 
 def process_cyyz(year: int) -> None:
@@ -307,7 +314,7 @@ def process_cyyz(year: int) -> None:
     print(f"[cyyz] Wrote {out} ({n_ok}/{len(doc['observations'])} times with t2m)")
 
 
-def process_soulis(year: int) -> None:
+def process_soulis(year: int, use_cached: bool = False) -> None:
     station_dir = OBS_ROOT / "eric_d_soulis"
     raw_dir = station_dir / "raw"
 
@@ -338,12 +345,15 @@ def process_soulis(year: int) -> None:
             "data_limitation": "Public bulk CSV for 2015+ is HOBO subset only; full main-logger yearly files stop at 2014.",
         }
 
-    print(f"[eric_d_soulis] Downloading {url}...")
-    try:
-        download(url, raw_path)
-    except urllib.error.HTTPError as e:
-        raise SystemExit(f"[eric_d_soulis] Download failed ({e.code}): {url}") from e
-    print(f"[eric_d_soulis] Saved raw -> {raw_path}")
+    if use_cached and raw_path.exists():
+        print(f"[eric_d_soulis] Using cached raw {raw_path}")
+    else:
+        print(f"[eric_d_soulis] Downloading {url}...")
+        try:
+            download(url, raw_path)
+        except urllib.error.HTTPError as e:
+            raise SystemExit(f"[eric_d_soulis] Download failed ({e.code}): {url}") from e
+        print(f"[eric_d_soulis] Saved raw -> {raw_path}")
 
     if use_main:
         samples = load_soulis_main_csv(raw_path, year)
@@ -398,11 +408,17 @@ def write_stations_registry() -> None:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--year", type=int, default=2025)
+    parser.add_argument(
+        "--use-cached",
+        action="store_true",
+        help="Reparse the existing raw CSV instead of re-downloading (Soulis only)",
+    )
     args = parser.parse_args()
 
     OBS_ROOT.mkdir(parents=True, exist_ok=True)
-    process_cyyz(args.year)
-    process_soulis(args.year)
+    if not args.use_cached:
+        process_cyyz(args.year)
+    process_soulis(args.year, use_cached=args.use_cached)
     write_stations_registry()
     print("Done.")
 
