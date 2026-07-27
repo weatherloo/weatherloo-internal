@@ -8,9 +8,32 @@ const RMSE_LABELS = {
   raw_model: "Raw model",
 };
 
+/**
+ * Windows are counted in 6-hourly initializations. The default is deliberately
+ * short: the point of this view is watching three forecasts diverge from the
+ * observation, which is unreadable once a full season is on one axis. Whole-
+ * period skill is what the benchmark panel below is for.
+ */
+const WINDOWS = [
+  { value: 28, label: "Last 7 days" },
+  { value: 56, label: "Last 14 days" },
+  { value: 120, label: "Last 30 days" },
+  { value: 0, label: "All data" },
+];
+
+/** RMSE over whatever subset is on screen, so the tiles match the chart. */
+function rmseOf(records, key) {
+  const errs = records
+    .filter((r) => r[key] !== null && r.actual !== null)
+    .map((r) => (r[key] - r.actual) ** 2);
+  if (errs.length === 0) return null;
+  return Math.sqrt(errs.reduce((a, b) => a + b, 0) / errs.length);
+}
+
 export default function HindcastPanel({ locationId, variable = "t2m", method, lead }) {
   const [doc, setDoc] = useState(null);
   const [error, setError] = useState(null);
+  const [windowSize, setWindowSize] = useState(56);
 
   useEffect(() => {
     let cancelled = false;
@@ -50,29 +73,55 @@ export default function HindcastPanel({ locationId, variable = "t2m", method, le
 
   if (!doc) return <p>Loading hindcast…</p>;
 
-  const hasReference = doc.records.some((r) => r.reference !== null);
+  const shown =
+    windowSize > 0 ? doc.records.slice(-windowSize) : doc.records;
+  const shownDoc = { ...doc, records: shown };
+  const hasReference = shown.some((r) => r.reference !== null);
+  const span = shown.length
+    ? `${shown[0].valid_time.slice(0, 10)} to ${shown[shown.length - 1].valid_time.slice(0, 10)}`
+    : "no records";
 
   return (
     <section className="hindcast-panel viz-root">
       <h3>What you'd have seen vs. what we'd have said</h3>
       <p className="subtitle">
-        {LOCATION_LABELS[locationId] ?? locationId} — {lead}h lead,{" "}
-        {doc.period.start} to {doc.period.end}. Each point is a forecast issued{" "}
-        {lead} hours before the plotted valid time.
+        {LOCATION_LABELS[locationId] ?? locationId} — {lead}h lead, {span}. Each
+        point is a forecast issued {lead} hours before the plotted valid time.
       </p>
 
+      <div className="hindcast-controls hindcast-controls--inline">
+        <label htmlFor="hindcast-window">Window</label>
+        <select
+          id="hindcast-window"
+          value={windowSize}
+          onChange={(e) => setWindowSize(Number(e.target.value))}
+        >
+          {WINDOWS.map((w) => (
+            <option key={w.value} value={w.value}>
+              {w.label}
+            </option>
+          ))}
+        </select>
+        <span className="hindcast-count">
+          {shown.length} of {doc.records.length} initializations
+        </span>
+      </div>
+
       <ul className="hindcast-summary">
-        {Object.entries(doc.summary_rmse).map(([key, value]) => (
-          <li key={key}>
-            <span className="label">{RMSE_LABELS[key] ?? key} RMSE</span>
-            <span className="value">
-              {value === null ? "—" : `${value.toFixed(2)} ${doc.units}`}
-            </span>
-          </li>
-        ))}
+        {Object.keys(doc.summary_rmse).map((key) => {
+          const value = rmseOf(shown, key);
+          return (
+            <li key={key}>
+              <span className="label">{RMSE_LABELS[key] ?? key} RMSE</span>
+              <span className="value">
+                {value === null ? "—" : `${value.toFixed(2)} ${doc.units}`}
+              </span>
+            </li>
+          );
+        })}
       </ul>
 
-      <HindcastChart doc={doc} />
+      <HindcastChart doc={shownDoc} />
 
       {!hasReference ? (
         <p className="hindcast-caveat">

@@ -274,3 +274,41 @@ select {
   margin-top: 0.75rem;
   max-width: 70ch;
 }
+
+/* The hindcast comparison needs the full width, not the narrow map column. */
+.hindcast-panel,
+.hindcast-controls {
+  grid-column: 1 / -1;
+}
+
+.hindcast-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.hindcast-controls label {
+  font-size: 0.85rem;
+  color: #555;
+}
+
+@media (max-width: 800px) {
+  .hindcast-panel,
+  .hindcast-controls {
+    grid-column: auto;
+  }
+}
+
+.hindcast-controls--inline {
+  margin-bottom: 1rem;
+}
+
+.hindcast-count {
+  font-size: 0.8rem;
+  color: var(--viz-text-secondary, #52514e);
+}
+
+.hindcast-table-wrap {
+  overflow-x: auto;
+}

@@ -68,7 +68,8 @@ export default function HindcastChart({ doc }) {
       borderWidth: emphasis ? 3 : 2,
       borderDash: emphasis ? [] : undefined,
       tension: 0.15,
-      pointRadius: 0,
+      // Markers only when they would not merge into the line.
+      pointRadius: records.length <= 120 ? 2.5 : 0,
       pointHoverRadius: 5,
       pointHoverBorderColor: surface,
       pointHoverBorderWidth: 2,
