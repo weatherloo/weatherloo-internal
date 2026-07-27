@@ -217,3 +217,46 @@ across cells it has never seen.
    when it no longer matches: residual magnitude scales with lead, and the
    arrays stay `(3,)` either way, so a stale file would silently mis-scale
    rather than fail.
+
+## Running on WATcloud Slurm
+
+The whole pipeline as one dependency chain — each stage starts only if the
+previous one succeeded, so a failed fetch never trains on a half-filled cache:
+
+```bash
+models/unet/submit_pipeline.sh                     # fetch -> train -> benchmark
+SHARDS=16 models/unet/submit_pipeline.sh           # more parallel fetch
+START=2024-01-01 models/unet/submit_pipeline.sh    # shorter range
+STAGES=train,benchmark models/unet/submit_pipeline.sh   # cache already warm
+```
+
+Or submit stages individually:
+
+| Stage | Script | Notes |
+|---|---|---|
+| fetch | `models/unet/fetch.slurm` | `--array=1-N` splits `[START, END]` into contiguous date chunks. Resumable — cached samples are skipped. Prunes GRIB by default. |
+| train | `models/unet/train.slurm` | Reads only cached `.npz`; no network. |
+| benchmark | `benchmarking-site/data/unet/run_benchmark.slurm` | Writes the dashboard JSON + NPZ and rebuilds the static aggregate. |
+
+Logs land in `models/unet/slurm_logs/` and
+`benchmarking-site/data/unet/slurm_logs/`, named `<jobname>-<jobid>`. Check the
+`.err` as well as the `.out` — tracebacks go to the former.
+
+`DATA_DIR` must be the **cache root** (the parent of `unet_training/`);
+`submit_pipeline.sh` passes one value to all three stages so they cannot
+disagree. A mismatch is the most common way to get a silently empty run.
+
+### Sizing
+
+Four cycles × eight leads is **32 samples/day** — roughly 56k samples for
+2021-03-23 .. 2025-12-31. GRIB intermediates are ~1.8 MB/sample against ~21 KB
+for the `.npz` that training actually reads, so `--prune-grib` (on by default in
+`fetch.slurm`) is the difference between ~100 GB and ~1.2 GB.
+
+The fetch is the only expensive stage; training is 117k parameters and is bound
+by small `.npz` reads, not compute.
+
+> `run_pipeline.py train` has **no** `--recompute-stats` flag and passes
+> `recompute_stats=False`, so the automatic sample-space invalidation in
+> `load_or_compute_stats` is what keeps `stats.json` honest when the cycle/lead
+> set changes. Deleting `<output-dir>/stats.json` forces it regardless.
