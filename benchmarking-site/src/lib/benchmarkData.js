@@ -1,13 +1,16 @@
 import {
-  API_DIR,
   DATA_DIR,
+  INIT_CYCLES,
   LEAD_TIMES_HOURS,
   METRICS,
-  VARIABLES,
 } from "../constants.js";
+import { combineFromPartials, resolveMonths } from "./aggregateCombine.js";
 
 const runsCache = new Map();
 const methodDataCache = new Map();
+const aggregateDocCache = new Map();
+
+const ALL_MONTHS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
 
 /**
  * @typedef {object} AggregateResult
@@ -61,15 +64,17 @@ export function aggregateRuns(runs, locationId, variableKey) {
 }
 
 /**
- * @param {object} payload
- * @returns {AggregateResult}
+ * @param {object|undefined} entry — aggregates[station][variable] from aggregate.json
+ * @param {object} doc — parsed aggregate.json
+ * @returns {AggregateResult|null}
  */
-function aggregatePayloadToResult(payload) {
-  const out = { lead_times_hours: payload.lead_times_hours ?? LEAD_TIMES_HOURS };
+function aggregateEntryToResult(entry, doc) {
+  if (!entry) return null;
+  const out = { lead_times_hours: doc.lead_times_hours ?? LEAD_TIMES_HOURS };
   for (const metric of METRICS) {
-    out[metric] = payload[metric] ?? [];
+    out[metric] = entry[metric] ?? [];
   }
-  out.n_samples = payload.n_samples ?? null;
+  out.n_samples = entry.n_samples ?? null;
   return out;
 }
 
@@ -108,37 +113,68 @@ export function filterRunsByDateRange(runs, initFrom, initTo) {
 }
 
 /**
+ * Fetch (and cache) the static aggregate.json for a method.
+ * Built by scripts/build_static_aggregates.py; null when the method has none.
  * @param {string} methodId
- * @param {Record<string, string>} [filters]
+ * @returns {Promise<object|null>}
  */
-async function tryLoadFromNpzApi(methodId, locationId, filters = {}) {
-  const statusRes = await fetch(`${API_DIR}/${methodId}`);
-  if (!statusRes.ok) return null;
+async function loadAggregateDoc(methodId) {
+  if (aggregateDocCache.has(methodId)) {
+    return aggregateDocCache.get(methodId);
+  }
+  let doc = null;
+  try {
+    const res = await fetch(`${DATA_DIR}/${methodId}/aggregate.json`);
+    if (res.ok) doc = await res.json();
+  } catch {
+    /* no static aggregate — fall back to per-init JSON */
+  }
+  aggregateDocCache.set(methodId, doc);
+  return doc;
+}
 
-  const status = await statusRes.json();
-  if (!status.npz_available) return null;
+/**
+ * Serve the request from the static aggregate document when it can reproduce
+ * the NPZ API's masked aggregation exactly: no filters -> precomputed overall
+ * mean; cycle subsets and month-aligned date ranges -> recombined partials.
+ * Returns null when the filters need per-init JSON (non-month-aligned range).
+ * @param {object} doc
+ * @param {string} locationId
+ * @param {Record<string, string>} filters
+ * @returns {MethodData|null}
+ */
+function tryFromStaticAggregate(doc, locationId, filters) {
+  const hasCycles = Boolean(filters.cycles);
+  const hasRange = Boolean(filters.init_from || filters.init_to);
 
-  const baseParams = new URLSearchParams({ location: locationId, ...filters });
+  if (!hasCycles && !hasRange) {
+    const perVariable = doc.aggregates?.[locationId];
+    if (!perVariable) return null;
+    return {
+      source: "aggregate",
+      nInits: doc.n_inits ?? 0,
+      t2m: aggregateEntryToResult(perVariable.t2m, doc),
+      wind_speed: aggregateEntryToResult(perVariable.wind_speed, doc),
+    };
+  }
 
-  const fetchVariable = async (variable) => {
-    const params = new URLSearchParams(baseParams);
-    params.set("variable", variable);
-    const res = await fetch(`${API_DIR}/${methodId}/aggregate?${params}`);
-    if (!res.ok) {
-      throw new Error(`NPZ aggregate failed for ${variable}: ${res.status}`);
-    }
-    return res.json();
-  };
+  const cycleHours = hasCycles
+    ? filters.cycles.split(",").map((c) => parseInt(c, 10))
+    : INIT_CYCLES;
+  const months = hasRange
+    ? resolveMonths(filters.init_from, filters.init_to, doc.year)
+    : ALL_MONTHS;
+  if (!months) return null;
 
-  const [t2mPayload, windPayload] = await Promise.all(
-    VARIABLES.map((variable) => fetchVariable(variable)),
-  );
+  const t2m = combineFromPartials(doc, locationId, "t2m", months, cycleHours);
+  const wind = combineFromPartials(doc, locationId, "wind_speed", months, cycleHours);
+  if (!t2m || !wind) return null;
 
   return {
-    source: "npz",
-    nInits: t2mPayload.n_inits ?? status.n_inits ?? 0,
-    t2m: aggregatePayloadToResult(t2mPayload),
-    wind_speed: aggregatePayloadToResult(windPayload),
+    source: "aggregate",
+    nInits: t2m.nInits,
+    t2m: t2m.result,
+    wind_speed: wind.result,
   };
 }
 
@@ -181,11 +217,12 @@ export async function loadMethodRuns(methodId) {
 
 /**
  * Load aggregated skill scores for a method at a location.
- * Prefers consolidated NPZ via /api when available; falls back to per-init JSON.
+ * Prefers the static aggregate.json (precomputed from consolidated NPZ);
+ * falls back to per-init JSON when there is none or the filters need it.
  *
  * @param {string} methodId
  * @param {string} locationId
- * @param {Record<string, string>} [filters] — forwarded to NPZ API (init_from, init_to, cycles)
+ * @param {Record<string, string>} [filters] — init_from, init_to, cycles
  * @returns {Promise<MethodData|null>}
  */
 export async function loadMethodData(methodId, locationId, filters = {}) {
@@ -195,13 +232,16 @@ export async function loadMethodData(methodId, locationId, filters = {}) {
   }
 
   try {
-    const fromApi = await tryLoadFromNpzApi(methodId, locationId, filters);
-    if (fromApi) {
-      methodDataCache.set(cacheKey, fromApi);
-      return fromApi;
+    const doc = await loadAggregateDoc(methodId);
+    if (doc) {
+      const fromStatic = tryFromStaticAggregate(doc, locationId, filters);
+      if (fromStatic) {
+        methodDataCache.set(cacheKey, fromStatic);
+        return fromStatic;
+      }
     }
   } catch (err) {
-    console.warn(`NPZ API unavailable for ${methodId}, falling back to JSON:`, err);
+    console.warn(`Static aggregate unusable for ${methodId}, falling back to JSON:`, err);
   }
 
   const allRuns = await loadMethodRuns(methodId);

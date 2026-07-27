@@ -17,7 +17,7 @@ npm run dev
 
 Open http://localhost:5173 — click a station on the map, pick a method, view RMSE / MAE / bias / ACC vs lead time. The UI **averages** metrics across all loaded init files for the selected location.
 
-`npm run dev` starts **Vite** and the **NPZ API** (`server/npz_api.py` on port 5174). When a method has a consolidated `<method_id>_2025.npz`, the dashboard loads aggregates via `/api/benchmark/…` instead of fetching hundreds of per-init JSON files. Without NPZ, it falls back to per-init JSON (via `index.json` or sample file).
+When a method has a consolidated `<method_id>_2025.npz`, the dashboard loads its precomputed **static aggregate** (`data/<method_id>/aggregate.json`, built by `scripts/build_static_aggregates.py` — run automatically by `npm run build`, or manually via `bash scripts/build_static_aggregates.sh`). There is no API server; cycle/month filters recombine the aggregate's per-(month × cycle) partial sums client-side. Without NPZ (or for non-month-aligned custom ranges), it falls back to per-init JSON (via `index.json` or sample file).
 
 Rebuild the consolidated NPZ from existing JSON without re-fetching:
 
@@ -25,9 +25,13 @@ Rebuild the consolidated NPZ from existing JSON without re-fetching:
 python3 data/gfs_interpolated/compute_benchmark.py --export-npz-only
 ```
 
-API only needs `numpy` (`pip install -r server/requirements.txt`, or use the repo `.venv` — `server/run_api.sh` picks it automatically).
+After (re)building an NPZ, refresh the static aggregate:
 
-Production build (serves `dist/` with benchmark JSON copied in):
+```bash
+bash scripts/build_static_aggregates.sh --methods <method_id>
+```
+
+Production build (bundles `dist/` with `aggregate.json` files copied in; see `DEPLOY.md` for Vercel):
 
 ```bash
 npm run build
@@ -83,40 +87,51 @@ Rebuild NPZ from existing JSON without re-fetching:
 | `climatology` | `data/climatology/compute_benchmark.py` | Multi-year (2010-2024) DOY+UTC-hour station climatology; no GRIB needed. `--fetch-historical` downloads historical obs. ACC is always null (forecast = climatology). |
 | `ecmwf_aifs` | `data/ecmwf_aifs/compute_benchmark.py` | ECMWF AIFS Single 0.25° at **00/06/12/18Z** via [dynamical.org catalog](https://dynamical.org/catalog/ecmwf-aifs-single-forecast/) (`dynamical-catalog`); 6-hourly steps; bilinear interp of `temperature_2m` / `wind_u_10m` / `wind_v_10m`. Archive 2024-04-01–present includes full 2025. `--resume` skips existing init JSONs. |
 | `gefs_mean` | `data/gefs_mean/compute_benchmark.py` | GEFS **ensemble mean** (`geavg`) at **0.5°** from AWS `noaa-gefs-pds`; 00/06/12/18Z; bilinear interp; wind from 10 m u/v. Pre-averaged 21-member mean on grid — no per-member downloads. `--resume` skips existing init JSONs. |
-| `unet` | `data/unet/compute_benchmark.py` | **Our UNet bias correction applied to GFS.** Same GFS 0.25° input as `gfs_interpolated`, cropped to the KW bbox, corrected by `models/unet/`, then interpolated to the station — so the two methods are a direct uncorrected-vs-corrected pair. `--checkpoint` overrides the model. See **UNet bias correction** below. |
+| `unet` | `data/unet/compute_benchmark.py` | **U-Net post-processing of GFS** (`models/unet/`). Thin adapter over the real model code; `corrected = GFS − predicted_residual` on the 21×41 southern Ontario grid, then interpolated to the station. Restricted to the checkpoint’s trained cycles/leads (00/12Z, f006–f024) unless `--all-cells`. Reuses `run_pipeline.py fetch` output via `--data-dir`. See **U-Net post-processing** below. |
 
 Add a row here when implementing other methods.
 
-### UNet bias correction
+### U-Net post-processing
 
-`models/unet/` holds the model definition (`model.py`) and the trained weights
-(`checkpoints/best_model.pt`). The network predicts a **residual** on a gridded
-forecast rather than the forecast itself:
+All of the modelling lives in `models/unet/` — `data/unet/compute_benchmark.py`
+is a thin **adapter** that imports it (`model/unet.py`, `data/dataset.py`,
+`config.yaml`) rather than reimplementing it, so the dashboard can never
+disagree with `models/unet/evaluate.py` about geometry, normalization, or sign.
+
+**Sign — the easy way to get this wrong.** The network predicts the *error*
+`GFS − ERA5`, so the correction is **subtracted**:
 
 ```
-x_norm    = (forecast − gfs.mean) / gfs.std
+x_norm    = (gfs − gfs.mean) / gfs.std
 r_norm    = unet(x_norm)
-corrected = forecast + (r_norm * residual.std + residual.mean)
+corrected = gfs − (r_norm * residual.std + residual.mean)
 ```
 
-- **Channels (fixed by the checkpoint):** `t2m` in **°C**, `u10`/`v10` in **m/s**.
-  GFS `TMP` is Kelvin, so the compute script subtracts 273.15 before inference.
-- **Wind:** `u10` and `v10` are corrected separately, then speed is derived as
-  `sqrt(u² + v²) * 3.6`. Never correct speed directly — that is not what the
-  model was trained on.
-- **Grid:** the KW bounding box from `scripts/weather_download_common.py`
-  (±0.5° padding) crops to **15 × 19** cells at 0.25°, with both stations
-  interior. The UNet pools twice, so `model.correct_fields` reflect-pads both
-  dims up to a multiple of 4 and crops the residual back before applying it.
-- **Interpolation order matters:** correct the *grid*, then bilinearly
-  interpolate the corrected grid to the station — not the other way round.
-- `load_checkpoint` uses `strict=True`; if `model.py` and the checkpoint ever
-  drift apart, the run fails loudly instead of silently mis-wiring weights.
+Adding it roughly doubles the error instead of removing it.
 
-The current checkpoint is an early prototype: 24 training days / 80 samples,
-best val loss at **epoch 17**, with train loss still falling while val flattens
-(see `checkpoints/training_log.csv`). Treat its dashboard numbers as a baseline
-to beat, not a finished result.
+- **Grid:** the southern Ontario box in `models/unet/config.yaml`
+  (41–46 °N, −84 to −74 °E at 0.25°) = **21 × 41**. This is baked into the
+  checkpoint — `ResidualUNet` reflect-pads 21×41 → 24×48 internally and crops
+  back, so a different crop is not interchangeable.
+- **Channels:** `t2m` in **°C** (GFS `TMP` is Kelvin), `u10`/`v10` in m/s.
+- **Wind:** correct `u10`/`v10` separately, then derive `sqrt(u² + v²) * 3.6`.
+  Never correct speed directly — the model was not trained on it.
+- **Interpolation order:** correct the *grid*, then bilinearly interpolate the
+  corrected grid to the station — not the other way round.
+- **Reusing fetched data:** pass `--data-dir` (or set `$UNET_DATA_DIR`) to the
+  cache built by `models/unet/run_pipeline.py fetch`; cached samples need no
+  download.
+
+**Coverage.** The checkpoint only ever saw `init_hours_utc` and
+`forecast_hours` from `config.yaml` — **00/12Z at f006–f024**. The other cells
+of the site's 00/06/12/18Z × 6–72 h matrix are written as `null` rather than
+silently extrapolated. `--all-cells` runs them anyway, at the cost of feeding
+the model inputs far outside its training distribution.
+
+> **Not yet a win.** `models/unet/README.md` records a held-out 2021 evaluation
+> where this model *loses* to raw GFS on t2m (CYYZ RMSE 1.289 → 1.404) and to a
+> zero-parameter seasonal-mean-bias baseline. Treat its dashboard numbers as a
+> baseline to beat, not a finished result.
 
 ### HRDPS analysis live GRIB archive
 
@@ -199,7 +214,7 @@ The dashboard **averages over whatever loads**; sparse or in-progress datasets a
 
 ### NPZ export
 
-Compute scripts write a **single consolidated NPZ** alongside the per-init JSON files. The dashboard reads NPZ **via the thin API** in `server/npz_api.py` (proxied at `/api/benchmark` during `npm run dev` / `npm run preview`); without NPZ it falls back to per-init JSON.
+Compute scripts write a **single consolidated NPZ** alongside the per-init JSON files. The dashboard reads NPZ **indirectly via the static aggregate** `data/<method_id>/aggregate.json` built from it by `scripts/build_static_aggregates.py` (part of `npm run build`); without NPZ it falls back to per-init JSON. `server/npz_api.py` is a legacy local tool (run manually with `bash server/run_api.sh`) kept for ad-hoc NPZ inspection; nothing in the site calls it anymore.
 
 - **Filename:** `data/<method_id>/<method_id>_<year>.npz` (e.g. `gfs_interpolated_2025.npz`).
 - **Document in** `data/<method_id>/metadata.json` via `"npz_file"` and `"npz_schema": "see benchmarking-site/AGENTS.md"`.
@@ -268,4 +283,4 @@ Full coverage below is the goal for a **finished** method; incomplete cycles, le
 | ECMWF AIFS | `ecmwf_aifs` |
 | GraphCast | `graphcast` |
 | Pangu-Weather | `pangu` |
-| UNet bias correction (GFS) | `unet` |
+| U-Net post-processing (GFS) | `unet` |

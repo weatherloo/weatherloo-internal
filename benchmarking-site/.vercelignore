@@ -1,0 +1,7 @@
+# Never needed by the static build: ground truth for compute scripts (264 MB),
+# consolidated NPZ (read locally by scripts/build_static_aggregates.py before
+# deploy), and the legacy dev-only NPZ API server.
+data/observations
+data/**/*.npz
+server
+.DS_Store

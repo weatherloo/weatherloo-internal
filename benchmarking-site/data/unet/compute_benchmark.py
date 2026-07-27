@@ -1,20 +1,27 @@
 #!/usr/bin/env python3
-"""Compute the UNet bias-correction benchmark JSON.
+"""Compute the U-Net post-processing benchmark JSON for the dashboard.
 
-Evaluates ``models/unet/checkpoints/best_model.pt`` as a correction layer on top
-of GFS: for each initialization and lead time we fetch the GFS 0.25° fields,
-crop them to the Kitchener-Waterloo bounding box, run the UNet to get a
-corrected ``(t2m, u10, v10)`` patch, then bilinearly interpolate that corrected
-patch to each station and score it against the same station observations every
-other method on the dashboard uses.
+This is a thin **adapter**: all of the modelling lives in ``models/unet/`` and is
+imported, never reimplemented, so the dashboard can never silently disagree with
+``models/unet/evaluate.py`` about geometry, normalization, or the residual sign.
 
-Because the input is GFS on the same grid, cycles, and lead times as
-``data/gfs_interpolated/``, this method is the directly corrected counterpart of
-that baseline — a lower RMSE here is the model earning its keep.
+Per initialization and lead time it:
 
-Wind speed: sqrt(u10^2 + v10^2), converted m/s -> km/h (* 3.6). The UNet
-corrects u10 and v10 separately, matching how it was trained; speed is derived
-after correction, never corrected directly.
+1. loads the GFS region grid — from the ``.npz`` cache written by
+   ``models/unet/run_pipeline.py fetch`` when present (set ``UNET_DATA_DIR`` or
+   pass ``--data-dir``), else fetching it via ``fetch_gfs.gfs_region_grid``;
+2. runs ``ResidualUNet`` and forms ``corrected = GFS - predicted_residual``;
+3. bilinearly interpolates the corrected grid to each station and scores it
+   against the same station observations every other method on the site uses.
+
+**Sign.** The network predicts ``GFS - ERA5``, so the correction is *subtracted*
+(see ``models/unet/model/unet.py``). Adding it doubles the error instead of
+removing it.
+
+**Coverage.** The checkpoint only ever saw ``init_hours_utc`` and
+``forecast_hours`` from ``models/unet/config.yaml`` — by default 00/12Z at
+f006–f024. Cells outside that window are written as ``null`` rather than
+silently extrapolated; pass ``--all-cells`` to run them anyway.
 
 ACC anomaly baseline: DOY + UTC-hour climatology from station observations with
 a ±15-day calendar window — identical to ``gfs_interpolated`` so ACC stays
@@ -25,62 +32,49 @@ from __future__ import annotations
 
 import argparse
 import json
+import multiprocessing as mp
+import os
 import sys
-from concurrent.futures import ThreadPoolExecutor, as_completed
+import time
+import urllib.error
+from concurrent.futures import ProcessPoolExecutor, as_completed
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
-import cfgrib
 import numpy as np
 import torch
-from scipy.interpolate import RegularGridInterpolator
 
 METHOD_DIR = Path(__file__).resolve().parent
 BENCHMARKING_SITE = METHOD_DIR.parents[1]
 REPO_ROOT = METHOD_DIR.parents[2]
 OUT_DIR = METHOD_DIR
 OBS_ROOT = BENCHMARKING_SITE / "data" / "observations"
-CACHE_DIR = REPO_ROOT / ".cache" / "gfs_grib"
 MODEL_DIR = REPO_ROOT / "models" / "unet"
 DEFAULT_CHECKPOINT = MODEL_DIR / "checkpoints" / "best_model.pt"
 
-sys.path.insert(0, str(MODEL_DIR))
-from model import correct_fields, load_checkpoint  # noqa: E402
-
-# Reuse the shared bbox/HTTP helpers the raw-data downloaders already use.
-sys.path.insert(0, str(REPO_ROOT / "scripts"))
-from weather_download_common import (  # noqa: E402
-    LAT_MAX,
-    LAT_MIN,
-    LON_MAX,
-    LON_MIN,
-    PAD_DEG,
-    download_bytes,
-    parse_idx_ranges,
-)
-
-AWS_BASE = "https://noaa-gfs-bdp-pds.s3.amazonaws.com"
-INIT_HOURS_UTC = (0, 6, 12, 18)
-LEAD_TIMES = [6, 12, 18, 24, 30, 36, 42, 48, 54, 60, 66, 72]
 METHOD_ID = "unet"
-
-STATIONS = {
-    "cyyz": {"lat": 43.6777, "lon": -79.6248},
-    "eric_d_soulis": {"lat": 43.4668, "lon": -80.5164},
-}
-STATION_IDS = list(STATIONS)
+LEAD_TIMES = [6, 12, 18, 24, 30, 36, 42, 48, 54, 60, 66, 72]
+ALL_INIT_HOURS = (0, 6, 12, 18)
 VARIABLES = ["t2m", "wind_speed"]
 METRICS = ["rmse", "mae", "bias", "acc"]
-
-# UNet channel order, fixed by the checkpoint.
-GRIB_NEEDLES = {
-    "t2m": ":TMP:2 m above ground:",
-    "u10": ":UGRD:10 m above ground:",
-    "v10": ":VGRD:10 m above ground:",
-}
-CHANNEL_ORDER = ("t2m", "u10", "v10")
+STATION_IDS = ["cyyz", "eric_d_soulis"]
 
 DOWNLOAD_RETRIES = 6
+
+
+def _bootstrap(data_dir: Path | None) -> None:
+    """Put ``models/unet`` on the path, honouring the pipeline's data-dir env var.
+
+    Must run before importing the pipeline modules: they resolve their cache
+    directories from ``UNET_DATA_DIR`` at import time, which is what lets this
+    script reuse whatever ``run_pipeline.py fetch`` already downloaded.
+    """
+    if data_dir is not None:
+        os.environ["UNET_DATA_DIR"] = str(data_dir)
+    for sub in ("data", "model", "."):
+        p = str((MODEL_DIR / sub).resolve())
+        if p not in sys.path:
+            sys.path.insert(0, p)
 
 
 def parse_utc(s: str) -> datetime:
@@ -91,10 +85,7 @@ def load_observations(station_id: str) -> dict[str, dict[str, float | None]]:
     path = OBS_ROOT / station_id / "observations_6h_2025.json"
     data = json.loads(path.read_text())
     return {
-        row["valid_time"]: {
-            "t2m": row.get("t2m"),
-            "wind_speed": row.get("wind_speed"),
-        }
+        row["valid_time"]: {"t2m": row.get("t2m"), "wind_speed": row.get("wind_speed")}
         for row in data["observations"]
     }
 
@@ -106,32 +97,31 @@ def build_climatology(
     slots: dict[tuple[str, int], list[tuple[int, float]]] = {}
     for valid_time, vals in obs_by_time.items():
         dt = parse_utc(valid_time)
-        doy = dt.timetuple().tm_yday
-        hour = dt.hour
+        doy, hour = dt.timetuple().tm_yday, dt.hour
         for var in ("t2m", "wind_speed"):
             v = vals.get(var)
-            if v is None:
-                continue
-            slots.setdefault((var, hour), []).append((doy, float(v)))
+            if v is not None:
+                slots.setdefault((var, hour), []).append((doy, float(v)))
 
     clim: dict[str, dict[str, float]] = {"t2m": {}, "wind_speed": {}}
     for var in ("t2m", "wind_speed"):
-        for hour in (0, 6, 12, 18):
+        for hour in ALL_INIT_HOURS:
             entries = slots.get((var, hour), [])
             if not entries:
                 continue
             for target_doy in range(1, 367):
-                vals_in_window = [
+                window = [
                     v
                     for doy, v in entries
-                    if abs(doy - target_doy) <= window_days
-                    or abs(doy - target_doy + 365) <= window_days
-                    or abs(doy - target_doy - 365) <= window_days
-                ]
-                if vals_in_window:
-                    clim[var][f"{target_doy:03d}-{hour:02d}"] = float(
-                        np.mean(vals_in_window)
+                    if min(
+                        abs(doy - target_doy),
+                        abs(doy - target_doy + 365),
+                        abs(doy - target_doy - 365),
                     )
+                    <= window_days
+                ]
+                if window:
+                    clim[var][f"{target_doy:03d}-{hour:02d}"] = float(np.mean(window))
     return clim
 
 
@@ -142,109 +132,11 @@ def climatology_lookup(
     return clim.get(var, {}).get(key)
 
 
-def _bbox_slices(lats: np.ndarray, lons: np.ndarray) -> tuple[slice, slice]:
-    """Index ranges covering the padded KW bbox on an ascending lat/lon grid."""
-    lat_lo, lat_hi = LAT_MIN - PAD_DEG, LAT_MAX + PAD_DEG
-    # GFS longitudes are 0..360; the bbox is in -180..180.
-    lon_lo, lon_hi = LON_MIN - PAD_DEG + 360.0, LON_MAX + PAD_DEG + 360.0
-
-    lat_idx = np.where((lats >= lat_lo) & (lats <= lat_hi))[0]
-    lon_idx = np.where((lons >= lon_lo) & (lons <= lon_hi))[0]
-    if lat_idx.size < 2 or lon_idx.size < 2:
-        raise RuntimeError(
-            f"bbox crop degenerate: {lat_idx.size} lats x {lon_idx.size} lons"
-        )
-    return slice(lat_idx[0], lat_idx[-1] + 1), slice(lon_idx[0], lon_idx[-1] + 1)
-
-
-def read_field(path: Path) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-    """Return ``(lats ascending, lons, values)`` for a single-message GRIB2."""
-    ds = cfgrib.open_dataset(path)
-    var = list(ds.data_vars)[0]
-    lats = np.asarray(ds.latitude.values, dtype=float)
-    lons = np.asarray(ds.longitude.values, dtype=float)
-    arr = np.asarray(ds[var].values, dtype=float)
-    if lats[0] > lats[-1]:
-        lats = lats[::-1]
-        arr = arr[::-1, :]
-    return lats, lons, arr
-
-
-def fetch_gfs_patch(
-    date_yyyymmdd: str, cycle_hour: int, fxx: int
-) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-    """Return ``(lats, lons, patch)`` where patch is ``(3, H, W)``.
-
-    Channels are ``(t2m °C, u10 m/s, v10 m/s)`` — the units the UNet was
-    normalized against.
-    """
-    cycle = f"{cycle_hour:02d}"
-    cycle_tag = f"{cycle_hour:02d}z"
-    grib_url = (
-        f"{AWS_BASE}/gfs.{date_yyyymmdd}/{cycle}/atmos/"
-        f"gfs.t{cycle_tag}.pgrb2.0p25.f{fxx:03d}"
-    )
-    cache_key = f"{date_yyyymmdd}_{cycle_tag}_f{fxx:03d}"
-    idx_path = CACHE_DIR / f"{cache_key}.idx"
-    if idx_path.exists():
-        idx_text = idx_path.read_text()
-    else:
-        idx_text = download_bytes(
-            grib_url + ".idx", retries=DOWNLOAD_RETRIES
-        ).decode("utf-8", errors="replace")
-        idx_path.parent.mkdir(parents=True, exist_ok=True)
-        idx_path.write_text(idx_text)
-
-    ranges = parse_idx_ranges(idx_text, GRIB_NEEDLES)
-    missing = set(GRIB_NEEDLES) - set(ranges)
-    if missing:
-        raise RuntimeError(f"Missing GRIB fields in idx for {cache_key}: {missing}")
-
-    channels: list[np.ndarray] = []
-    lats = lons = None
-    rows = cols = None
-    for field in CHANNEL_ORDER:
-        path = CACHE_DIR / f"{cache_key}_{field}.grib2"
-        if not path.exists():
-            start, end = ranges[field]
-            path.parent.mkdir(parents=True, exist_ok=True)
-            path.write_bytes(
-                download_bytes(grib_url, start, end, retries=DOWNLOAD_RETRIES)
-            )
-        f_lats, f_lons, arr = read_field(path)
-        if rows is None:
-            rows, cols = _bbox_slices(f_lats, f_lons)
-            lats, lons = f_lats[rows], f_lons[cols]
-        channels.append(arr[rows, cols])
-
-    patch = np.stack(channels, axis=0)
-    patch[0] -= 273.15  # GFS TMP is Kelvin; the UNet expects °C
-    return lats, lons, patch
-
-
-def interp_point(lats: np.ndarray, lons: np.ndarray, arr: np.ndarray, lat: float, lon: float) -> float:
-    lon_q = lon + 360.0 if lon < 0 else lon
-    return float(RegularGridInterpolator((lats, lons), arr)((lat, lon_q)))
-
-
-def station_values(
-    lats: np.ndarray, lons: np.ndarray, patch: np.ndarray, lat: float, lon: float
-) -> tuple[float, float]:
-    """Interpolate a corrected patch to a station -> ``(t2m °C, wind km/h)``."""
-    t2m_c = interp_point(lats, lons, patch[0], lat, lon)
-    u10 = interp_point(lats, lons, patch[1], lat, lon)
-    v10 = interp_point(lats, lons, patch[2], lat, lon)
-    return t2m_c, float(np.hypot(u10, v10) * 3.6)
-
-
-def point_metrics(
-    forecast: float, obs: float, clim: float | None
-) -> dict[str, float | None]:
+def point_metrics(forecast: float, obs: float, clim: float | None) -> dict:
     err = forecast - obs
     acc = None
     if clim is not None:
-        f_anom = forecast - clim
-        o_anom = obs - clim
+        f_anom, o_anom = forecast - clim, obs - clim
         denom = abs(f_anom) * abs(o_anom)
         if denom > 0:
             acc = float((f_anom * o_anom) / denom)
@@ -252,16 +144,11 @@ def point_metrics(
 
 
 def init_datetimes(year: int) -> list[datetime]:
-    """All benchmark inits: every day at 00, 06, 12, 18 UTC (1460 for 2025)."""
-    start = datetime(year, 1, 1, tzinfo=timezone.utc)
-    end = datetime(year, 12, 31, tzinfo=timezone.utc)
-    inits: list[datetime] = []
-    cur = start
+    start, end = datetime(year, 1, 1, tzinfo=timezone.utc), datetime(year, 12, 31, tzinfo=timezone.utc)
+    inits, cur = [], start
     while cur.date() <= end.date():
-        for hour in INIT_HOURS_UTC:
-            inits.append(
-                datetime(cur.year, cur.month, cur.day, hour, tzinfo=timezone.utc)
-            )
+        for hour in ALL_INIT_HOURS:
+            inits.append(datetime(cur.year, cur.month, cur.day, hour, tzinfo=timezone.utc))
         cur += timedelta(days=1)
     return inits
 
@@ -274,102 +161,211 @@ def init_json_paths(out_dir: Path, year: int) -> list[Path]:
     return sorted(out_dir.glob(f"{year}-*T*Z.json"))
 
 
-def build_init_json(
-    init_dt: datetime,
-    obs: dict[str, dict[str, dict[str, float | None]]],
-    clim: dict[str, dict[str, dict[str, float]]],
-    model,
-    stats: dict,
-) -> dict:
-    date_str = init_dt.strftime("%Y%m%d")
-    init_iso = init_dt.strftime("%Y-%m-%dT%H:00:00Z")
+# ---------------------------------------------------------------------------
+# Per-process state
+# ---------------------------------------------------------------------------
+_W: dict = {}
 
+
+def init_worker(checkpoint: Path, data_dir: Path | None, all_cells: bool) -> None:
+    # eccodes is not thread-safe, so workers are processes; each must then keep
+    # BLAS to one thread or workers x cores threads thrash.
+    torch.set_num_threads(1)
+    _bootstrap(data_dir)
+
+    from dataset import _cache_path, denormalize_residual  # noqa: E402
+    from fetch_era5 import load_config  # noqa: E402
+    from fetch_gfs import gfs_region_grid  # noqa: E402
+    from unet import ResidualUNet  # noqa: E402
+
+    cfg = load_config()
+    ckpt = torch.load(checkpoint, map_location="cpu", weights_only=True)
+    model = ResidualUNet(
+        in_channels=len(ckpt.get("channels", ("t2m", "u10", "v10"))),
+        out_channels=len(ckpt.get("channels", ("t2m", "u10", "v10"))),
+    )
+    model.load_state_dict(ckpt["model_state"], strict=True)
+    model.eval()
+
+    _W.update(
+        cfg=cfg,
+        model=model,
+        stats=ckpt["stats"],
+        denorm=denormalize_residual,
+        cache_path=_cache_path,
+        region_grid=gfs_region_grid,
+        obs={sid: load_observations(sid) for sid in STATION_IDS},
+        all_cells=all_cells,
+    )
+    _W["clim"] = {sid: build_climatology(_W["obs"][sid]) for sid in STATION_IDS}
+    _W["stations"] = cfg["stations"]
+    gfs_cfg = cfg["data"]["gfs"]
+    _W["trained_cycles"] = set(gfs_cfg["init_hours_utc"])
+    _W["trained_leads"] = set(gfs_cfg["forecast_hours"])
+
+
+def load_gfs_grid(init_dt: datetime, lead: int):
+    """``(lats, lons, (3,H,W) GFS grid in degC/m·s⁻¹)``, from cache when available."""
+    sample = {
+        "date": init_dt.strftime("%Y-%m-%d"),
+        "cycle": init_dt.hour,
+        "fxx": lead,
+    }
+    path = _W["cache_path"](sample)
+    if path.exists():
+        # Written by run_pipeline.py fetch — already region-cropped and in degC.
+        with np.load(path) as z:
+            gfs = z["gfs"].astype(np.float32)
+        region = _W["cfg"]["region"]
+        res = region["resolution_deg"]
+        lats = np.arange(region["lat_min"], region["lat_max"] + res / 2, res)
+        lons = np.arange(region["lon_min"], region["lon_max"] + res / 2, res) % 360.0
+        return lats, lons, gfs
+
+    ds = _W["region_grid"](_W["cfg"], init_dt.strftime("%Y%m%d"), init_dt.hour, lead)
+    lats = np.asarray(ds.latitude.values, dtype=float)
+    lons = np.asarray(ds.longitude.values, dtype=float)
+    gfs = np.stack([ds[c].values for c in ("t2m", "u10", "v10")]).astype(np.float32)
+    return lats, lons, gfs
+
+
+def correct_grid(gfs: np.ndarray) -> np.ndarray:
+    """``corrected = GFS - predicted_residual`` (see models/unet/model/unet.py)."""
+    stats = _W["stats"]
+    mean = np.asarray(stats["gfs"]["mean"], dtype=np.float32).reshape(-1, 1, 1)
+    std = np.asarray(stats["gfs"]["std"], dtype=np.float32).reshape(-1, 1, 1)
+    x = torch.from_numpy((gfs - mean) / std).unsqueeze(0)
+    with torch.no_grad():
+        pred = _W["model"](x).squeeze(0).numpy()
+    return gfs - np.asarray(_W["denorm"](pred, stats), dtype=np.float32)
+
+
+def _interp(lats: np.ndarray, lons: np.ndarray, field: np.ndarray, lat: float, lon: float) -> float:
+    from scipy.interpolate import RegularGridInterpolator
+
+    lon_q = lon + 360.0 if lon < 0 else lon
+    if lats[0] > lats[-1]:
+        lats, field = lats[::-1], field[::-1, :]
+    return float(RegularGridInterpolator((lats, lons), field)((lat, lon_q)))
+
+
+def station_values(lats, lons, grid3: np.ndarray, lat: float, lon: float) -> tuple[float, float]:
+    """Corrected grid -> ``(t2m °C, wind km/h)``; wind from corrected u/v."""
+    t2m = _interp(lats, lons, grid3[0], lat, lon)
+    u = _interp(lats, lons, grid3[1], lat, lon)
+    v = _interp(lats, lons, grid3[2], lat, lon)
+    return t2m, float(np.hypot(u, v) * 3.6)
+
+
+def build_init_json(init_dt: datetime) -> dict:
+    init_iso = init_dt.strftime("%Y-%m-%dT%H:00:00Z")
     var_metrics = {
-        sid: {var: {m: [] for m in METRICS} for var in VARIABLES} for sid in STATIONS
+        sid: {var: {m: [] for m in METRICS} for var in VARIABLES} for sid in STATION_IDS
     }
 
+    def fill_nulls() -> None:
+        for sid in STATION_IDS:
+            for var in VARIABLES:
+                for m in METRICS:
+                    var_metrics[sid][var][m].append(None)
+
     for lead in LEAD_TIMES:
+        # Outside the checkpoint's training window these cells would be pure
+        # extrapolation, so record them as gaps unless explicitly asked for.
+        if not _W["all_cells"] and lead not in _W["trained_leads"]:
+            fill_nulls()
+            continue
+
         valid = init_dt + timedelta(hours=lead)
         valid_iso = valid.strftime("%Y-%m-%dT%H:%M:%SZ")
+        try:
+            lats, lons, gfs = load_gfs_grid(init_dt, lead)
+        except (urllib.error.HTTPError, RuntimeError, FileNotFoundError, KeyError) as exc:
+            print(f"    {init_iso} f{lead:03d}: no model output ({exc}); nulls")
+            fill_nulls()
+            continue
 
-        # One fetch + one forward pass per lead, shared by both stations.
-        lats, lons, raw_patch = fetch_gfs_patch(date_str, init_dt.hour, lead)
-        corrected = correct_fields(model, stats, raw_patch)
-
-        for station_id, coords in STATIONS.items():
+        corrected = correct_grid(gfs)
+        for sid in STATION_IDS:
+            coords = _W["stations"][sid]
             fcst_t2m, fcst_wind = station_values(
                 lats, lons, corrected, coords["lat"], coords["lon"]
             )
-            obs_vals = obs[station_id].get(valid_iso)
+            obs_vals = _W["obs"][sid].get(valid_iso)
             for var, fcst in (("t2m", fcst_t2m), ("wind_speed", fcst_wind)):
                 if not obs_vals or obs_vals.get(var) is None:
                     for m in METRICS:
-                        var_metrics[station_id][var][m].append(None)
+                        var_metrics[sid][var][m].append(None)
                     continue
-                obs_val = float(obs_vals[var])
-                clim_val = climatology_lookup(clim[station_id], var, valid)
-                pm = point_metrics(fcst, obs_val, clim_val)
+                pm = point_metrics(
+                    fcst,
+                    float(obs_vals[var]),
+                    climatology_lookup(_W["clim"][sid], var, valid),
+                )
                 for m in METRICS:
-                    var_metrics[station_id][var][m].append(pm[m])
+                    var_metrics[sid][var][m].append(pm[m])
 
     locations = {
-        station_id: {
-            "lat": coords["lat"],
-            "lon": coords["lon"],
+        sid: {
+            "lat": _W["stations"][sid]["lat"],
+            "lon": _W["stations"][sid]["lon"],
             "variables": {
-                var: {"lead_times_hours": LEAD_TIMES, **var_metrics[station_id][var]}
+                var: {"lead_times_hours": LEAD_TIMES, **var_metrics[sid][var]}
                 for var in VARIABLES
             },
         }
-        for station_id, coords in STATIONS.items()
+        for sid in STATION_IDS
     }
-
     return {"method": METHOD_ID, "initialization": init_iso, "locations": locations}
 
 
-def process_init(
-    init_dt: datetime,
-    obs: dict,
-    clim: dict,
-    model,
-    stats: dict,
-    out_dir: Path,
-    resume: bool,
-) -> str:
+def process_init(init_dt: datetime, out_dir: Path, resume: bool) -> tuple[str, bool]:
     fname = init_filename(init_dt)
     out_path = out_dir / fname
     if resume and out_path.exists():
-        return fname
-    payload = build_init_json(init_dt, obs, clim, model, stats)
-    out_path.write_text(json.dumps(payload, indent=2) + "\n")
-    return fname
+        return fname, True
+    payload = build_init_json(init_dt)
+    # Write via a temp file so an interrupted run never leaves a truncated JSON
+    # that --resume would then happily skip over.
+    tmp = out_path.with_suffix(".json.tmp")
+    tmp.write_text(json.dumps(payload, indent=2) + "\n")
+    tmp.replace(out_path)
+    return fname, False
 
 
-def write_metadata(out_dir: Path, year: int, checkpoint: Path, meta: dict) -> None:
+def format_eta(seconds: float) -> str:
+    seconds = int(max(seconds, 0))
+    h, rem = divmod(seconds, 3600)
+    m, s = divmod(rem, 60)
+    return f"{h}h{m:02d}m" if h else f"{m}m{s:02d}s"
+
+
+def write_metadata(out_dir: Path, year: int, checkpoint: Path, meta: dict, cfg: dict, all_cells: bool) -> None:
+    gfs_cfg = cfg["data"]["gfs"]
     payload = {
         "method_id": METHOD_ID,
-        "model": "UNet residual bias correction on GFS",
-        "input": "NOAA GFS 0.25° (t2m, u10, v10) cropped to the KW bounding box",
-        "baseline": "gfs_interpolated (same input, no correction)",
-        "checkpoint": str(checkpoint.relative_to(REPO_ROOT)),
+        "model": "U-Net residual post-processing of GFS (models/unet)",
+        "objective": "network predicts (GFS - ERA5); corrected = GFS - predicted_residual",
+        "baseline": "gfs_interpolated (same GFS input, no correction)",
+        "checkpoint": str(Path(checkpoint).resolve().relative_to(REPO_ROOT)),
         "checkpoint_epoch": meta.get("epoch"),
         "checkpoint_val_loss": meta.get("val_loss"),
-        "train_days": meta.get("train_days"),
         "split_mode": meta.get("split_mode"),
-        "channels": list(CHANNEL_ORDER),
-        "bbox": {
-            "lat_min": LAT_MIN - PAD_DEG,
-            "lat_max": LAT_MAX + PAD_DEG,
-            "lon_min": LON_MIN - PAD_DEG,
-            "lon_max": LON_MAX + PAD_DEG,
-        },
-        "cycles": ["00Z", "06Z", "12Z", "18Z"],
+        "channels": list(meta.get("channels", ("t2m", "u10", "v10"))),
+        "region": cfg["region"],
+        "trained_cycles_utc": gfs_cfg["init_hours_utc"],
+        "trained_forecast_hours": gfs_cfg["forecast_hours"],
+        "coverage": (
+            "all cycles/leads (extrapolated beyond training window)"
+            if all_cells
+            else "restricted to the checkpoint's trained cycles/leads; other cells null"
+        ),
+        "cycles": [f"{h:02d}Z" for h in gfs_cfg["init_hours_utc"]],
         "grid": "0p25",
         "year": year,
-        "interpolation": "bilinear, applied to the corrected grid",
+        "interpolation": "bilinear (scipy RegularGridInterpolator) on the corrected region grid",
         "wind": "sqrt(u10^2 + v10^2) after correcting u/v separately, m/s to km/h",
         "acc_climatology": "DOY + UTC-hour mean from 2025 station obs, ±15-day window",
-        "source": "https://registry.opendata.aws/noaa-gfs-bdp-pds/",
         "npz_file": f"{METHOD_ID}_{year}.npz",
         "npz_schema": "see benchmarking-site/AGENTS.md",
     }
@@ -377,13 +373,10 @@ def write_metadata(out_dir: Path, year: int, checkpoint: Path, meta: dict) -> No
 
 
 def write_index(out_dir: Path, files: list[str]) -> None:
-    (out_dir / "index.json").write_text(
-        json.dumps({"files": sorted(files)}, indent=2) + "\n"
-    )
+    (out_dir / "index.json").write_text(json.dumps({"files": sorted(files)}, indent=2) + "\n")
 
 
 def export_npz(out_dir: Path, year: int) -> Path | None:
-    """Consolidate per-init JSON files into one compressed NPZ for analysis."""
     json_paths = init_json_paths(out_dir, year)
     if not json_paths:
         print(f"No {year}-*T*Z.json files in {out_dir}; skipping NPZ export.")
@@ -396,15 +389,13 @@ def export_npz(out_dir: Path, year: int) -> Path | None:
     for init_idx, path in enumerate(json_paths):
         payload = json.loads(path.read_text())
         initializations.append(payload["initialization"])
-        locations = payload["locations"]
-        for station_idx, station_id in enumerate(STATION_IDS):
-            variables = locations[station_id]["variables"]
-            for var_idx, var_id in enumerate(VARIABLES):
-                var_data = variables[var_id]
+        for s_idx, sid in enumerate(STATION_IDS):
+            variables = payload["locations"][sid]["variables"]
+            for v_idx, var_id in enumerate(VARIABLES):
                 for metric in METRICS:
-                    for lead_idx, value in enumerate(var_data[metric]):
+                    for l_idx, value in enumerate(variables[var_id][metric]):
                         if value is not None:
-                            arrays[metric][init_idx, station_idx, var_idx, lead_idx] = value
+                            arrays[metric][init_idx, s_idx, v_idx, l_idx] = value
 
     npz_path = out_dir / f"{METHOD_ID}_{year}.npz"
     np.savez_compressed(
@@ -424,89 +415,128 @@ def export_npz(out_dir: Path, year: int) -> Path | None:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--year", type=int, default=2025)
-    parser.add_argument("--start-date", type=str, default=None, help="YYYY-MM-DD inclusive")
-    parser.add_argument("--end-date", type=str, default=None, help="YYYY-MM-DD inclusive")
-    parser.add_argument("--workers", type=int, default=3, help="Parallel init workers")
-    parser.add_argument("--download-retries", type=int, default=6)
+    parser.add_argument("--start-date", type=str, default=None, metavar="YYYY-MM-DD")
+    parser.add_argument("--end-date", type=str, default=None, metavar="YYYY-MM-DD")
+    parser.add_argument("--workers", type=int, default=3)
     parser.add_argument("--resume", action="store_true", help="Skip existing init files")
+    parser.add_argument("--dry-run", action="store_true", help="Only 2025-01-15")
+    parser.add_argument("--checkpoint", type=Path, default=DEFAULT_CHECKPOINT)
     parser.add_argument(
-        "--dry-run", action="store_true", help="Process only 2025-01-15 (all four cycles)"
+        "--data-dir",
+        type=Path,
+        default=None,
+        help="run_pipeline.py fetch cache to reuse (else $UNET_DATA_DIR); "
+        "cached samples need no download",
     )
-    parser.add_argument("--cycles", type=str, default=None, help="Comma-separated init hours UTC")
     parser.add_argument(
-        "--checkpoint", type=Path, default=DEFAULT_CHECKPOINT, help="UNet checkpoint .pt"
-    )
-    parser.add_argument(
-        "--export-npz-only",
+        "--all-cells",
         action="store_true",
-        help="Rebuild NPZ from existing JSON without fetching GFS or running the model",
+        help="Also score cycles/leads the checkpoint was never trained on "
+        "(pure extrapolation; off by default)",
     )
+    parser.add_argument("--shard", type=str, default=None, metavar="I/N")
+    parser.add_argument("--export-npz-only", action="store_true")
     args = parser.parse_args()
-
-    global DOWNLOAD_RETRIES
-    DOWNLOAD_RETRIES = args.download_retries
 
     out_dir = OUT_DIR
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    model, stats, meta = load_checkpoint(args.checkpoint)
+    _bootstrap(args.data_dir)
+    from fetch_era5 import load_config  # noqa: E402
+
+    cfg = load_config()
+    meta = {
+        k: v
+        for k, v in torch.load(args.checkpoint, map_location="cpu", weights_only=True).items()
+        if k not in ("model_state", "stats")
+    }
 
     if args.export_npz_only:
         export_npz(out_dir, args.year)
-        write_metadata(out_dir, args.year, args.checkpoint, meta)
+        write_metadata(out_dir, args.year, args.checkpoint, meta, cfg, args.all_cells)
         return
 
-    # Each init worker runs its own tiny forward pass; keep BLAS from oversubscribing.
-    torch.set_num_threads(1)
-    CACHE_DIR.mkdir(parents=True, exist_ok=True)
-
-    obs = {sid: load_observations(sid) for sid in STATIONS}
-    clim = {sid: build_climatology(obs[sid]) for sid in STATIONS}
-
-    cycle_hours = INIT_HOURS_UTC
-    if args.cycles:
-        cycle_hours = tuple(int(h.strip()) for h in args.cycles.split(","))
-
-    inits = [d for d in init_datetimes(args.year) if d.hour in cycle_hours]
+    trained_cycles = set(cfg["data"]["gfs"]["init_hours_utc"])
+    inits = init_datetimes(args.year)
+    if not args.all_cells:
+        inits = [d for d in inits if d.hour in trained_cycles]
     if args.dry_run:
-        inits = [datetime(2025, 1, 15, hour, tzinfo=timezone.utc) for hour in cycle_hours]
+        inits = [d for d in inits if d.date() == datetime(2025, 1, 15).date()]
     if args.start_date:
-        start = parse_utc(f"{args.start_date}T00:00:00Z")
-        inits = [d for d in inits if d >= start]
+        inits = [d for d in inits if d >= parse_utc(f"{args.start_date}T00:00:00Z")]
     if args.end_date:
-        end = parse_utc(f"{args.end_date}T18:00:00Z")
-        inits = [d for d in inits if d <= end]
+        inits = [d for d in inits if d <= parse_utc(f"{args.end_date}T18:00:00Z")]
+    if args.shard:
+        idx, total = (int(x) for x in args.shard.split("/"))
+        if not 1 <= idx <= total:
+            parser.error(f"--shard {args.shard}: expected 1/N..N/N")
+        inits = inits[idx - 1 :: total]
+        print(f"Shard {idx}/{total}: {len(inits)} initializations")
 
     print(
-        f"UNet checkpoint: {args.checkpoint} "
-        f"(epoch {meta.get('epoch')}, val_loss {meta.get('val_loss'):.4f})"
+        f"Checkpoint {args.checkpoint} (epoch {meta.get('epoch')}, "
+        f"val_loss {meta.get('val_loss'):.4f})"
     )
+    print(f"Region {cfg['region']['lat_min']}..{cfg['region']['lat_max']}N, "
+          f"{cfg['region']['lon_min']}..{cfg['region']['lon_max']}E")
+    print(f"Trained cycles {sorted(trained_cycles)}Z, leads "
+          f"{cfg['data']['gfs']['forecast_hours']}h"
+          f"{' (IGNORED: --all-cells)' if args.all_cells else ''}")
     print(f"Processing {len(inits)} initializations -> {out_dir}")
 
+    started, done, skipped = time.monotonic(), 0, 0
+    failures: list[dict[str, str]] = []
+
+    def report(fname: str, was_skipped: bool) -> None:
+        nonlocal done, skipped
+        done += 1
+        if was_skipped:
+            skipped += 1
+            return
+        elapsed = time.monotonic() - started
+        rate = done / elapsed if elapsed > 0 else 0
+        eta = (len(inits) - done) / rate if rate > 0 else 0
+        print(f"  [{done}/{len(inits)}] {fname}  ({rate * 3600:.0f}/h, ETA {format_eta(eta)})",
+              flush=True)
+
     if args.workers <= 1:
+        init_worker(args.checkpoint, args.data_dir, args.all_cells)
         for init_dt in inits:
-            print(f"  wrote {process_init(init_dt, obs, clim, model, stats, out_dir, args.resume)}")
+            try:
+                report(*process_init(init_dt, out_dir, args.resume))
+            except Exception as exc:  # noqa: BLE001 — one bad init must not end the run
+                print(f"  FAILED {init_dt.isoformat()}: {exc}", flush=True)
+                failures.append({"initialization": init_dt.isoformat(), "error": str(exc)})
     else:
-        with ThreadPoolExecutor(max_workers=args.workers) as pool:
-            futures = {
-                pool.submit(
-                    process_init, init_dt, obs, clim, model, stats, out_dir, args.resume
-                ): init_dt
-                for init_dt in inits
-            }
+        with ProcessPoolExecutor(
+            max_workers=args.workers,
+            mp_context=mp.get_context("spawn"),
+            initializer=init_worker,
+            initargs=(args.checkpoint, args.data_dir, args.all_cells),
+        ) as pool:
+            futures = {pool.submit(process_init, d, out_dir, args.resume): d for d in inits}
             for fut in as_completed(futures):
                 init_dt = futures[fut]
                 try:
-                    print(f"  wrote {fut.result()}")
-                except Exception as exc:
-                    print(f"  FAILED {init_dt.isoformat()}: {exc}")
-                    raise
+                    report(*fut.result())
+                except Exception as exc:  # noqa: BLE001
+                    print(f"  FAILED {init_dt.isoformat()}: {exc}", flush=True)
+                    failures.append({"initialization": init_dt.isoformat(), "error": str(exc)})
 
-    write_metadata(out_dir, args.year, args.checkpoint, meta)
+    write_metadata(out_dir, args.year, args.checkpoint, meta, cfg, args.all_cells)
     existing = sorted(p.name for p in init_json_paths(out_dir, args.year))
     write_index(out_dir, existing)
     export_npz(out_dir, args.year)
-    print(f"Done. {len(existing)} init files, index.json updated.")
+
+    if skipped:
+        print(f"Skipped {skipped} existing init(s) (--resume).")
+    print(f"Done in {format_eta(time.monotonic() - started)}. {len(existing)} init files.")
+    print("Next: bash benchmarking-site/scripts/build_static_aggregates.sh --methods unet")
+
+    if failures:
+        (out_dir / "failures.json").write_text(json.dumps(failures, indent=2) + "\n")
+        print(f"{len(failures)} init(s) failed -> failures.json. Re-run with --resume to retry.")
+        sys.exit(1)
 
 
 if __name__ == "__main__":
