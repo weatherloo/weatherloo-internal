@@ -1,0 +1,646 @@
+/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/google/api_core/_python_version_support.py:255: FutureWarning: You are using a Python version (3.10.12) which Google will stop supporting in new releases of google.api_core once it reaches its end of life (2026-10-04). Please upgrade to the latest Python version, or at least Python 3.11, to continue receiving updates for google.api_core past that date.
+  warnings.warn(message, FutureWarning)
+/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/google/api_core/_python_version_support.py:255: FutureWarning: You are using a Python version (3.10.12) which Google will stop supporting in new releases of google.cloud._storage_v2 once it reaches its end of life (2026-10-04). Please upgrade to the latest Python version, or at least Python 3.11, to continue receiving updates for google.cloud._storage_v2 past that date.
+  warnings.warn(message, FutureWarning)
+/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/google/api_core/_python_version_support.py:255: FutureWarning: You are using a Python version (3.10.12) which Google will stop supporting in new releases of google.cloud.storage_control_v2 once it reaches its end of life (2026-10-04). Please upgrade to the latest Python version, or at least Python 3.11, to continue receiving updates for google.cloud.storage_control_v2 past that date.
+  warnings.warn(message, FutureWarning)
+skipping corrupted Message
+Traceback (most recent call last):
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 274, in itervalues
+    yield self.filestream.message_from_file(file, errors=errors)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 341, in message_from_file
+    return Message.from_file(file, offset, **kwargs)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 97, in from_file
+    codes_id = eccodes.codes_grib_new_from_file(file)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/gribapi/gribapi.py", line 415, in grib_new_from_file
+    GRIB_CHECK(err)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/gribapi/gribapi.py", line 232, in GRIB_CHECK
+    errors.raise_grib_error(errid)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/gribapi/errors.py", line 386, in raise_grib_error
+    raise ERROR_MAP[errid](errid)
+gribapi.errors.PrematureEndOfFileError: End of resource reached when reading message
+skipping corrupted Message
+Traceback (most recent call last):
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 274, in itervalues
+    yield self.filestream.message_from_file(file, errors=errors)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 341, in message_from_file
+    return Message.from_file(file, offset, **kwargs)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 97, in from_file
+    codes_id = eccodes.codes_grib_new_from_file(file)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/gribapi/gribapi.py", line 415, in grib_new_from_file
+    GRIB_CHECK(err)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/gribapi/gribapi.py", line 232, in GRIB_CHECK
+    errors.raise_grib_error(errid)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/gribapi/errors.py", line 386, in raise_grib_error
+    raise ERROR_MAP[errid](errid)
+gribapi.errors.PrematureEndOfFileError: End of resource reached when reading message
+Can't create file '/mnt/wato-drive/c52li/weatherloo-data/unet/gfs_grib/20221129_18z_f012_u10.grib2.5b7b6.idx'
+Traceback (most recent call last):
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 274, in itervalues
+    yield self.filestream.message_from_file(file, errors=errors)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 341, in message_from_file
+    return Message.from_file(file, offset, **kwargs)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 105, in from_file
+    raise EOFError("End of file: %r" % file)
+EOFError: End of file: <_io.BufferedReader name='/mnt/wato-drive/c52li/weatherloo-data/unet/gfs_grib/20221129_18z_f012_u10.grib2'>
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 539, in from_indexpath_or_filestream
+    self = cls.from_fieldset(filestream, index_keys, computed_keys)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 379, in from_fieldset
+    return cls.from_fieldset_and_iteritems(fieldset, iteritems, index_keys, computed_keys)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 392, in from_fieldset_and_iteritems
+    for field_id, raw_field in iteritems:
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 292, in __iter__
+    for message in self.itervalues():
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 278, in itervalues
+    raise EOFError("No valid message found: %r" % self.filestream.path)
+EOFError: No valid message found: '/mnt/wato-drive/c52li/weatherloo-data/unet/gfs_grib/20221129_18z_f012_u10.grib2'
+Can't read index file '/mnt/wato-drive/c52li/weatherloo-data/unet/gfs_grib/20221129_18z_f012_u10.grib2.5b7b6.idx'
+Traceback (most recent call last):
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 548, in from_indexpath_or_filestream
+    index_mtime = os.path.getmtime(indexpath)
+  File "/usr/lib/python3.10/genericpath.py", line 55, in getmtime
+    return os.stat(filename).st_mtime
+FileNotFoundError: [Errno 2] No such file or directory: '/mnt/wato-drive/c52li/weatherloo-data/unet/gfs_grib/20221129_18z_f012_u10.grib2.5b7b6.idx'
+skipping corrupted Message
+Traceback (most recent call last):
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 274, in itervalues
+    yield self.filestream.message_from_file(file, errors=errors)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 341, in message_from_file
+    return Message.from_file(file, offset, **kwargs)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 97, in from_file
+    codes_id = eccodes.codes_grib_new_from_file(file)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/gribapi/gribapi.py", line 415, in grib_new_from_file
+    GRIB_CHECK(err)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/gribapi/gribapi.py", line 232, in GRIB_CHECK
+    errors.raise_grib_error(errid)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/gribapi/errors.py", line 386, in raise_grib_error
+    raise ERROR_MAP[errid](errid)
+gribapi.errors.PrematureEndOfFileError: End of resource reached when reading message
+skipping corrupted Message
+Traceback (most recent call last):
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 274, in itervalues
+    yield self.filestream.message_from_file(file, errors=errors)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 341, in message_from_file
+    return Message.from_file(file, offset, **kwargs)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 97, in from_file
+    codes_id = eccodes.codes_grib_new_from_file(file)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/gribapi/gribapi.py", line 415, in grib_new_from_file
+    GRIB_CHECK(err)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/gribapi/gribapi.py", line 232, in GRIB_CHECK
+    errors.raise_grib_error(errid)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/gribapi/errors.py", line 386, in raise_grib_error
+    raise ERROR_MAP[errid](errid)
+gribapi.errors.PrematureEndOfFileError: End of resource reached when reading message
+Can't create file '/mnt/wato-drive/c52li/weatherloo-data/unet/gfs_grib/20221129_18z_f018_t2m_k.grib2.5b7b6.idx'
+Traceback (most recent call last):
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 274, in itervalues
+    yield self.filestream.message_from_file(file, errors=errors)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 341, in message_from_file
+    return Message.from_file(file, offset, **kwargs)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 105, in from_file
+    raise EOFError("End of file: %r" % file)
+EOFError: End of file: <_io.BufferedReader name='/mnt/wato-drive/c52li/weatherloo-data/unet/gfs_grib/20221129_18z_f018_t2m_k.grib2'>
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 539, in from_indexpath_or_filestream
+    self = cls.from_fieldset(filestream, index_keys, computed_keys)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 379, in from_fieldset
+    return cls.from_fieldset_and_iteritems(fieldset, iteritems, index_keys, computed_keys)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 392, in from_fieldset_and_iteritems
+    for field_id, raw_field in iteritems:
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 292, in __iter__
+    for message in self.itervalues():
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 278, in itervalues
+    raise EOFError("No valid message found: %r" % self.filestream.path)
+EOFError: No valid message found: '/mnt/wato-drive/c52li/weatherloo-data/unet/gfs_grib/20221129_18z_f018_t2m_k.grib2'
+Can't read index file '/mnt/wato-drive/c52li/weatherloo-data/unet/gfs_grib/20221129_18z_f018_t2m_k.grib2.5b7b6.idx'
+Traceback (most recent call last):
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 548, in from_indexpath_or_filestream
+    index_mtime = os.path.getmtime(indexpath)
+  File "/usr/lib/python3.10/genericpath.py", line 55, in getmtime
+    return os.stat(filename).st_mtime
+FileNotFoundError: [Errno 2] No such file or directory: '/mnt/wato-drive/c52li/weatherloo-data/unet/gfs_grib/20221129_18z_f018_t2m_k.grib2.5b7b6.idx'
+skipping corrupted Message
+Traceback (most recent call last):
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 274, in itervalues
+    yield self.filestream.message_from_file(file, errors=errors)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 341, in message_from_file
+    return Message.from_file(file, offset, **kwargs)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 97, in from_file
+    codes_id = eccodes.codes_grib_new_from_file(file)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/gribapi/gribapi.py", line 415, in grib_new_from_file
+    GRIB_CHECK(err)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/gribapi/gribapi.py", line 232, in GRIB_CHECK
+    errors.raise_grib_error(errid)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/gribapi/errors.py", line 386, in raise_grib_error
+    raise ERROR_MAP[errid](errid)
+gribapi.errors.PrematureEndOfFileError: End of resource reached when reading message
+skipping corrupted Message
+Traceback (most recent call last):
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 274, in itervalues
+    yield self.filestream.message_from_file(file, errors=errors)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 341, in message_from_file
+    return Message.from_file(file, offset, **kwargs)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 97, in from_file
+    codes_id = eccodes.codes_grib_new_from_file(file)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/gribapi/gribapi.py", line 415, in grib_new_from_file
+    GRIB_CHECK(err)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/gribapi/gribapi.py", line 232, in GRIB_CHECK
+    errors.raise_grib_error(errid)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/gribapi/errors.py", line 386, in raise_grib_error
+    raise ERROR_MAP[errid](errid)
+gribapi.errors.PrematureEndOfFileError: End of resource reached when reading message
+Can't create file '/mnt/wato-drive/c52li/weatherloo-data/unet/gfs_grib/20221129_18z_f024_t2m_k.grib2.5b7b6.idx'
+Traceback (most recent call last):
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 274, in itervalues
+    yield self.filestream.message_from_file(file, errors=errors)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 341, in message_from_file
+    return Message.from_file(file, offset, **kwargs)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 105, in from_file
+    raise EOFError("End of file: %r" % file)
+EOFError: End of file: <_io.BufferedReader name='/mnt/wato-drive/c52li/weatherloo-data/unet/gfs_grib/20221129_18z_f024_t2m_k.grib2'>
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 539, in from_indexpath_or_filestream
+    self = cls.from_fieldset(filestream, index_keys, computed_keys)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 379, in from_fieldset
+    return cls.from_fieldset_and_iteritems(fieldset, iteritems, index_keys, computed_keys)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 392, in from_fieldset_and_iteritems
+    for field_id, raw_field in iteritems:
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 292, in __iter__
+    for message in self.itervalues():
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 278, in itervalues
+    raise EOFError("No valid message found: %r" % self.filestream.path)
+EOFError: No valid message found: '/mnt/wato-drive/c52li/weatherloo-data/unet/gfs_grib/20221129_18z_f024_t2m_k.grib2'
+Can't read index file '/mnt/wato-drive/c52li/weatherloo-data/unet/gfs_grib/20221129_18z_f024_t2m_k.grib2.5b7b6.idx'
+Traceback (most recent call last):
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 548, in from_indexpath_or_filestream
+    index_mtime = os.path.getmtime(indexpath)
+  File "/usr/lib/python3.10/genericpath.py", line 55, in getmtime
+    return os.stat(filename).st_mtime
+FileNotFoundError: [Errno 2] No such file or directory: '/mnt/wato-drive/c52li/weatherloo-data/unet/gfs_grib/20221129_18z_f024_t2m_k.grib2.5b7b6.idx'
+skipping corrupted Message
+Traceback (most recent call last):
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 274, in itervalues
+    yield self.filestream.message_from_file(file, errors=errors)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 341, in message_from_file
+    return Message.from_file(file, offset, **kwargs)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 97, in from_file
+    codes_id = eccodes.codes_grib_new_from_file(file)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/gribapi/gribapi.py", line 415, in grib_new_from_file
+    GRIB_CHECK(err)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/gribapi/gribapi.py", line 232, in GRIB_CHECK
+    errors.raise_grib_error(errid)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/gribapi/errors.py", line 386, in raise_grib_error
+    raise ERROR_MAP[errid](errid)
+gribapi.errors.PrematureEndOfFileError: End of resource reached when reading message
+skipping corrupted Message
+Traceback (most recent call last):
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 274, in itervalues
+    yield self.filestream.message_from_file(file, errors=errors)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 341, in message_from_file
+    return Message.from_file(file, offset, **kwargs)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 97, in from_file
+    codes_id = eccodes.codes_grib_new_from_file(file)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/gribapi/gribapi.py", line 415, in grib_new_from_file
+    GRIB_CHECK(err)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/gribapi/gribapi.py", line 232, in GRIB_CHECK
+    errors.raise_grib_error(errid)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/gribapi/errors.py", line 386, in raise_grib_error
+    raise ERROR_MAP[errid](errid)
+gribapi.errors.PrematureEndOfFileError: End of resource reached when reading message
+skipping corrupted Message
+Traceback (most recent call last):
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 274, in itervalues
+    yield self.filestream.message_from_file(file, errors=errors)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 341, in message_from_file
+    return Message.from_file(file, offset, **kwargs)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 97, in from_file
+    codes_id = eccodes.codes_grib_new_from_file(file)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/gribapi/gribapi.py", line 415, in grib_new_from_file
+    GRIB_CHECK(err)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/gribapi/gribapi.py", line 232, in GRIB_CHECK
+    errors.raise_grib_error(errid)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/gribapi/errors.py", line 386, in raise_grib_error
+    raise ERROR_MAP[errid](errid)
+gribapi.errors.PrematureEndOfFileError: End of resource reached when reading message
+Can't create file '/mnt/wato-drive/c52li/weatherloo-data/unet/gfs_grib/20221130_06z_f024_u10.grib2.5b7b6.idx'
+Traceback (most recent call last):
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 274, in itervalues
+    yield self.filestream.message_from_file(file, errors=errors)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 341, in message_from_file
+    return Message.from_file(file, offset, **kwargs)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 105, in from_file
+    raise EOFError("End of file: %r" % file)
+EOFError: End of file: <_io.BufferedReader name='/mnt/wato-drive/c52li/weatherloo-data/unet/gfs_grib/20221130_06z_f024_u10.grib2'>
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 539, in from_indexpath_or_filestream
+    self = cls.from_fieldset(filestream, index_keys, computed_keys)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 379, in from_fieldset
+    return cls.from_fieldset_and_iteritems(fieldset, iteritems, index_keys, computed_keys)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 392, in from_fieldset_and_iteritems
+    for field_id, raw_field in iteritems:
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 292, in __iter__
+    for message in self.itervalues():
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 278, in itervalues
+    raise EOFError("No valid message found: %r" % self.filestream.path)
+EOFError: No valid message found: '/mnt/wato-drive/c52li/weatherloo-data/unet/gfs_grib/20221130_06z_f024_u10.grib2'
+Can't read index file '/mnt/wato-drive/c52li/weatherloo-data/unet/gfs_grib/20221130_06z_f024_u10.grib2.5b7b6.idx'
+Traceback (most recent call last):
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 548, in from_indexpath_or_filestream
+    index_mtime = os.path.getmtime(indexpath)
+  File "/usr/lib/python3.10/genericpath.py", line 55, in getmtime
+    return os.stat(filename).st_mtime
+FileNotFoundError: [Errno 2] No such file or directory: '/mnt/wato-drive/c52li/weatherloo-data/unet/gfs_grib/20221130_06z_f024_u10.grib2.5b7b6.idx'
+skipping corrupted Message
+Traceback (most recent call last):
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 274, in itervalues
+    yield self.filestream.message_from_file(file, errors=errors)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 341, in message_from_file
+    return Message.from_file(file, offset, **kwargs)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 97, in from_file
+    codes_id = eccodes.codes_grib_new_from_file(file)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/gribapi/gribapi.py", line 415, in grib_new_from_file
+    GRIB_CHECK(err)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/gribapi/gribapi.py", line 232, in GRIB_CHECK
+    errors.raise_grib_error(errid)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/gribapi/errors.py", line 386, in raise_grib_error
+    raise ERROR_MAP[errid](errid)
+gribapi.errors.PrematureEndOfFileError: End of resource reached when reading message
+skipping corrupted Message
+Traceback (most recent call last):
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 274, in itervalues
+    yield self.filestream.message_from_file(file, errors=errors)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 341, in message_from_file
+    return Message.from_file(file, offset, **kwargs)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 97, in from_file
+    codes_id = eccodes.codes_grib_new_from_file(file)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/gribapi/gribapi.py", line 415, in grib_new_from_file
+    GRIB_CHECK(err)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/gribapi/gribapi.py", line 232, in GRIB_CHECK
+    errors.raise_grib_error(errid)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/gribapi/errors.py", line 386, in raise_grib_error
+    raise ERROR_MAP[errid](errid)
+gribapi.errors.PrematureEndOfFileError: End of resource reached when reading message
+skipping corrupted Message
+Traceback (most recent call last):
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 274, in itervalues
+    yield self.filestream.message_from_file(file, errors=errors)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 341, in message_from_file
+    return Message.from_file(file, offset, **kwargs)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 97, in from_file
+    codes_id = eccodes.codes_grib_new_from_file(file)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/gribapi/gribapi.py", line 415, in grib_new_from_file
+    GRIB_CHECK(err)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/gribapi/gribapi.py", line 232, in GRIB_CHECK
+    errors.raise_grib_error(errid)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/gribapi/errors.py", line 386, in raise_grib_error
+    raise ERROR_MAP[errid](errid)
+gribapi.errors.PrematureEndOfFileError: End of resource reached when reading message
+skipping corrupted Message
+Traceback (most recent call last):
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 274, in itervalues
+    yield self.filestream.message_from_file(file, errors=errors)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 341, in message_from_file
+    return Message.from_file(file, offset, **kwargs)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 97, in from_file
+    codes_id = eccodes.codes_grib_new_from_file(file)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/gribapi/gribapi.py", line 415, in grib_new_from_file
+    GRIB_CHECK(err)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/gribapi/gribapi.py", line 232, in GRIB_CHECK
+    errors.raise_grib_error(errid)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/gribapi/errors.py", line 386, in raise_grib_error
+    raise ERROR_MAP[errid](errid)
+gribapi.errors.PrematureEndOfFileError: End of resource reached when reading message
+skipping corrupted Message
+Traceback (most recent call last):
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 274, in itervalues
+    yield self.filestream.message_from_file(file, errors=errors)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 341, in message_from_file
+    return Message.from_file(file, offset, **kwargs)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 97, in from_file
+    codes_id = eccodes.codes_grib_new_from_file(file)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/gribapi/gribapi.py", line 415, in grib_new_from_file
+    GRIB_CHECK(err)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/gribapi/gribapi.py", line 232, in GRIB_CHECK
+    errors.raise_grib_error(errid)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/gribapi/errors.py", line 386, in raise_grib_error
+    raise ERROR_MAP[errid](errid)
+gribapi.errors.PrematureEndOfFileError: End of resource reached when reading message
+Can't create file '/mnt/wato-drive/c52li/weatherloo-data/unet/gfs_grib/20221130_00z_f036_v10.grib2.5b7b6.idx'
+Traceback (most recent call last):
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 274, in itervalues
+    yield self.filestream.message_from_file(file, errors=errors)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 341, in message_from_file
+    return Message.from_file(file, offset, **kwargs)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 105, in from_file
+    raise EOFError("End of file: %r" % file)
+EOFError: End of file: <_io.BufferedReader name='/mnt/wato-drive/c52li/weatherloo-data/unet/gfs_grib/20221130_00z_f036_v10.grib2'>
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 539, in from_indexpath_or_filestream
+    self = cls.from_fieldset(filestream, index_keys, computed_keys)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 379, in from_fieldset
+    return cls.from_fieldset_and_iteritems(fieldset, iteritems, index_keys, computed_keys)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 392, in from_fieldset_and_iteritems
+    for field_id, raw_field in iteritems:
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 292, in __iter__
+    for message in self.itervalues():
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 278, in itervalues
+    raise EOFError("No valid message found: %r" % self.filestream.path)
+EOFError: No valid message found: '/mnt/wato-drive/c52li/weatherloo-data/unet/gfs_grib/20221130_00z_f036_v10.grib2'
+Can't read index file '/mnt/wato-drive/c52li/weatherloo-data/unet/gfs_grib/20221130_00z_f036_v10.grib2.5b7b6.idx'
+Traceback (most recent call last):
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 548, in from_indexpath_or_filestream
+    index_mtime = os.path.getmtime(indexpath)
+  File "/usr/lib/python3.10/genericpath.py", line 55, in getmtime
+    return os.stat(filename).st_mtime
+FileNotFoundError: [Errno 2] No such file or directory: '/mnt/wato-drive/c52li/weatherloo-data/unet/gfs_grib/20221130_00z_f036_v10.grib2.5b7b6.idx'
+skipping corrupted Message
+Traceback (most recent call last):
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 274, in itervalues
+    yield self.filestream.message_from_file(file, errors=errors)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 341, in message_from_file
+    return Message.from_file(file, offset, **kwargs)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 97, in from_file
+    codes_id = eccodes.codes_grib_new_from_file(file)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/gribapi/gribapi.py", line 415, in grib_new_from_file
+    GRIB_CHECK(err)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/gribapi/gribapi.py", line 232, in GRIB_CHECK
+    errors.raise_grib_error(errid)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/gribapi/errors.py", line 386, in raise_grib_error
+    raise ERROR_MAP[errid](errid)
+gribapi.errors.PrematureEndOfFileError: End of resource reached when reading message
+skipping corrupted Message
+Traceback (most recent call last):
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 274, in itervalues
+    yield self.filestream.message_from_file(file, errors=errors)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 341, in message_from_file
+    return Message.from_file(file, offset, **kwargs)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 97, in from_file
+    codes_id = eccodes.codes_grib_new_from_file(file)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/gribapi/gribapi.py", line 415, in grib_new_from_file
+    GRIB_CHECK(err)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/gribapi/gribapi.py", line 232, in GRIB_CHECK
+    errors.raise_grib_error(errid)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/gribapi/errors.py", line 386, in raise_grib_error
+    raise ERROR_MAP[errid](errid)
+gribapi.errors.PrematureEndOfFileError: End of resource reached when reading message
+Can't create file '/mnt/wato-drive/c52li/weatherloo-data/unet/gfs_grib/20221130_06z_f030_u10.grib2.5b7b6.idx'
+Traceback (most recent call last):
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 274, in itervalues
+    yield self.filestream.message_from_file(file, errors=errors)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 341, in message_from_file
+    return Message.from_file(file, offset, **kwargs)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 105, in from_file
+    raise EOFError("End of file: %r" % file)
+EOFError: End of file: <_io.BufferedReader name='/mnt/wato-drive/c52li/weatherloo-data/unet/gfs_grib/20221130_06z_f030_u10.grib2'>
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 539, in from_indexpath_or_filestream
+    self = cls.from_fieldset(filestream, index_keys, computed_keys)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 379, in from_fieldset
+    return cls.from_fieldset_and_iteritems(fieldset, iteritems, index_keys, computed_keys)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 392, in from_fieldset_and_iteritems
+    for field_id, raw_field in iteritems:
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 292, in __iter__
+    for message in self.itervalues():
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 278, in itervalues
+    raise EOFError("No valid message found: %r" % self.filestream.path)
+EOFError: No valid message found: '/mnt/wato-drive/c52li/weatherloo-data/unet/gfs_grib/20221130_06z_f030_u10.grib2'
+Can't read index file '/mnt/wato-drive/c52li/weatherloo-data/unet/gfs_grib/20221130_06z_f030_u10.grib2.5b7b6.idx'
+Traceback (most recent call last):
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 548, in from_indexpath_or_filestream
+    index_mtime = os.path.getmtime(indexpath)
+  File "/usr/lib/python3.10/genericpath.py", line 55, in getmtime
+    return os.stat(filename).st_mtime
+FileNotFoundError: [Errno 2] No such file or directory: '/mnt/wato-drive/c52li/weatherloo-data/unet/gfs_grib/20221130_06z_f030_u10.grib2.5b7b6.idx'
+skipping corrupted Message
+Traceback (most recent call last):
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 274, in itervalues
+    yield self.filestream.message_from_file(file, errors=errors)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 341, in message_from_file
+    return Message.from_file(file, offset, **kwargs)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 97, in from_file
+    codes_id = eccodes.codes_grib_new_from_file(file)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/gribapi/gribapi.py", line 415, in grib_new_from_file
+    GRIB_CHECK(err)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/gribapi/gribapi.py", line 232, in GRIB_CHECK
+    errors.raise_grib_error(errid)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/gribapi/errors.py", line 386, in raise_grib_error
+    raise ERROR_MAP[errid](errid)
+gribapi.errors.PrematureEndOfFileError: End of resource reached when reading message
+skipping corrupted Message
+Traceback (most recent call last):
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 274, in itervalues
+    yield self.filestream.message_from_file(file, errors=errors)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 341, in message_from_file
+    return Message.from_file(file, offset, **kwargs)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 97, in from_file
+    codes_id = eccodes.codes_grib_new_from_file(file)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/gribapi/gribapi.py", line 415, in grib_new_from_file
+    GRIB_CHECK(err)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/gribapi/gribapi.py", line 232, in GRIB_CHECK
+    errors.raise_grib_error(errid)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/gribapi/errors.py", line 386, in raise_grib_error
+    raise ERROR_MAP[errid](errid)
+gribapi.errors.PrematureEndOfFileError: End of resource reached when reading message
+Can't create file '/mnt/wato-drive/c52li/weatherloo-data/unet/gfs_grib/20221129_18z_f048_t2m_k.grib2.5b7b6.idx'
+Traceback (most recent call last):
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 274, in itervalues
+    yield self.filestream.message_from_file(file, errors=errors)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 341, in message_from_file
+    return Message.from_file(file, offset, **kwargs)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 105, in from_file
+    raise EOFError("End of file: %r" % file)
+EOFError: End of file: <_io.BufferedReader name='/mnt/wato-drive/c52li/weatherloo-data/unet/gfs_grib/20221129_18z_f048_t2m_k.grib2'>
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 539, in from_indexpath_or_filestream
+    self = cls.from_fieldset(filestream, index_keys, computed_keys)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 379, in from_fieldset
+    return cls.from_fieldset_and_iteritems(fieldset, iteritems, index_keys, computed_keys)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 392, in from_fieldset_and_iteritems
+    for field_id, raw_field in iteritems:
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 292, in __iter__
+    for message in self.itervalues():
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 278, in itervalues
+    raise EOFError("No valid message found: %r" % self.filestream.path)
+EOFError: No valid message found: '/mnt/wato-drive/c52li/weatherloo-data/unet/gfs_grib/20221129_18z_f048_t2m_k.grib2'
+Can't read index file '/mnt/wato-drive/c52li/weatherloo-data/unet/gfs_grib/20221129_18z_f048_t2m_k.grib2.5b7b6.idx'
+Traceback (most recent call last):
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 548, in from_indexpath_or_filestream
+    index_mtime = os.path.getmtime(indexpath)
+  File "/usr/lib/python3.10/genericpath.py", line 55, in getmtime
+    return os.stat(filename).st_mtime
+FileNotFoundError: [Errno 2] No such file or directory: '/mnt/wato-drive/c52li/weatherloo-data/unet/gfs_grib/20221129_18z_f048_t2m_k.grib2.5b7b6.idx'
+skipping corrupted Message
+Traceback (most recent call last):
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 274, in itervalues
+    yield self.filestream.message_from_file(file, errors=errors)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 341, in message_from_file
+    return Message.from_file(file, offset, **kwargs)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 97, in from_file
+    codes_id = eccodes.codes_grib_new_from_file(file)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/gribapi/gribapi.py", line 415, in grib_new_from_file
+    GRIB_CHECK(err)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/gribapi/gribapi.py", line 232, in GRIB_CHECK
+    errors.raise_grib_error(errid)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/gribapi/errors.py", line 386, in raise_grib_error
+    raise ERROR_MAP[errid](errid)
+gribapi.errors.PrematureEndOfFileError: End of resource reached when reading message
+skipping corrupted Message
+Traceback (most recent call last):
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 274, in itervalues
+    yield self.filestream.message_from_file(file, errors=errors)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 341, in message_from_file
+    return Message.from_file(file, offset, **kwargs)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 97, in from_file
+    codes_id = eccodes.codes_grib_new_from_file(file)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/gribapi/gribapi.py", line 415, in grib_new_from_file
+    GRIB_CHECK(err)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/gribapi/gribapi.py", line 232, in GRIB_CHECK
+    errors.raise_grib_error(errid)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/gribapi/errors.py", line 386, in raise_grib_error
+    raise ERROR_MAP[errid](errid)
+gribapi.errors.PrematureEndOfFileError: End of resource reached when reading message
+skipping corrupted Message
+Traceback (most recent call last):
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 274, in itervalues
+    yield self.filestream.message_from_file(file, errors=errors)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 341, in message_from_file
+    return Message.from_file(file, offset, **kwargs)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 97, in from_file
+    codes_id = eccodes.codes_grib_new_from_file(file)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/gribapi/gribapi.py", line 415, in grib_new_from_file
+    GRIB_CHECK(err)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/gribapi/gribapi.py", line 232, in GRIB_CHECK
+    errors.raise_grib_error(errid)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/gribapi/errors.py", line 386, in raise_grib_error
+    raise ERROR_MAP[errid](errid)
+gribapi.errors.PrematureEndOfFileError: End of resource reached when reading message
+Can't create file '/mnt/wato-drive/c52li/weatherloo-data/unet/gfs_grib/20221130_06z_f036_u10.grib2.5b7b6.idx'
+Traceback (most recent call last):
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 274, in itervalues
+    yield self.filestream.message_from_file(file, errors=errors)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 341, in message_from_file
+    return Message.from_file(file, offset, **kwargs)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 105, in from_file
+    raise EOFError("End of file: %r" % file)
+EOFError: End of file: <_io.BufferedReader name='/mnt/wato-drive/c52li/weatherloo-data/unet/gfs_grib/20221130_06z_f036_u10.grib2'>
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 539, in from_indexpath_or_filestream
+    self = cls.from_fieldset(filestream, index_keys, computed_keys)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 379, in from_fieldset
+    return cls.from_fieldset_and_iteritems(fieldset, iteritems, index_keys, computed_keys)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 392, in from_fieldset_and_iteritems
+    for field_id, raw_field in iteritems:
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 292, in __iter__
+    for message in self.itervalues():
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 278, in itervalues
+    raise EOFError("No valid message found: %r" % self.filestream.path)
+EOFError: No valid message found: '/mnt/wato-drive/c52li/weatherloo-data/unet/gfs_grib/20221130_06z_f036_u10.grib2'
+Can't read index file '/mnt/wato-drive/c52li/weatherloo-data/unet/gfs_grib/20221130_06z_f036_u10.grib2.5b7b6.idx'
+Traceback (most recent call last):
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 548, in from_indexpath_or_filestream
+    index_mtime = os.path.getmtime(indexpath)
+  File "/usr/lib/python3.10/genericpath.py", line 55, in getmtime
+    return os.stat(filename).st_mtime
+FileNotFoundError: [Errno 2] No such file or directory: '/mnt/wato-drive/c52li/weatherloo-data/unet/gfs_grib/20221130_06z_f036_u10.grib2.5b7b6.idx'
+skipping corrupted Message
+Traceback (most recent call last):
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 274, in itervalues
+    yield self.filestream.message_from_file(file, errors=errors)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 341, in message_from_file
+    return Message.from_file(file, offset, **kwargs)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 97, in from_file
+    codes_id = eccodes.codes_grib_new_from_file(file)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/gribapi/gribapi.py", line 415, in grib_new_from_file
+    GRIB_CHECK(err)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/gribapi/gribapi.py", line 232, in GRIB_CHECK
+    errors.raise_grib_error(errid)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/gribapi/errors.py", line 386, in raise_grib_error
+    raise ERROR_MAP[errid](errid)
+gribapi.errors.PrematureEndOfFileError: End of resource reached when reading message
+skipping corrupted Message
+Traceback (most recent call last):
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 274, in itervalues
+    yield self.filestream.message_from_file(file, errors=errors)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 341, in message_from_file
+    return Message.from_file(file, offset, **kwargs)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 97, in from_file
+    codes_id = eccodes.codes_grib_new_from_file(file)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/gribapi/gribapi.py", line 415, in grib_new_from_file
+    GRIB_CHECK(err)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/gribapi/gribapi.py", line 232, in GRIB_CHECK
+    errors.raise_grib_error(errid)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/gribapi/errors.py", line 386, in raise_grib_error
+    raise ERROR_MAP[errid](errid)
+gribapi.errors.PrematureEndOfFileError: End of resource reached when reading message
+Can't create file '/mnt/wato-drive/c52li/weatherloo-data/unet/gfs_grib/20221130_06z_f042_t2m_k.grib2.5b7b6.idx'
+Traceback (most recent call last):
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 274, in itervalues
+    yield self.filestream.message_from_file(file, errors=errors)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 341, in message_from_file
+    return Message.from_file(file, offset, **kwargs)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 105, in from_file
+    raise EOFError("End of file: %r" % file)
+EOFError: End of file: <_io.BufferedReader name='/mnt/wato-drive/c52li/weatherloo-data/unet/gfs_grib/20221130_06z_f042_t2m_k.grib2'>
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 539, in from_indexpath_or_filestream
+    self = cls.from_fieldset(filestream, index_keys, computed_keys)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 379, in from_fieldset
+    return cls.from_fieldset_and_iteritems(fieldset, iteritems, index_keys, computed_keys)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 392, in from_fieldset_and_iteritems
+    for field_id, raw_field in iteritems:
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 292, in __iter__
+    for message in self.itervalues():
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 278, in itervalues
+    raise EOFError("No valid message found: %r" % self.filestream.path)
+EOFError: No valid message found: '/mnt/wato-drive/c52li/weatherloo-data/unet/gfs_grib/20221130_06z_f042_t2m_k.grib2'
+Can't read index file '/mnt/wato-drive/c52li/weatherloo-data/unet/gfs_grib/20221130_06z_f042_t2m_k.grib2.5b7b6.idx'
+Traceback (most recent call last):
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 548, in from_indexpath_or_filestream
+    index_mtime = os.path.getmtime(indexpath)
+  File "/usr/lib/python3.10/genericpath.py", line 55, in getmtime
+    return os.stat(filename).st_mtime
+FileNotFoundError: [Errno 2] No such file or directory: '/mnt/wato-drive/c52li/weatherloo-data/unet/gfs_grib/20221130_06z_f042_t2m_k.grib2.5b7b6.idx'
+skipping corrupted Message
+Traceback (most recent call last):
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 274, in itervalues
+    yield self.filestream.message_from_file(file, errors=errors)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 341, in message_from_file
+    return Message.from_file(file, offset, **kwargs)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/cfgrib/messages.py", line 97, in from_file
+    codes_id = eccodes.codes_grib_new_from_file(file)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/gribapi/gribapi.py", line 415, in grib_new_from_file
+    GRIB_CHECK(err)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/gribapi/gribapi.py", line 232, in GRIB_CHECK
+    errors.raise_grib_error(errid)
+  File "/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/gribapi/errors.py", line 386, in raise_grib_error
+    raise ERROR_MAP[errid](errid)
+gribapi.errors.PrematureEndOfFileError: End of resource reached when reading message
+srun: error: tr-slurm2: task 0: Exited with exit code 1

@@ -1,0 +1,39 @@
+{
+  "station": "eric_d_soulis",
+  "variable": "t2m",
+  "method": "gefs_mean",
+  "lead_time": 48,
+  "best_params": {
+    "seq_len": 24,
+    "hidden_size": 256,
+    "num_layers": 1,
+    "dropout": 0.1072239326853248,
+    "lr": 0.002626960520633285,
+    "batch_size": 16,
+    "patience": 10,
+    "max_norm": 1.0
+  },
+  "n_samples": 1243,
+  "n_sequences": 1212,
+  "split": {
+    "train": 848,
+    "val": 181,
+    "test": 183
+  },
+  "epochs_trained": 15,
+  "best_val_loss": 0.605369867376201,
+  "metrics_normalized": {
+    "rmse": 0.9662706851959229,
+    "mae": 0.611493706703186,
+    "bias": -0.32055965065956116
+  },
+  "metrics_original": {
+    "rmse": 2.608283042907715,
+    "mae": 1.6506229639053345,
+    "bias": -0.8652960658073425
+  },
+  "original_sweep_best_rmse": 2.236536979675293,
+  "original_sweep_source": "output/eric_d_soulis_t2m/gefs_mean_48h/sweep_results.json",
+  "device": "cpu",
+  "retrained_at": "2026-07-27T09:08:20Z"
+}

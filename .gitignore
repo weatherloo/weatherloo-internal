@@ -1,6 +1,7 @@
 .venv/
 artifacts/
 data/hrrr/
+data/era5/
 test_sprint/__pycache__/
 test_sprint/src/**/__pycache__/
 **/__pycache__/

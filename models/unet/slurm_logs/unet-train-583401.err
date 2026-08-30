@@ -1,0 +1,17 @@
+/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/google/api_core/_python_version_support.py:255: FutureWarning: You are using a Python version (3.10.12) which Google will stop supporting in new releases of google.api_core once it reaches its end of life (2026-10-04). Please upgrade to the latest Python version, or at least Python 3.11, to continue receiving updates for google.api_core past that date.
+  warnings.warn(message, FutureWarning)
+/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/google/api_core/_python_version_support.py:255: FutureWarning: You are using a Python version (3.10.12) which Google will stop supporting in new releases of google.cloud._storage_v2 once it reaches its end of life (2026-10-04). Please upgrade to the latest Python version, or at least Python 3.11, to continue receiving updates for google.cloud._storage_v2 past that date.
+  warnings.warn(message, FutureWarning)
+/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/google/api_core/_python_version_support.py:255: FutureWarning: You are using a Python version (3.10.12) which Google will stop supporting in new releases of google.cloud.storage_control_v2 once it reaches its end of life (2026-10-04). Please upgrade to the latest Python version, or at least Python 3.11, to continue receiving updates for google.cloud.storage_control_v2 past that date.
+  warnings.warn(message, FutureWarning)
+I0727 16:12:33.949026 1263965 fork_posix.cc:71] Other threads are currently calling into gRPC, skipping fork() handlers
+I0727 16:12:33.958595 1263965 fork_posix.cc:71] Other threads are currently calling into gRPC, skipping fork() handlers
+I0727 16:12:33.968084 1263965 fork_posix.cc:71] Other threads are currently calling into gRPC, skipping fork() handlers
+I0727 16:12:33.980450 1263965 fork_posix.cc:71] Other threads are currently calling into gRPC, skipping fork() handlers
+I0727 16:14:45.305053 1263965 fork_posix.cc:71] Other threads are currently calling into gRPC, skipping fork() handlers
+I0727 16:14:45.315828 1263965 fork_posix.cc:71] Other threads are currently calling into gRPC, skipping fork() handlers
+I0727 16:14:45.346951 1263965 fork_posix.cc:71] Other threads are currently calling into gRPC, skipping fork() handlers
+I0727 16:14:45.358794 1263965 fork_posix.cc:71] Other threads are currently calling into gRPC, skipping fork() handlers
+srun: Job step aborted: Waiting up to 32 seconds for job step to finish.
+slurmstepd: error: *** JOB 583401 ON tr-slurm2 CANCELLED AT 2026-07-27T16:16:05 ***
+slurmstepd: error: *** STEP 583401.0 ON tr-slurm2 CANCELLED AT 2026-07-27T16:16:05 ***

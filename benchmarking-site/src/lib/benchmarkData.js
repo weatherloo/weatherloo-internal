@@ -1,13 +1,16 @@
 import {
-  API_DIR,
   DATA_DIR,
+  INIT_CYCLES,
   LEAD_TIMES_HOURS,
   METRICS,
-  VARIABLES,
 } from "../constants.js";
+import { combineFromPartials, resolveMonths } from "./aggregateCombine.js";
 
 const runsCache = new Map();
 const methodDataCache = new Map();
+const aggregateDocCache = new Map();
+
+const ALL_MONTHS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
 
 /**
  * @typedef {object} AggregateResult
@@ -49,7 +52,17 @@ export function aggregateRuns(runs, locationId, variableKey) {
         .map((s) => s[metric]?.[i])
         .filter((v) => typeof v === "number");
       if (values.length === 0) return null;
-      return values.reduce((a, b) => a + b, 0) / values.length;
+      const mean = values.reduce((a, b) => a + b, 0) / values.length;
+      // Each per-init record holds one forecast/obs pair, so its stored "rmse"
+      // is just |error|. Averaging those gives MAE; a pooled RMSE has to square
+      // first and take the root last.
+      if (metric === "rmse") {
+        const ms = values.reduce((a, b) => a + b * b, 0) / values.length;
+        return Math.sqrt(ms);
+      }
+      // ACC over single-sample records degenerates to +/-1; averaging is meaningless.
+      if (metric === "acc") return null;
+      return mean;
     });
   }
 
@@ -61,15 +74,17 @@ export function aggregateRuns(runs, locationId, variableKey) {
 }
 
 /**
- * @param {object} payload
- * @returns {AggregateResult}
+ * @param {object|undefined} entry — aggregates[station][variable] from aggregate.json
+ * @param {object} doc — parsed aggregate.json
+ * @returns {AggregateResult|null}
  */
-function aggregatePayloadToResult(payload) {
-  const out = { lead_times_hours: payload.lead_times_hours ?? LEAD_TIMES_HOURS };
+function aggregateEntryToResult(entry, doc) {
+  if (!entry) return null;
+  const out = { lead_times_hours: doc.lead_times_hours ?? LEAD_TIMES_HOURS };
   for (const metric of METRICS) {
-    out[metric] = payload[metric] ?? [];
+    out[metric] = entry[metric] ?? [];
   }
-  out.n_samples = payload.n_samples ?? null;
+  out.n_samples = entry.n_samples ?? null;
   return out;
 }
 
@@ -107,38 +122,162 @@ export function filterRunsByDateRange(runs, initFrom, initTo) {
   });
 }
 
+const aggregateSourceCache = new Map();
+
 /**
+ * One compact per-method file of per-init bias values, built by
+ * scripts/build_site_aggregates.py. This is what makes the site work on static
+ * hosting: one request per method instead of a backend call or thousands of
+ * per-init fetches.
  * @param {string} methodId
- * @param {Record<string, string>} [filters]
  */
-async function tryLoadFromNpzApi(methodId, locationId, filters = {}) {
-  const statusRes = await fetch(`${API_DIR}/${methodId}`);
-  if (!statusRes.ok) return null;
+async function loadAggregateSource(methodId) {
+  if (aggregateSourceCache.has(methodId)) {
+    return aggregateSourceCache.get(methodId);
+  }
+  let doc = null;
+  try {
+    const res = await fetch(`${DATA_DIR}/aggregates/${methodId}.json`);
+    if (res.ok) doc = await res.json();
+  } catch {
+    /* fall through to the other sources */
+  }
+  aggregateSourceCache.set(methodId, doc);
+  return doc;
+}
 
-  const status = await statusRes.json();
-  if (!status.npz_available) return null;
+/**
+ * Pool per-init bias into skill scores for one station/variable.
+ * @param {object} source
+ * @returns {AggregateResult|null}
+ */
+export function aggregateFromBias(source, locationId, variableKey, filters = {}) {
+  const rows = source?.bias?.[locationId]?.[variableKey];
+  if (!Array.isArray(rows)) return null;
 
-  const baseParams = new URLSearchParams({ location: locationId, ...filters });
+  const leadTimes = source.lead_times_hours ?? LEAD_TIMES_HOURS;
+  const inits = source.initializations ?? [];
 
-  const fetchVariable = async (variable) => {
-    const params = new URLSearchParams(baseParams);
-    params.set("variable", variable);
-    const res = await fetch(`${API_DIR}/${methodId}/aggregate?${params}`);
-    if (!res.ok) {
-      throw new Error(`NPZ aggregate failed for ${variable}: ${res.status}`);
+  const cycles = filters.cycles
+    ? filters.cycles.split(",").map((c) => parseInt(c, 10)).filter((n) => !Number.isNaN(n))
+    : [];
+  const from = filters.init_from ? new Date(filters.init_from).getTime() : -Infinity;
+  const to = filters.init_to ? new Date(filters.init_to).getTime() : Infinity;
+
+  const keep = [];
+  for (let i = 0; i < rows.length; i += 1) {
+    const iso = inits[i];
+    if (!iso) continue;
+    const t = new Date(iso).getTime();
+    if (t < from || t > to) continue;
+    if (cycles.length && !cycles.includes(new Date(iso).getUTCHours())) continue;
+    keep.push(rows[i]);
+  }
+  if (keep.length === 0) return null;
+
+  const out = { lead_times_hours: leadTimes };
+  const nSamples = [];
+  const rmse = [];
+  const mae = [];
+  const bias = [];
+
+  leadTimes.forEach((_, i) => {
+    let n = 0;
+    let sum = 0;
+    let sumAbs = 0;
+    let sumSq = 0;
+    for (const row of keep) {
+      const b = row?.[i];
+      if (typeof b !== "number") continue;
+      n += 1;
+      sum += b;
+      sumAbs += Math.abs(b);
+      sumSq += b * b;
     }
-    return res.json();
-  };
+    nSamples.push(n);
+    if (n === 0) {
+      rmse.push(null);
+      mae.push(null);
+      bias.push(null);
+      return;
+    }
+    rmse.push(Math.sqrt(sumSq / n));
+    mae.push(sumAbs / n);
+    bias.push(sum / n);
+  });
 
-  const [t2mPayload, windPayload] = await Promise.all(
-    VARIABLES.map((variable) => fetchVariable(variable)),
-  );
+  out.rmse = rmse;
+  out.mae = mae;
+  out.bias = bias;
+  out.acc = leadTimes.map(() => null);
+  out.n_samples = nSamples;
+  out.n_inits = keep.length;
+  return out;
+}
+
+/**
+ * Fetch (and cache) the static aggregate.json for a method.
+ * Built by scripts/build_static_aggregates.py; null when the method has none.
+ * @param {string} methodId
+ * @returns {Promise<object|null>}
+ */
+async function loadAggregateDoc(methodId) {
+  if (aggregateDocCache.has(methodId)) {
+    return aggregateDocCache.get(methodId);
+  }
+  let doc = null;
+  try {
+    const res = await fetch(`${DATA_DIR}/${methodId}/aggregate.json`);
+    if (res.ok) doc = await res.json();
+  } catch {
+    /* no static aggregate — fall back to per-init JSON */
+  }
+  aggregateDocCache.set(methodId, doc);
+  return doc;
+}
+
+/**
+ * Serve the request from the static aggregate document when it can reproduce
+ * the NPZ API's masked aggregation exactly: no filters -> precomputed overall
+ * mean; cycle subsets and month-aligned date ranges -> recombined partials.
+ * Returns null when the filters need per-init JSON (non-month-aligned range).
+ * @param {object} doc
+ * @param {string} locationId
+ * @param {Record<string, string>} filters
+ * @returns {MethodData|null}
+ */
+function tryFromStaticAggregate(doc, locationId, filters) {
+  const hasCycles = Boolean(filters.cycles);
+  const hasRange = Boolean(filters.init_from || filters.init_to);
+
+  if (!hasCycles && !hasRange) {
+    const perVariable = doc.aggregates?.[locationId];
+    if (!perVariable) return null;
+    return {
+      source: "aggregate",
+      nInits: doc.n_inits ?? 0,
+      t2m: aggregateEntryToResult(perVariable.t2m, doc),
+      wind_speed: aggregateEntryToResult(perVariable.wind_speed, doc),
+    };
+  }
+
+  const cycleHours = hasCycles
+    ? filters.cycles.split(",").map((c) => parseInt(c, 10))
+    : INIT_CYCLES;
+  const months = hasRange
+    ? resolveMonths(filters.init_from, filters.init_to, doc.year)
+    : ALL_MONTHS;
+  if (!months) return null;
+
+  const t2m = combineFromPartials(doc, locationId, "t2m", months, cycleHours);
+  const wind = combineFromPartials(doc, locationId, "wind_speed", months, cycleHours);
+  if (!t2m || !wind) return null;
 
   return {
-    source: "npz",
-    nInits: t2mPayload.n_inits ?? status.n_inits ?? 0,
-    t2m: aggregatePayloadToResult(t2mPayload),
-    wind_speed: aggregatePayloadToResult(windPayload),
+    source: "aggregate",
+    nInits: t2m.nInits,
+    t2m: t2m.result,
+    wind_speed: wind.result,
   };
 }
 
@@ -181,11 +320,12 @@ export async function loadMethodRuns(methodId) {
 
 /**
  * Load aggregated skill scores for a method at a location.
- * Prefers consolidated NPZ via /api when available; falls back to per-init JSON.
+ * Prefers the static aggregate.json (precomputed from consolidated NPZ);
+ * falls back to per-init JSON when there is none or the filters need it.
  *
  * @param {string} methodId
  * @param {string} locationId
- * @param {Record<string, string>} [filters] — forwarded to NPZ API (init_from, init_to, cycles)
+ * @param {Record<string, string>} [filters] — init_from, init_to, cycles
  * @returns {Promise<MethodData|null>}
  */
 export async function loadMethodData(methodId, locationId, filters = {}) {
@@ -194,14 +334,35 @@ export async function loadMethodData(methodId, locationId, filters = {}) {
     return methodDataCache.get(cacheKey);
   }
 
+  // Static aggregates first: they work on any host, need one request, and pool
+  // RMSE correctly. The API and the per-init walk stay as fallbacks.
+  const source = await loadAggregateSource(methodId);
+  if (source) {
+    const t2m = aggregateFromBias(source, locationId, "t2m", filters);
+    const wind = aggregateFromBias(source, locationId, "wind_speed", filters);
+    if (t2m || wind) {
+      const result = {
+        source: "aggregates",
+        nInits: t2m?.n_inits ?? wind?.n_inits ?? 0,
+        t2m,
+        wind_speed: wind,
+      };
+      methodDataCache.set(cacheKey, result);
+      return result;
+    }
+  }
+
   try {
-    const fromApi = await tryLoadFromNpzApi(methodId, locationId, filters);
-    if (fromApi) {
-      methodDataCache.set(cacheKey, fromApi);
-      return fromApi;
+    const doc = await loadAggregateDoc(methodId);
+    if (doc) {
+      const fromStatic = tryFromStaticAggregate(doc, locationId, filters);
+      if (fromStatic) {
+        methodDataCache.set(cacheKey, fromStatic);
+        return fromStatic;
+      }
     }
   } catch (err) {
-    console.warn(`NPZ API unavailable for ${methodId}, falling back to JSON:`, err);
+    console.warn(`Static aggregate unusable for ${methodId}, falling back to JSON:`, err);
   }
 
   const allRuns = await loadMethodRuns(methodId);

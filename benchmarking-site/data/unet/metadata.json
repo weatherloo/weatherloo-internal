@@ -1,0 +1,53 @@
+{
+  "method_id": "unet",
+  "model": "U-Net residual post-processing of GFS (models/unet)",
+  "objective": "network predicts (GFS - ERA5); corrected = GFS - predicted_residual",
+  "baseline": "gfs_interpolated (same GFS input, no correction)",
+  "checkpoint": "models/unet/checkpoints/best_model.pt",
+  "checkpoint_epoch": 6,
+  "checkpoint_val_loss": 0.5548688737205466,
+  "split_mode": "chronological",
+  "channels": [
+    "t2m",
+    "u10",
+    "v10"
+  ],
+  "region": {
+    "lat_min": 41.0,
+    "lat_max": 46.0,
+    "lon_min": -84.0,
+    "lon_max": -74.0,
+    "resolution_deg": 0.25
+  },
+  "trained_cycles_utc": [
+    0,
+    6,
+    12,
+    18
+  ],
+  "trained_forecast_hours": [
+    6,
+    12,
+    18,
+    24,
+    30,
+    36,
+    42,
+    48
+  ],
+  "lead_channel": true,
+  "coverage": "restricted to the checkpoint's trained cycles/leads; other cells null",
+  "cycles": [
+    "00Z",
+    "06Z",
+    "12Z",
+    "18Z"
+  ],
+  "grid": "0p25",
+  "year": 2025,
+  "interpolation": "bilinear (scipy RegularGridInterpolator) on the corrected region grid",
+  "wind": "sqrt(u10^2 + v10^2) after correcting u/v separately, m/s to km/h",
+  "acc_climatology": "DOY + UTC-hour mean from 2025 station obs, \u00b115-day window",
+  "npz_file": "unet_2025.npz",
+  "npz_schema": "see benchmarking-site/AGENTS.md"
+}

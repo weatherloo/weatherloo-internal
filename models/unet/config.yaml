@@ -1,0 +1,79 @@
+# U-Net post-processing — configuration
+# Region, data sources, and (placeholder) training hyperparameters.
+# Step 1 only uses `region`, `stations`, `data`, and `sample_dates`.
+
+# Southern Ontario bounding box (covers CYYZ and Eric D. Soulis).
+# ERA5 and GFS share the same 0.25° grid (1440 x 721), so the boxes align.
+region:
+  lat_min: 41.0
+  lat_max: 46.0
+  lon_min: -84.0   # degrees East, negative = West
+  lon_max: -74.0
+  resolution_deg: 0.25
+
+# Station coordinates — use exactly (from benchmarking-site/AGENTS.md).
+stations:
+  cyyz:
+    lat: 43.6777
+    lon: -79.6248
+  eric_d_soulis:
+    lat: 43.4668
+    lon: -80.5164
+
+data:
+  # ERA5 reanalysis (ground truth) — GCP public ARCO zarr store.
+  # Coverage: 1940-01-01 .. near-present (continuously extended), 1-hourly, 0.25°.
+  # NOTE: the "-v3" suffix is the ARCO dataset version, not the zarr format —
+  # the store is Zarr v2 and opens with zarr<3 exactly like the old store.
+  # The usable end date is read from the store's time axis at runtime
+  # (dataset.era5_last_valid_time), so nothing here goes stale.
+  era5:
+    store: "gs://gcp-public-data-arco-era5/ar/full_37-1h-0p25deg-chunk-1.zarr-v3"
+    token: "anon"
+    variables:
+      t2m: "2m_temperature"                 # Kelvin
+      u10: "10m_u_component_of_wind"         # m/s
+      v10: "10m_v_component_of_wind"         # m/s
+
+  # GFS forecast (model input) — AWS Open Data, byte-range GRIB (no credentials).
+  # Coverage on this bucket: 2021-01-01 onward (NO 2020 data).
+  gfs:
+    aws_base: "https://noaa-gfs-bdp-pds.s3.amazonaws.com"
+    # NOTE: the 0.25° pgrb2 archive on this bucket begins ~2021-03-23.
+    # All four synoptic cycles. Restricting to 00/12Z aliases the diurnal error
+    # cycle onto the lead axis (each lead then sees only two valid hours), which
+    # shows up as a sawtooth in the dashboard's RMSE-vs-lead curve.
+    init_hours_utc: [0, 6, 12, 18]                        # 00/06/12/18Z cycles
+    # f006 .. f048. Lead is an input channel (dataset.build_model_input), so one
+    # network covers the whole range; LEAD_SCALE_HOURS must match the max here.
+    forecast_hours: [6, 12, 18, 24, 30, 36, 42, 48]
+    # GRIB .idx needles for byte-range extraction.
+    grib_needles:
+      t2m_k: ":TMP:2 m above ground:"        # Kelvin
+      u10: ":UGRD:10 m above ground:"        # m/s
+      v10: ":VGRD:10 m above ground:"        # m/s
+    download_retries: 6
+
+# Sample (init_date, cycle, forecast_hour) triples for Step 1 verification.
+# NOTE: chosen when the pipeline used the old 6-hourly store (ended 2021-12-31);
+# the usable window was 2021-03-23 .. 2021-12-31. With the new store the
+# overlap extends to near-present, but these 2021 samples remain valid.
+sample_forecasts:
+  - {date: "2021-04-15", cycle: 0,  fxx: 6}
+  - {date: "2021-05-15", cycle: 0,  fxx: 6}
+  - {date: "2021-07-15", cycle: 12, fxx: 6}
+  - {date: "2021-10-15", cycle: 0,  fxx: 6}
+  - {date: "2021-07-15", cycle: 0,  fxx: 24}
+
+# ---- Placeholders for later steps (not used in Step 1) ----
+train:
+  learning_objective: "residual"   # predict (GFS - ERA5); corrected = GFS - pred_error
+  batch_size: 16
+  epochs: 100
+  learning_rate: 1.0e-3
+  val_fraction: 0.15
+  seed: 42
+model:
+  in_channels: 3      # t2m, u10, v10
+  out_channels: 3     # residuals for t2m, u10, v10
+  base_features: 32

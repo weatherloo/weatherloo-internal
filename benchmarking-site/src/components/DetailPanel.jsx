@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   INIT_CYCLES,
   LOCATION_LABELS,
@@ -7,9 +7,33 @@ import {
 } from "../constants.js";
 import { loadMethodData } from "../lib/benchmarkData.js";
 import VariableCharts from "./VariableCharts.jsx";
+import SummaryTable from "./SummaryTable.jsx";
+
+function buildFilters(cycleFilter, timePreset, customFrom, customTo) {
+  const selectedCycles =
+    cycleFilter === "all" ? INIT_CYCLES : [parseInt(cycleFilter, 10)];
+
+  const filters = {};
+  if (selectedCycles.length !== INIT_CYCLES.length) {
+    filters.cycles = selectedCycles.join(",");
+  }
+
+  if (timePreset !== "all") {
+    const preset = TIME_PRESETS.find((p) => p.value === timePreset);
+    if (preset && timePreset !== "custom") {
+      filters.init_from = preset.from;
+      filters.init_to = preset.to;
+    } else if (timePreset === "custom") {
+      if (customFrom) filters.init_from = `${customFrom}T00:00:00Z`;
+      if (customTo) filters.init_to = `${customTo}T18:00:00Z`;
+    }
+  }
+
+  return filters;
+}
 
 function formatLoadStatus(nInits, source, selectedCycles, timePreset, customFrom, customTo) {
-  const via = source === "npz" ? " (consolidated NPZ)" : "";
+  const via = source === "aggregate" ? " (precomputed NPZ aggregate)" : "";
   const allCycles = selectedCycles.length === INIT_CYCLES.length;
   const cycleLabel = allCycles
     ? null
@@ -45,6 +69,10 @@ export default function DetailPanel({ locationId }) {
 
   const selectedCycles =
     cycleFilter === "all" ? INIT_CYCLES : [parseInt(cycleFilter, 10)];
+  const filters = useMemo(
+    () => buildFilters(cycleFilter, timePreset, customFrom, customTo),
+    [cycleFilter, timePreset, customFrom, customTo],
+  );
 
   function toggleMethod(id) {
     setSelectedIds((prev) => {
@@ -82,21 +110,6 @@ export default function DetailPanel({ locationId }) {
         return;
       }
 
-      const filters = {};
-      if (selectedCycles.length !== INIT_CYCLES.length)
-        filters.cycles = selectedCycles.join(",");
-
-      if (timePreset !== "all") {
-        const preset = TIME_PRESETS.find((p) => p.value === timePreset);
-        if (preset && timePreset !== "custom") {
-          filters.init_from = preset.from;
-          filters.init_to = preset.to;
-        } else if (timePreset === "custom") {
-          if (customFrom) filters.init_from = `${customFrom}T00:00:00Z`;
-          if (customTo) filters.init_to = `${customTo}T18:00:00Z`;
-        }
-      }
-
       const ids = [...selectedIds];
       const results = await Promise.all(
         ids.map((id) => loadMethodData(id, locationId, filters))
@@ -131,7 +144,7 @@ export default function DetailPanel({ locationId }) {
     return () => {
       cancelled = true;
     };
-  }, [locationId, selectedIds, cycleFilter, timePreset, customFrom, customTo]);
+  }, [locationId, selectedIds, cycleFilter, timePreset, customFrom, customTo, filters]);
 
   const title = LOCATION_LABELS[locationId] ?? locationId;
   const noData = selectedIds.size > 0 && methodResults.length === 0 && !loadStatus.startsWith("Loading");
@@ -235,6 +248,8 @@ export default function DetailPanel({ locationId }) {
       <p id="load-status" className="status">
         {loadStatus}
       </p>
+
+      <SummaryTable locationId={locationId} filters={filters} />
 
       {selectedIds.size === 0 ? (
         <p className="status">Select one or more methods above to see charts.</p>

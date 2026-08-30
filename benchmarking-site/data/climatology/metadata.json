@@ -1,21 +1,21 @@
 {
   "method_id": "climatology",
-  "model": "DOY + UTC-hour station climatology (2010-2024)",
+  "model": "DOY + UTC-hour station climatology (2010-2025)",
   "cycles": [
     "00Z",
     "06Z",
     "12Z",
     "18Z"
   ],
-  "year": 2025,
-  "forecast_logic": "Multi-year DOY + UTC-hour mean from station observations (2010-2024). The climatological mean at the valid_time's day-of-year and UTC hour is the forecast.",
-  "climatology_years": "2010-2024",
+  "year": 2026,
+  "forecast_logic": "Multi-year DOY + UTC-hour mean from station observations (2010-2025). The climatological mean at the valid_time's day-of-year and UTC hour is the forecast.",
+  "climatology_years": "2010-2025",
   "climatology_window_days": 15,
   "climatology_min_samples": 3,
   "wind": "Station wind speed (km/h) from observations; no u/v decomposition",
   "acc_note": "ACC is null: forecast equals climatology, so all forecast anomalies are zero",
   "source_cyyz": "ECCC climate-hourly API, STN_ID 51459",
   "source_eric_d_soulis": "UW Soulis archive (main logger 2010-2014, HOBO 2015-2024)",
-  "npz_file": "climatology_2025.npz",
+  "npz_file": "climatology_2026.npz",
   "npz_schema": "see benchmarking-site/AGENTS.md"
 }

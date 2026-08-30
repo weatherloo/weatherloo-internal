@@ -42,7 +42,7 @@ npm run dev
 
 Open http://localhost:5173 — click a station on the map, pick a method, view RMSE / MAE / bias / ACC vs lead time. The UI **averages** metrics across all loaded init files for the selected location.
 
-`npm run dev` starts **Vite** and the **NPZ API** (`server/npz_api.py` on port 5174). When a method has a consolidated `<method_id>_2025.npz`, the dashboard loads aggregates via `/api/benchmark/…` instead of fetching hundreds of per-init JSON files. Without NPZ, it falls back to per-init JSON (via `index.json` or sample file).
+When a method has a consolidated `<method_id>_2025.npz`, the dashboard loads its precomputed **site aggregate** (`data/aggregates/<method_id>.json`, built by `scripts/build_site_aggregates.py` at the **repo root** — also `npm run build:data`). Cycle/month filters recombine its per-(month × cycle) partial sums client-side, so the site needs no backend. Without an aggregate it falls back to per-init JSON (via `index.json` or sample file), which is hundreds of sequential fetches — always build the aggregate.
 
 Rebuild the consolidated NPZ from existing JSON without re-fetching:
 
@@ -50,9 +50,13 @@ Rebuild the consolidated NPZ from existing JSON without re-fetching:
 python3 data/gfs_interpolated/compute_benchmark.py --export-npz-only
 ```
 
-API only needs `numpy` (`pip install -r server/requirements.txt`, or use the repo `.venv` — `server/run_api.sh` picks it automatically).
+After (re)building an NPZ, refresh the static aggregate:
 
-Production build (serves `dist/` with benchmark JSON copied in):
+```bash
+npm run build:data       # or: python3 ../scripts/build_site_aggregates.py
+```
+
+Production build (bundles `dist/` with `aggregate.json` files copied in; see `DEPLOY.md` for Vercel):
 
 ```bash
 npm run build
@@ -108,8 +112,79 @@ Rebuild NPZ from existing JSON without re-fetching:
 | `climatology` | `data/climatology/compute_benchmark.py` | Multi-year (2010-2024) DOY+UTC-hour station climatology; no GRIB needed. `--fetch-historical` downloads historical obs. ACC is always null (forecast = climatology). |
 | `ecmwf_aifs` | `data/ecmwf_aifs/compute_benchmark.py` | ECMWF AIFS Single 0.25° at **00/06/12/18Z** via [dynamical.org catalog](https://dynamical.org/catalog/ecmwf-aifs-single-forecast/) (`dynamical-catalog`); 6-hourly steps; bilinear interp of `temperature_2m` / `wind_u_10m` / `wind_v_10m`. Archive 2024-04-01–present includes full 2025. `--resume` skips existing init JSONs. |
 | `gefs_mean` | `data/gefs_mean/compute_benchmark.py` | GEFS **ensemble mean** (`geavg`) at **0.5°** from AWS `noaa-gefs-pds`; 00/06/12/18Z; bilinear interp; wind from 10 m u/v. Pre-averaged 21-member mean on grid — no per-member downloads. `--resume` skips existing init JSONs. |
+| `unet` | `data/unet/compute_benchmark.py` | **U-Net post-processing of GFS** (`models/unet/`). Thin adapter over the real model code; `corrected = GFS − predicted_residual` on the 21×41 southern Ontario grid, then interpolated to the station. Scored over the checkpoint’s recorded `sample_space` (now 00/06/12/18Z, f006–f048); other cells null unless `--all-cells`. Reuses `run_pipeline.py fetch` output via `--data-dir`. See **U-Net post-processing** below. |
+| `cnn_lstm_bias_correction` | `data/cnn_lstm_bias_correction/compute_benchmark.py` | Scores the trained CNN-LSTM (`src/hrrr_bias_correction`) on the 2025 **test** split. Predicts HRRR-minus-obs bias; scores `corrected = HRRR − bias`. Reads the Keras model + Zarr store — no GRIB download. **eric_d_soulis only** (model is Soulis-trained; `cyyz` null by design); horizon **f48** (leads 54–72h null by design). Needs the model trained first (`scripts/submit_training_slurm.sh`). `--model-path`/`--zarr-store` override defaults; `--resume`/`--export-npz-only` as usual. |
 
 Add a row here when implementing other methods.
+
+### U-Net post-processing
+
+All of the modelling lives in `models/unet/` — `data/unet/compute_benchmark.py`
+is a thin **adapter** that imports it (`model/unet.py`, `data/dataset.py`,
+`config.yaml`) rather than reimplementing it, so the dashboard can never
+disagree with `models/unet/evaluate.py` about geometry, normalization, or sign.
+
+**Sign — the easy way to get this wrong.** The network predicts the *error*
+`GFS − ERA5`, so the correction is **subtracted**:
+
+```
+x_norm    = (gfs − gfs.mean) / gfs.std
+r_norm    = unet(x_norm)
+corrected = gfs − (r_norm * residual.std + residual.mean)
+```
+
+Adding it roughly doubles the error instead of removing it.
+
+- **Grid:** the southern Ontario box in `models/unet/config.yaml`
+  (41–46 °N, −84 to −74 °E at 0.25°) = **21 × 41**. This is baked into the
+  checkpoint — `ResidualUNet` reflect-pads 21×41 → 24×48 internally and crops
+  back, so a different crop is not interchangeable.
+- **Channels:** `t2m` in **°C** (GFS `TMP` is Kelvin), `u10`/`v10` in m/s.
+- **Wind:** correct `u10`/`v10` separately, then derive `sqrt(u² + v²) * 3.6`.
+  Never correct speed directly — the model was not trained on it.
+- **Interpolation order:** correct the *grid*, then bilinearly interpolate the
+  corrected grid to the station — not the other way round.
+- **Reusing fetched data:** pass `--data-dir` (or set `$UNET_DATA_DIR`) to the
+  cache built by `models/unet/run_pipeline.py fetch`; cached samples need no
+  download. Either the parent or the `unet_training/` directory itself works.
+  The run prints its cache-hit count on startup — if that says `0`, the
+  `--data-dir` is wrong and the job is about to re-download the year from AWS.
+
+**Running a full year on WATcloud Slurm:**
+
+```bash
+sbatch benchmarking-site/data/unet/run_benchmark.slurm            # single node
+sbatch --array=1-8 benchmarking-site/data/unet/run_benchmark.slurm  # sharded
+sbatch --dependency=afterok:<jobid> \
+    benchmarking-site/data/unet/finalize_benchmark.slurm
+```
+
+`DATA_DIR`, `YEAR`, and `WORKERS` are overridable (`--export=ALL,YEAR=2024`).
+Array tasks pass `--shard i/N --no-export`, so they take disjoint slices and
+leave `index.json` / the NPZ to the finalize job — concurrent shards would
+otherwise race and each publish a partial index. Failed inits land in
+`failures.json` rather than killing the job; re-run with `--resume` to retry
+just those.
+
+- **Lead time is an input channel.** The network takes **4** channels — the
+  three normalized GFS fields plus a constant plane encoding the lead — so one
+  model covers f006–f048 without over-correcting short leads. Build the tensor
+  with `dataset.build_model_input`, never by hand.
+
+**Coverage.** Currently **00/06/12/18Z at f006–f048**. The remaining cells of
+the site's 00/06/12/18Z × 6–72 h matrix (f054–f072) are written as `null`
+rather than silently extrapolated. `--all-cells` runs them anyway, at the cost
+of feeding the model inputs far outside its training distribution.
+
+The range comes from the **checkpoint's** recorded `sample_space`, not from
+`config.yaml` — config describes the next training run, so after widening it a
+checkpoint trained on the old set would otherwise be scored on cells it never
+saw. Checkpoints predating that record fall back to config and say so.
+
+> **Not yet a win.** `models/unet/README.md` records a held-out 2021 evaluation
+> where this model *loses* to raw GFS on t2m (CYYZ RMSE 1.289 → 1.404) and to a
+> zero-parameter seasonal-mean-bias baseline. Treat its dashboard numbers as a
+> baseline to beat, not a finished result.
 
 ### HRDPS analysis live GRIB archive
 
@@ -192,7 +267,7 @@ The dashboard **averages over whatever loads**; sparse or in-progress datasets a
 
 ### NPZ export
 
-Compute scripts write a **single consolidated NPZ** alongside the per-init JSON files. The dashboard reads NPZ **via the thin API** in `server/npz_api.py` (proxied at `/api/benchmark` during `npm run dev` / `npm run preview`); without NPZ it falls back to per-init JSON.
+Compute scripts write a **single consolidated NPZ** alongside the per-init JSON files. The dashboard reads NPZ **indirectly via the site aggregate** `data/aggregates/<method_id>.json`, built from it by `scripts/build_site_aggregates.py` (repo root); without NPZ it falls back to per-init JSON. `server/npz_api.py` is a legacy local tool (run manually with `bash server/run_api.sh`) kept for ad-hoc NPZ inspection; nothing in the site calls it anymore.
 
 - **Filename:** `data/<method_id>/<method_id>_<year>.npz` (e.g. `gfs_interpolated_2025.npz`).
 - **Document in** `data/<method_id>/metadata.json` via `"npz_file"` and `"npz_schema": "see benchmarking-site/AGENTS.md"`.
@@ -258,6 +333,8 @@ Full coverage below is the goal for a **finished** method; incomplete cycles, le
 | HRDPS analysis | `hrdps_analysis` |
 | HRRR interpolated | `hrrr_interpolated` |
 | HRRR analysis | `hrrr_analysis` |
+| CNN-LSTM bias correction | `cnn_lstm_bias_correction` |
 | ECMWF AIFS | `ecmwf_aifs` |
 | GraphCast | `graphcast` |
 | Pangu-Weather | `pangu` |
+| U-Net post-processing (GFS) | `unet` |

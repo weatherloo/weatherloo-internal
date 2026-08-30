@@ -174,6 +174,11 @@ def init_json_paths(out_dir: Path, year: int) -> list[Path]:
     return sorted(out_dir.glob(f"{year}-*T*Z.json"))
 
 
+def all_init_json_paths(out_dir: Path) -> list[Path]:
+    """Per-init JSON files across all years (for index.json)."""
+    return sorted(out_dir.glob("????-??-??T??Z.json"))
+
+
 # --------------------------------------------------------------------------- #
 # Raw GFS forecast recovery: raw = observation + bias                          #
 # --------------------------------------------------------------------------- #
@@ -510,7 +515,7 @@ def main() -> None:
             print(f"  [{i}/{len(inits)}] wrote {fname}")
 
     write_metadata(out_dir, args.year)
-    existing = sorted(p.name for p in init_json_paths(out_dir, args.year))
+    existing = sorted(p.name for p in all_init_json_paths(out_dir))
     write_index(out_dir, existing)
     export_npz(out_dir, args.year)
     print(

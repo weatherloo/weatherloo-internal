@@ -1,0 +1,29 @@
+job 583386 on tr-slurm2
+shard 7/8: 2024-10-27 .. 2025-06-02 (219 days of 1745)
+/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/google/api_core/_python_version_support.py:255: FutureWarning: You are using a Python version (3.10.12) which Google will stop supporting in new releases of google.api_core once it reaches its end of life (2026-10-04). Please upgrade to the latest Python version, or at least Python 3.11, to continue receiving updates for google.api_core past that date.
+  warnings.warn(message, FutureWarning)
+/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/google/api_core/_python_version_support.py:255: FutureWarning: You are using a Python version (3.10.12) which Google will stop supporting in new releases of google.cloud._storage_v2 once it reaches its end of life (2026-10-04). Please upgrade to the latest Python version, or at least Python 3.11, to continue receiving updates for google.cloud._storage_v2 past that date.
+  warnings.warn(message, FutureWarning)
+/home/c52li/weatherloo-internal/.venv/lib/python3.10/site-packages/google/api_core/_python_version_support.py:255: FutureWarning: You are using a Python version (3.10.12) which Google will stop supporting in new releases of google.cloud.storage_control_v2 once it reaches its end of life (2026-10-04). Please upgrade to the latest Python version, or at least Python 3.11, to continue receiving updates for google.cloud.storage_control_v2 past that date.
+  warnings.warn(message, FutureWarning)
+=== U-Net pipeline: fetch ===
+  data dir : /mnt/wato-drive/c52li/weatherloo-data/unet
+  GFS      : https://noaa-gfs-bdp-pds.s3.amazonaws.com (anonymous, byte-range GRIB)
+  ERA5     : gs://gcp-public-data-arco-era5/ar/full_37-1h-0p25deg-chunk-1.zarr-v3 (anonymous)
+
+opening ERA5 store (reads metadata only) ...
+  ERA5 final-data boundary: 2026-04-30T23:00:00+00:00 (--end clamps to this; time axis is padded past it)
+
+range 2024-10-27 .. 2025-06-02: 7008 samples
+  already cached: 7008   to fetch: 0   workers: 6
+  expected footprint: ~1.5-2 MB/sample GRIB + ~21 KB/sample .npz (~11.7 GB total, GRIB pruned after caching)
+
+=== fetch summary ===
+  samples in range     : 7008
+  cached and ready     : 7008  (7008 pre-existing, 0 new)
+  failures             : 0
+  cache size on disk   : 1.1 GB  (/mnt/wato-drive/c52li/weatherloo-data/unet)
+  elapsed              : 0m 00s
+
+OK — cache is complete for 2024-10-27 .. 2025-06-02.
+next: python run_pipeline.py train --data-dir /mnt/wato-drive/c52li/weatherloo-data/unet --output-dir <checkpoints>
