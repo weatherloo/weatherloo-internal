@@ -6,6 +6,31 @@ Internal dashboard for [epic #1](https://github.com/weatherloo/weatherloo-intern
 
 All paths below are **relative to this directory** (`benchmarking-site/`).
 
+## Multi-method comparison (added Jun 2026)
+
+The dashboard supports selecting multiple methods simultaneously and overlaying their curves on shared charts.
+
+**Files changed:**
+
+| File | Change |
+|------|--------|
+| `src/components/DetailPanel.jsx` | `methodId` (string) → `selectedIds` (Set). Methods are chosen via a dropdown with checkboxes. Default state is nothing selected. Loads all selected methods in parallel with `Promise.all`, then passes an array of results downstream. |
+| `src/components/VariableCharts.jsx` | Prop changed from `agg` (single aggregate) to `entries: [{id, label, agg}]`. Builds one Chart.js dataset per entry, assigning colors from a 12-color palette. |
+| `src/components/MetricChart.jsx` | Prop changed from `values`/`nSamples` to `datasets: [{label, values, nSamples, color}]`. Chart.js `Legend` registered; legend shown only when >1 dataset. Chart height increases to 220 px in that case. |
+| `src/index.css` | Added `.method-picker` dropdown styles (trigger button, absolute-positioned list, "Clear all" button, `.method-option` checkbox rows, `.chart-card--tall` height override). |
+
+**Data flow with multiple methods selected:**
+
+```
+DetailPanel
+  → Promise.all([loadMethodData(id1, …), loadMethodData(id2, …), …])
+  → methodResults: [{id, label, t2m, wind_speed}, …]
+  → <VariableCharts entries={methodResults.map(r => ({…, agg: r.t2m}))} />
+       → <MetricChart datasets={entries.map((e,i) => ({label, values: e.agg[metric], color: COLORS[i]}))} />
+```
+
+Single-method behavior is unchanged (legend hidden, sample summary shown, existing status format).
+
 ## Run the dashboard locally
 
 From `benchmarking-site/`:
