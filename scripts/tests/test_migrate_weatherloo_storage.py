@@ -28,6 +28,7 @@ class MigrateWeatherlooStorageTests(unittest.TestCase):
             self.assertEqual(by_label["raw-hrrr"].dst, data_root / "raw" / "hrrr")
             self.assertEqual(by_label["raw-hrrr"].src, source_root / "hrrr")
             self.assertEqual(by_label["cache-root"].dst, data_root / "cache")
+            self.assertEqual(by_label["repo-data"].dst, data_root / "processed" / "repo_data")
             self.assertEqual(by_label["repo-artifacts"].src, repo_root / "artifacts")
 
     def test_same_file_uses_size_and_hash(self):

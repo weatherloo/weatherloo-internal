@@ -75,7 +75,7 @@ def build_mappings(source_root: Path, data_root: Path, repo_root: Path) -> list[
         Mapping("cache-root", source_root / ".cache", data_root / "cache"),
         Mapping("experiments-unet", source_root / "unet", data_root / "experiments" / "unet"),
         Mapping("repo-cache", repo_root / ".cache", data_root / "cache" / "repo"),
-        Mapping("repo-data", repo_root / "data", data_root / "raw" / "repo_data"),
+        Mapping("repo-data", repo_root / "data", data_root / "processed" / "repo_data"),
         Mapping("repo-artifacts", repo_root / "artifacts", data_root / "published" / "repo_artifacts"),
     ]
 
@@ -123,6 +123,16 @@ def copy_or_link(src: Path, dst: Path, *, symlink: bool, dry_run: bool) -> None:
         dst.symlink_to(src.resolve())
     else:
         shutil.copy2(src, dst)
+
+
+def remove_existing_path(path: Path, *, dry_run: bool) -> None:
+    if dry_run:
+        return
+    if path.is_symlink() or path.is_file():
+        path.unlink()
+        return
+    if path.is_dir():
+        shutil.rmtree(path)
 
 
 def prune_empty_dirs(start: Path, stop: Path, *, dry_run: bool) -> None:
@@ -222,8 +232,7 @@ def main() -> int:
                     conflicts += 1
                     continue
                 print(f"  ~ replace {rel}")
-                if not dry_run:
-                    dst_file.unlink()
+                remove_existing_path(dst_file, dry_run=dry_run)
             else:
                 print(f"  + {'link' if args.symlink else 'copy'} {rel}")
 
