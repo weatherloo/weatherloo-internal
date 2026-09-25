@@ -27,7 +27,7 @@ from torch.utils.data import Dataset
 
 
 HERE = Path(__file__).resolve().parent
-REPO_ROOT = HERE.parents[3]
+REPO_ROOT = HERE.parents[2]
 DATA_ROOT = Path(
     os.environ.get("UNET_DATA_ROOT")
     or (

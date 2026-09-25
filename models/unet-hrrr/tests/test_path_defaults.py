@@ -26,7 +26,7 @@ class PathDefaultsTests(unittest.TestCase):
 
     def test_falls_back_to_repo_data_raw(self):
         env = {}
-        expected = str((MODULE_PATH.resolve().parents[2] / "data" / "raw").resolve())
+        expected = str((Path(__file__).resolve().parents[3] / "data" / "raw").resolve())
         self.assertEqual(module.resolve_default_data_dir(env), expected)
 
 

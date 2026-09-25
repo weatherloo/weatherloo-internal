@@ -155,6 +155,9 @@ def main() -> int:
     parser.add_argument("--include-repo-local", action="store_true", help="Also migrate repo-local .cache/data/artifacts")
     args = parser.parse_args()
 
+    if args.symlink and args.remove_source:
+        raise SystemExit("--symlink and --remove-source cannot be used together")
+
     dry_run = not args.apply
     data_root = resolve_data_root(args.data_root)
     source_root = (
