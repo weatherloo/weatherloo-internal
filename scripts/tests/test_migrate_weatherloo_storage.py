@@ -42,6 +42,16 @@ class MigrateWeatherlooStorageTests(unittest.TestCase):
             self.assertTrue(module.same_file(a, b))
             self.assertFalse(module.same_file(a, c))
 
+    def test_copy_or_link_uses_resolved_symlink_target(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            src = root / "src.txt"
+            dst = root / "dst.txt"
+            src.write_text("abc")
+            module.copy_or_link(src, dst, symlink=True, dry_run=False)
+            self.assertTrue(dst.is_symlink())
+            self.assertEqual(dst.resolve(), src.resolve())
+
 
 if __name__ == "__main__":
     unittest.main()

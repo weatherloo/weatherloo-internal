@@ -5,6 +5,7 @@
   "scored_quantity": "bias-corrected forecast = HRRR - predicted_bias",
   "model_path": "artifacts/hrrr_bias_correction/final_model.keras",
   "zarr_store": "${WEATHERLOO_DATA_ROOT}/processed/hrrr_bias_correction/hrrr",
+  "path_convention": "model_path is repo-root relative; zarr_store expands WEATHERLOO_DATA_ROOT.",
   "cycles": [
     "00Z",
     "06Z",

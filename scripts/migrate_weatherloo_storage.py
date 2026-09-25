@@ -120,7 +120,7 @@ def copy_or_link(src: Path, dst: Path, *, symlink: bool, dry_run: bool) -> None:
     if dry_run:
         return
     if symlink:
-        dst.symlink_to(src)
+        dst.symlink_to(src.resolve())
     else:
         shutil.copy2(src, dst)
 
@@ -194,6 +194,19 @@ def main() -> int:
             dst_file = mapping.dst / rel
             action_key = key_for(src_file, dst_file)
             planned += 1
+            record = state.get(action_key)
+
+            if record and dst_file.exists():
+                expected_size = int(record.get("size", -1))
+                expected_hash = str(record.get("sha256", ""))
+                if (
+                    src_file.stat().st_size == expected_size
+                    and sha256(src_file) == expected_hash
+                    and same_file(src_file, dst_file)
+                ):
+                    print(f"  = resumed {rel}")
+                    skipped += 1
+                    continue
 
             if dst_file.exists():
                 if same_file(src_file, dst_file):
