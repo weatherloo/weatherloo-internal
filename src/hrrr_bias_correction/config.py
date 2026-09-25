@@ -32,7 +32,11 @@ def _default_data_root() -> Path:
 def _coerce_path(value: Any, default: Path) -> Path:
     if value is None:
         return default
-    expanded = Path(os.path.expandvars(str(value))).expanduser()
+    raw = str(value)
+    if "WEATHERLOO_DATA_ROOT" in raw and os.environ.get("WEATHERLOO_DATA_ROOT") is None:
+        raw = raw.replace("${WEATHERLOO_DATA_ROOT}", str(_default_data_root()))
+        raw = raw.replace("$WEATHERLOO_DATA_ROOT", str(_default_data_root()))
+    expanded = Path(os.path.expandvars(raw)).expanduser()
     if expanded.is_absolute():
         return expanded.resolve()
     return (_repo_root() / expanded).resolve()

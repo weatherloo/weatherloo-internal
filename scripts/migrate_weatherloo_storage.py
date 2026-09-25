@@ -195,8 +195,9 @@ def main() -> int:
             action_key = key_for(src_file, dst_file)
             planned += 1
             record = state.get(action_key)
+            dst_present = dst_file.exists() or dst_file.is_symlink()
 
-            if record and dst_file.exists():
+            if record and dst_present:
                 expected_size = int(record.get("size", -1))
                 expected_hash = str(record.get("sha256", ""))
                 if (
@@ -208,7 +209,7 @@ def main() -> int:
                     skipped += 1
                     continue
 
-            if dst_file.exists():
+            if dst_present:
                 if same_file(src_file, dst_file):
                     print(f"  = keep {rel}")
                     skipped += 1

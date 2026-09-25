@@ -15,7 +15,8 @@ REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$REPO/models/unet-hrrr"
 mkdir -p slurm_logs
 
-export UNET_DATA_ROOT="${UNET_DATA_ROOT:-${WEATHERLOO_DATA_ROOT:-$REPO/data}}"
+export UNET_DATA_ROOT="${UNET_DATA_ROOT:-${WEATHERLOO_DATA_ROOT:+${WEATHERLOO_DATA_ROOT}/raw}}"
+UNET_DATA_ROOT="${UNET_DATA_ROOT:-$REPO/data/raw}"
 
 # whichever venv actually has torch — your home one, or the mount one you created
 source "$REPO/.venv/bin/activate"
