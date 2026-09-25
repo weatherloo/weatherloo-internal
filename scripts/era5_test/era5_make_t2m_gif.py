@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Create an animated GIF from a 24-hour window of ERA5 2m temperature."""
-# python3 scripts/era5_test/era5_make_t2m_gif.py ~/../../mnt/wato-drive/c52li/weatherloo-data/era5/2025/era5_202512.nc -o /tmp/t2m.gif
+# python3 scripts/era5_test/era5_make_t2m_gif.py /mnt/wato-drive/$USER/weatherloo-data/era5/2025/era5_202512.nc -o /tmp/t2m.gif
 # 
 from __future__ import annotations
 

@@ -1,8 +1,8 @@
 {
   "paths": {
-    "hrrr_root": "/mnt/wato-drive/c52li/weatherloo-data/hrrr",
+    "hrrr_root": "${WEATHERLOO_DATA_ROOT}/hrrr",
     "obs_root": "benchmarking-site/data/observations/eric_d_soulis/raw",
-    "zarr_store": "/mnt/wato-drive/gguirgui/weatherloo-data/hrrr_bias_correction/hrrr",
+    "zarr_store": "${WEATHERLOO_DATA_ROOT}/processed/hrrr_bias_correction/hrrr",
     "artifact_dir": "artifacts/hrrr_bias_correction"
   },
   "data": {

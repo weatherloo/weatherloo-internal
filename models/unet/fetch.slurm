@@ -21,16 +21,16 @@
 #SBATCH --cpus-per-task=6
 #SBATCH --mem=16G
 #SBATCH --time=12:00:00
-#SBATCH --output=/home/c52li/weatherloo-internal/models/unet/slurm_logs/%x-%j.out
-#SBATCH --error=/home/c52li/weatherloo-internal/models/unet/slurm_logs/%x-%j.err
+#SBATCH --output=models/unet/slurm_logs/%x-%j.out
+#SBATCH --error=models/unet/slurm_logs/%x-%j.err
 
 set -euo pipefail
 
-REPO=/home/c52li/weatherloo-internal
+REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$REPO"
 mkdir -p models/unet/slurm_logs
 
-DATA_DIR="${DATA_DIR:-/mnt/wato-drive/c52li/weatherloo-data/unet}"
+DATA_DIR="${DATA_DIR:-${WEATHERLOO_DATA_ROOT:-$REPO/data}/experiments/unet}"
 START="${START:-2021-03-23}"          # first day with 0.25° pgrb2 on noaa-gfs-bdp-pds
 END="${END:-2025-12-31}"
 WORKERS="${WORKERS:-${SLURM_CPUS_PER_TASK:-6}}"

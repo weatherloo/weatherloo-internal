@@ -189,7 +189,12 @@ def train(args):
 
 def parse_args():
     p = argparse.ArgumentParser(description="Train U-Net on HRRR/ERA5 data")
-    p.add_argument("--data-dir", default="/mnt/wato-drive/c52li/weatherloo-data")
+    default_data_dir = os.environ.get("UNET_DATA_ROOT")
+    if default_data_dir is None and os.environ.get("WEATHERLOO_DATA_ROOT"):
+        default_data_dir = str(Path(os.environ["WEATHERLOO_DATA_ROOT"]).expanduser())
+    if default_data_dir is None:
+        default_data_dir = str((HERE.parents[2] / "data").resolve())
+    p.add_argument("--data-dir", default=default_data_dir)
     p.add_argument("--output-dir", default=str(HERE / "checkpoints"))
     p.add_argument("--ckpt-name", default="best_model.pt")
     p.add_argument("--log-name", default="training_log.csv")
