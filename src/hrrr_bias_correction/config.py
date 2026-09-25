@@ -42,7 +42,7 @@ def _coerce_path(value: Any, default: Path) -> Path:
 class PathsConfig:
     """Filesystem paths used across preprocessing, loading, and training."""
 
-    hrrr_root: Path = field(default_factory=lambda: _default_data_root() / "hrrr")
+    hrrr_root: Path = field(default_factory=lambda: _default_data_root() / "raw" / "hrrr")
     obs_root: Path = field(
         default_factory=lambda: _repo_root()
         / "benchmarking-site"

@@ -80,8 +80,14 @@ Examples:
 
 ```bash
 # plan only
-python3 scripts/migrate_weatherloo_storage.py --data-root "$WEATHERLOO_DATA_ROOT"
+python3 scripts/migrate_weatherloo_storage.py \
+  --data-root "$WEATHERLOO_DATA_ROOT" \
+  --source-root "/mnt/wato-drive/$USER/weatherloo-data"
 
 # apply, including repo-local .cache/data/artifacts inputs
-python3 scripts/migrate_weatherloo_storage.py --data-root "$WEATHERLOO_DATA_ROOT" --include-repo-local --apply
+python3 scripts/migrate_weatherloo_storage.py \
+  --data-root "$WEATHERLOO_DATA_ROOT" \
+  --source-root "/mnt/wato-drive/$USER/weatherloo-data" \
+  --include-repo-local \
+  --apply
 ```

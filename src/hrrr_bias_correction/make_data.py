@@ -18,7 +18,7 @@ only when T0 itself has no observation in that window. Missing leads / later
 obs → NaN (partial samples allowed).
 
 Default paths:
-  HRRR:  ${WEATHERLOO_DATA_ROOT}/hrrr/{YYYY}/{YYYYMMDD}/hrrr_*.nc
+  HRRR:  ${WEATHERLOO_DATA_ROOT}/raw/hrrr/{YYYY}/{YYYYMMDD}/hrrr_*.nc
   Obs:   <repo>/benchmarking-site/data/observations/eric_d_soulis/raw/
          uw_hobo_15min_{YYYY}.csv
   Out:   ${WEATHERLOO_DATA_ROOT}/processed/hrrr_bias_correction/hrrr
@@ -55,7 +55,7 @@ def _default_data_root() -> Path:
     return REPO_ROOT / "data"
 
 
-DEFAULT_HRRR_ROOT = _default_data_root() / "hrrr"
+DEFAULT_HRRR_ROOT = _default_data_root() / "raw" / "hrrr"
 DEFAULT_OBS_ROOT = (
     REPO_ROOT / "benchmarking-site" / "data" / "observations" / "eric_d_soulis" / "raw"
 )

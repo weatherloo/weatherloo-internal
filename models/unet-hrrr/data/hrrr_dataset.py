@@ -7,7 +7,8 @@ This version is deliberately lightweight and data-driven:
 - auxiliary loss: weather-station observations (Toronto area) interpolated
   from the model output grid to the station location
 
-Set UNET_DATA_ROOT explicitly, or set WEATHERLOO_DATA_ROOT.
+Set UNET_DATA_ROOT explicitly, or set WEATHERLOO_DATA_ROOT and use
+`${WEATHERLOO_DATA_ROOT}/raw`.
 """
 
 from __future__ import annotations
@@ -30,9 +31,9 @@ REPO_ROOT = HERE.parents[3]
 DATA_ROOT = Path(
     os.environ.get("UNET_DATA_ROOT")
     or (
-        str(Path(os.environ["WEATHERLOO_DATA_ROOT"]).expanduser())
+        str(Path(os.environ["WEATHERLOO_DATA_ROOT"]).expanduser() / "raw")
         if "WEATHERLOO_DATA_ROOT" in os.environ
-        else str(REPO_ROOT / "data")
+        else str(REPO_ROOT / "data" / "raw")
     )
 )
 

@@ -15,12 +15,18 @@ spec.loader.exec_module(module)
 
 class MigrateWeatherlooStorageTests(unittest.TestCase):
     def test_build_mappings_has_expected_targets(self):
-        with tempfile.TemporaryDirectory() as td, tempfile.TemporaryDirectory() as tr:
+        with (
+            tempfile.TemporaryDirectory() as ts,
+            tempfile.TemporaryDirectory() as td,
+            tempfile.TemporaryDirectory() as tr,
+        ):
+            source_root = Path(ts)
             data_root = Path(td)
             repo_root = Path(tr)
-            mappings = module.build_mappings(data_root, repo_root)
+            mappings = module.build_mappings(source_root, data_root, repo_root)
             by_label = {m.label: m for m in mappings}
             self.assertEqual(by_label["raw-hrrr"].dst, data_root / "raw" / "hrrr")
+            self.assertEqual(by_label["raw-hrrr"].src, source_root / "hrrr")
             self.assertEqual(by_label["cache-root"].dst, data_root / "cache")
             self.assertEqual(by_label["repo-artifacts"].src, repo_root / "artifacts")
 

@@ -28,9 +28,8 @@ On WATcloud, point it at HDD-backed bulk storage (`/mnt/wato-drive*`), **not**
 
 ```bash
 export WEATHERLOO_DATA_ROOT=/mnt/wato-drive/<you>/weatherloo-data
-# canonical layout keeps raw files in raw/, so either:
-#   export WEATHERLOO_DATA_ROOT=/mnt/wato-drive/<you>/weatherloo-data/raw
-# or pass --data-root "$WEATHERLOO_DATA_ROOT/raw" to these scripts
+# canonical layout keeps raw files in raw/, so pass:
+#   --data-root "$WEATHERLOO_DATA_ROOT/raw"
 ```
 
 ## Usage

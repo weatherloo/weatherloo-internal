@@ -1,6 +1,6 @@
 {
   "paths": {
-    "hrrr_root": "${WEATHERLOO_DATA_ROOT}/hrrr",
+    "hrrr_root": "${WEATHERLOO_DATA_ROOT}/raw/hrrr",
     "obs_root": "benchmarking-site/data/observations/eric_d_soulis/raw",
     "zarr_store": "${WEATHERLOO_DATA_ROOT}/processed/hrrr_bias_correction/hrrr",
     "artifact_dir": "artifacts/hrrr_bias_correction"

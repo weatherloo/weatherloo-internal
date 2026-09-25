@@ -5,7 +5,6 @@ from __future__ import annotations
 
 import argparse
 import csv
-import os
 import sys
 from pathlib import Path
 
@@ -19,6 +18,7 @@ sys.path.insert(0, str(HERE / "data"))
 sys.path.insert(0, str(HERE / "model"))
 
 from hrrr_dataset import HRRRDataset  # noqa: E402
+from path_defaults import resolve_default_data_dir  # noqa: E402
 from unet import ResidualUNet  # noqa: E402
 
 CKPT_DIR = HERE / "checkpoints"
@@ -189,12 +189,7 @@ def train(args):
 
 def parse_args():
     p = argparse.ArgumentParser(description="Train U-Net on HRRR/ERA5 data")
-    default_data_dir = os.environ.get("UNET_DATA_ROOT")
-    if default_data_dir is None and os.environ.get("WEATHERLOO_DATA_ROOT"):
-        default_data_dir = str(Path(os.environ["WEATHERLOO_DATA_ROOT"]).expanduser())
-    if default_data_dir is None:
-        default_data_dir = str((HERE.parents[2] / "data").resolve())
-    p.add_argument("--data-dir", default=default_data_dir)
+    p.add_argument("--data-dir", default=resolve_default_data_dir())
     p.add_argument("--output-dir", default=str(HERE / "checkpoints"))
     p.add_argument("--ckpt-name", default="best_model.pt")
     p.add_argument("--log-name", default="training_log.csv")

@@ -62,14 +62,18 @@ def canonical_layout(root: Path) -> dict[str, Path]:
     }
 
 
-def build_mappings(data_root: Path, repo_root: Path) -> list[Mapping]:
+def build_mappings(source_root: Path, data_root: Path, repo_root: Path) -> list[Mapping]:
     return [
-        Mapping("raw-hrrr", data_root / "hrrr", data_root / "raw" / "hrrr"),
-        Mapping("raw-era5", data_root / "era5", data_root / "raw" / "era5"),
-        Mapping("raw-observations", data_root / "observations", data_root / "raw" / "observations"),
-        Mapping("processed-hrrr-bias", data_root / "hrrr_bias_correction", data_root / "processed" / "hrrr_bias_correction"),
-        Mapping("cache-root", data_root / ".cache", data_root / "cache"),
-        Mapping("experiments-unet", data_root / "unet", data_root / "experiments" / "unet"),
+        Mapping("raw-hrrr", source_root / "hrrr", data_root / "raw" / "hrrr"),
+        Mapping("raw-era5", source_root / "era5", data_root / "raw" / "era5"),
+        Mapping("raw-observations", source_root / "observations", data_root / "raw" / "observations"),
+        Mapping(
+            "processed-hrrr-bias",
+            source_root / "hrrr_bias_correction",
+            data_root / "processed" / "hrrr_bias_correction",
+        ),
+        Mapping("cache-root", source_root / ".cache", data_root / "cache"),
+        Mapping("experiments-unet", source_root / "unet", data_root / "experiments" / "unet"),
         Mapping("repo-cache", repo_root / ".cache", data_root / "cache" / "repo"),
         Mapping("repo-data", repo_root / "data", data_root / "raw" / "repo_data"),
         Mapping("repo-artifacts", repo_root / "artifacts", data_root / "published" / "repo_artifacts"),
@@ -133,7 +137,16 @@ def prune_empty_dirs(start: Path, stop: Path, *, dry_run: bool) -> None:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--data-root", default=None, help="WEATHERLOO_DATA_ROOT (defaults to env, then repo data/)")
+    parser.add_argument(
+        "--data-root",
+        default=None,
+        help="Canonical WEATHERLOO_DATA_ROOT destination (defaults to env, then repo data/)",
+    )
+    parser.add_argument(
+        "--source-root",
+        default=None,
+        help="Legacy source root to migrate from (defaults to WEATHERLOO_LEGACY_DATA_ROOT, else --data-root)",
+    )
     parser.add_argument("--repo-root", default=None, help="Repository root for repo-local migration sources")
     parser.add_argument("--apply", action="store_true", help="Execute migration actions (default is dry-run plan)")
     parser.add_argument("--symlink", action="store_true", help="Create symlinks instead of copying")
@@ -144,13 +157,18 @@ def main() -> int:
 
     dry_run = not args.apply
     data_root = resolve_data_root(args.data_root)
+    source_root = (
+        Path(args.source_root).expanduser().resolve()
+        if args.source_root
+        else Path(os.environ.get("WEATHERLOO_LEGACY_DATA_ROOT", str(data_root))).expanduser().resolve()
+    )
     repo_root = Path(args.repo_root).expanduser().resolve() if args.repo_root else repo_root_from_script()
 
     layout = canonical_layout(data_root)
     for directory in layout.values():
         ensure_dir(directory, dry_run=dry_run)
 
-    mappings = build_mappings(data_root, repo_root)
+    mappings = build_mappings(source_root, data_root, repo_root)
     if not args.include_repo_local:
         mappings = [m for m in mappings if not m.label.startswith("repo-")]
 
@@ -163,6 +181,7 @@ def main() -> int:
     conflicts = 0
 
     print(f"WEATHERLOO_DATA_ROOT={data_root}")
+    print(f"LEGACY_SOURCE_ROOT={source_root}")
     print(f"mode={'dry-run' if dry_run else 'apply'} symlink={args.symlink}")
     print("\nPlan:")
 
