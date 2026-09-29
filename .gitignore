@@ -7,3 +7,6 @@ test_sprint/src/**/__pycache__/
 .DS_Store
 .cache/
 .ipynb_checkpoints/
+training_framework/runs/
+benchmarking-site/data/
+.env*
