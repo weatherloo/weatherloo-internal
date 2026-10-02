@@ -16,8 +16,23 @@ export default function App() {
 
   return (
     <>
-      <header>
-        <h1>Weather Forecast Benchmark</h1>
+      <header className="topbar">
+        <div className="brand-row">
+          <div className="brand-lockup" aria-label="Weatherloo benchmark brand">
+            <div className="brand-mark" aria-hidden="true">W</div>
+            <div>
+              <p className="eyebrow">weatherloo</p>
+              <h1>Forecast benchmark</h1>
+            </div>
+          </div>
+
+          <div className="header-meta" aria-label="Benchmark summary highlights">
+            <span className="meta-pill">2025</span>
+            <span className="meta-pill">t2m + wind</span>
+            <span className="meta-pill">6–72h leads</span>
+          </div>
+        </div>
+
         <p className="subtitle">
           Internal forecast skill scores for 2025 — 2 m temperature and 10 m
           wind speed, averaged over loaded initializations (target: 1460 inits at
@@ -27,12 +42,17 @@ export default function App() {
 
       <main>
         <section id="map-panel" aria-label="Station map">
-          <h2>Locations</h2>
+          <div className="panel-header panel-header--dark">
+            <h2>Locations</h2>
+            <span className="status-badge">active station</span>
+          </div>
           <StationMap
             selectedLocationId={locationId}
             onSelectLocation={selectLocation}
           />
-          <p id="selected-location">{selectedLabel}</p>
+          <p id="selected-location" className="selected-location">
+            {selectedLabel}
+          </p>
         </section>
 
         {locationId ? <DetailPanel locationId={locationId} /> : null}
