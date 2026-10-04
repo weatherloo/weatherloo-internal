@@ -4,7 +4,7 @@ Trains an LSTM to predict the next-step forecast bias for a given station, varia
 
 ## Input data
 
-NPZ files from `benchmarking-site/data/` with keys:
+NPZ files from `data/benchmarks/` with keys:
 - `bias` shape `(n_inits, 2, 2, 12)` for `[inits, stations, variables, lead_times]`
 - `station_ids`: `['cyyz', 'eric_d_soulis']`
 - `variables`: `['t2m', 'wind_speed']`
@@ -19,11 +19,11 @@ pip install -r lstm_training/requirements.txt
 
 # Train on GFS interpolated bias for CYYZ t2m at 6h lead
 python lstm_training/train.py \
-    --npz  benchmarking-site/data/gfs_interpolated/gfs_interpolated_2025.npz \
+    --npz  data/benchmarks/gfs_interpolated/gfs_interpolated_2025.npz \
     --station    cyyz \
     --variable   t2m \
     --lead_time  6 \
-    --out_dir    lstm_training/output
+    --out_dir    outputs/lstm_training/sweeps
 ```
 
 Logs a line every 5 epochs. Stops early once validation loss stops improving.
@@ -35,11 +35,11 @@ cd /path/to/weatherloo-internal
 sbatch lstm_training/run_train.sh
 ```
 
-The script creates a venv under `lstm_training/.venv/` on the first run and reuses it on subsequent runs. Logs go to `lstm_training/logs/<job_id>.out`.
+The script creates a venv under `lstm_training/.venv/` on the first run and reuses it on subsequent runs. Logs go to `outputs/logs/<job_id>.out`.
 
 ## Outputs
 
-All written to `--out_dir` (default `lstm_training/output/`):
+All written to `--out_dir` (default `outputs/lstm_training/sweeps/`):
 
 | File | Contents |
 |---|---|
@@ -64,7 +64,7 @@ All written to `--out_dir` (default `lstm_training/output/`):
 | `--max_epochs` | `200` | Maximum training epochs |
 | `--patience` | `15` | Early stopping patience |
 | `--max_norm` | `1.0` | Gradient clipping max norm |
-| `--out_dir` | `lstm_training/output` | Output directory |
+| `--out_dir` | `outputs/lstm_training/sweeps` | Output directory |
 
 ## Window cutoff (why the window is not adjacent to the target)
 

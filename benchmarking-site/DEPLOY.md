@@ -19,14 +19,14 @@ npm run build
 1. **`npm run build:data`** — `scripts/build_site_aggregates.py` (repo root)
    (via a wrapper that picks the repo `.venv` Python or any `python3` with
    numpy) reads each method's consolidated `<method_id>_<year>.npz` and
-   writes `data/<method_id>/aggregate.json`: the mean across all inits per
+   writes `../data/benchmarks/aggregates/<method_id>.json`: the mean across all inits per
    station/variable/metric/lead, plus per-(month × cycle) partial sums and
    counts. The partials let the dashboard reproduce every cycle/quarter/month
    filter exactly, client-side, with no API.
 2. **`vite build`** — bundles the app into `dist/` and copies the data the
    dashboard needs: only `aggregate.json` for methods that have one; all JSON
    (index/sample/per-init) for methods without an NPZ (fallback path).
-   `data/observations/`, `*.npz`, and per-init JSON of aggregated methods are
+   `../data/benchmarks/observations/`, `*.npz`, and per-init JSON of aggregated methods are
    **not** shipped. Total `dist/` is ~2.6 MB.
 
 Commit the regenerated `aggregate.json` files — Vercel's build image has no
@@ -47,12 +47,12 @@ directory = `benchmarking-site`).
 ## Refreshing after a new compute_benchmark.py run
 
 After a method pipeline updates its per-init JSON + NPZ (e.g.
-`.venv/bin/python data/gfs_interpolated/compute_benchmark.py …`):
+.venv/bin/python ../pipelines/benchmarking/gfs_interpolated/compute_benchmark.py …`):
 
 ```bash
 cd benchmarking-site
 npm run build          # regenerates data/<method_id>/aggregate.json + dist/
-git add data/aggregates/ && git commit -m "chore: refresh static aggregates"
+git add ../data/benchmarks/aggregates/ && git commit -m "chore: refresh static aggregates"
 vercel --prod
 ```
 

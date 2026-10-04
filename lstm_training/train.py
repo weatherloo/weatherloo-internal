@@ -176,7 +176,13 @@ def parse_args():
     p.add_argument("--max_epochs",  type=int, default=200)
     p.add_argument("--patience",    type=int, default=15)
     p.add_argument("--max_norm",    type=float, default=1.0, help="Gradient clipping max norm")
-    p.add_argument("--out_dir",     default="lstm_training/output")
+    p.add_argument(
+        "--out_dir",
+        default=os.path.join(
+            os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+            "outputs", "lstm_training", "sweeps",
+        ),
+    )
     return p.parse_args()
 
 

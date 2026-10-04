@@ -5,8 +5,8 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$REPO_ROOT"
 
 DATA_ROOT="${WEATHERLOO_DATA_ROOT:-/mnt/wato-drive/${USER}/weatherloo-data}"
-LOG_DIR="$REPO_ROOT/logs"
-LOCK_DIR="$REPO_ROOT/.locks"
+LOG_DIR="$REPO_ROOT/outputs/logs/cron"
+LOCK_DIR="$REPO_ROOT/outputs/.locks"
 mkdir -p "$LOG_DIR" "$LOCK_DIR" "$DATA_ROOT"
 
 timestamp() { date -u +%Y%m%dT%H%M%SZ; }
@@ -57,4 +57,3 @@ case "$mode" in
     exit 2
     ;;
 esac
-

@@ -11,7 +11,7 @@ Quick sanity run (5 epochs on the June test week, separate stats file)::
 
     .venv/bin/python models/unet/train.py --sanity
 
-Full run (whole 2021 usable window, writes canonical data/stats.json)::
+Full run (whole 2021 usable window, writes canonical outputs/models/unet/stats/stats.json)::
 
     .venv/bin/python models/unet/train.py
 
@@ -43,8 +43,10 @@ from dataset import (  # noqa: E402
 )
 from unet import ResidualUNet  # noqa: E402
 
-CKPT_DIR = HERE / "checkpoints"
-LOG_PATH = HERE / "training_log.csv"
+REPO_ROOT = HERE.parents[1]
+OUTPUT_ROOT = REPO_ROOT / "outputs" / "models" / "unet"
+CKPT_DIR = OUTPUT_ROOT / "checkpoints"
+LOG_PATH = OUTPUT_ROOT / "training_logs" / "training_log.csv"
 
 
 def pick_device() -> torch.device:
@@ -262,7 +264,7 @@ def parse_args():
     if args.stats_path == str(STATS_PATH):
         args.stats_path = str(STATS_PATH.parent / f"stats{suffix}.json")
     if args.log_path == str(LOG_PATH):
-        args.log_path = str(HERE / f"training_log{suffix}.csv")
+        args.log_path = str(OUTPUT_ROOT / "training_logs" / f"training_log{suffix}.csv")
     # Force recompute when the mode-specific stats file doesn't exist yet.
     if suffix and not Path(args.stats_path).exists():
         args.recompute_stats = True
@@ -273,7 +275,7 @@ def parse_args():
         args.batch_size = min(args.batch_size, 8)
         args.stats_path = str(CACHE_DIR / "stats_selftest.json")
         args.recompute_stats = True
-        args.log_path = str(HERE / "training_log_sanity.csv")
+        args.log_path = str(OUTPUT_ROOT / "training_logs" / "training_log_sanity.csv")
         args.ckpt_name = "best_model.pt"
     return args
 

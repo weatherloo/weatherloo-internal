@@ -1,7 +1,7 @@
 # Raw HRRR + ERA5 downloaders
 
 Bulk raw training data for the bias-correction model described in
-`lit-review/weather-forecasting.md`: **HRRR** 0–48 h forecasts (model input) and
+`docs/research/lit-review/weather-forecasting.md`: **HRRR** 0–48 h forecasts (model input) and
 **ERA5** reanalysis (ground truth), both subset to the Kitchener-Waterloo
 bounding box and kept on their **native grids** (no regridding — that's a
 downstream modelling step).
@@ -85,10 +85,10 @@ python scripts/sanity_gif_hrrr.py \
 ## SLURM (WATcloud)
 
 ```bash
-# one ~month worker (unbuffered logs under logs/)
+# one ~month worker (unbuffered logs under outputs/logs/)
 sbatch --partition=compute --cpus-per-task=4 --mem=32G --time=12:00:00 \
   --job-name=weatherloo-raw-download-smoke \
-  --output=logs/%x-%j.out --error=logs/%x-%j.err \
+  --output=outputs/logs/%x-%j.out --error=outputs/logs/%x-%j.err \
   --wrap='bash scripts/download_raw_training_data_slurm.sh /mnt/wato-drive/$USER/weatherloo-data --start-date 2018-07-13 --end-date 2018-07-13 --resume'
 
 # full backfill: one job per ~month window (resumable, batched)

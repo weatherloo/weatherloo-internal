@@ -19,7 +19,7 @@ set -euo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$REPO_ROOT"
 
-DATA_DIR="${DATA_DIR:-/mnt/wato-drive/c52li/weatherloo-data/unet}"
+DATA_DIR="${DATA_DIR:-${WEATHERLOO_DATA_ROOT:-/mnt/wato-drive/${USER:-weatherloo}/weatherloo-data}/unet}"
 START="${START:-2021-03-23}"
 END="${END:-2025-12-31}"
 SHARDS="${SHARDS:-8}"
@@ -27,6 +27,8 @@ YEAR="${YEAR:-2025}"
 STAGES="${STAGES:-fetch,train,benchmark}"
 
 has_stage() { [[ ",$STAGES," == *",$1,"* ]]; }
+
+mkdir -p outputs/logs/slurm/unet outputs/logs/slurm/benchmark-unet
 
 # Passed through to every stage so all three agree on the cache root — the
 # single most common way to get a silently empty run.
@@ -59,11 +61,11 @@ fi
 if has_stage benchmark; then
   # shellcheck disable=SC2086
   bench_id=$(sbatch --parsable $dep --export="$COMMON_EXPORT,YEAR=$YEAR" \
-    benchmarking-site/data/unet/run_benchmark.slurm)
+    pipelines/benchmarking/unet/run_benchmark.slurm)
   echo "benchmark : job $bench_id${dep:+  (after ${train_id:-$fetch_id})}"
 fi
 
 echo
 echo "watch:   squeue -u \$USER"
-echo "logs:    models/unet/slurm_logs/  and  benchmarking-site/data/unet/slurm_logs/"
-echo "after the benchmark finishes, commit benchmarking-site/data/unet/ to publish."
+echo "logs:    outputs/logs/slurm/unet/  and  outputs/logs/slurm/benchmark-unet/"
+echo "after the benchmark finishes, commit data/benchmarks/unet/ to publish."

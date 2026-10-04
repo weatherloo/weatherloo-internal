@@ -17,16 +17,13 @@ from pathlib import Path
 
 STATIONS = ["cyyz", "eric_d_soulis"]
 LEADS    = [6, 12, 18, 24, 30, 36, 42, 48, 54, 60, 66, 72]
+REPO_ROOT = Path(__file__).resolve().parents[1]
 METHODS  = {
-    "climatology":       "benchmarking-site/data/climatology/climatology_2025.npz",
-    "ecmwf_aifs":        "benchmarking-site/data/ecmwf_aifs/ecmwf_aifs_2025.npz",
-    "gefs_mean":         "benchmarking-site/data/gefs_mean/gefs_mean_2025.npz",
-    "gfs_analysis":      "benchmarking-site/data/gfs_analysis/gfs_analysis_2025.npz",
-    "gfs_interpolated":  "benchmarking-site/data/gfs_interpolated/gfs_interpolated_2025.npz",
-    "graphcast":         "benchmarking-site/data/graphcast/graphcast_2025.npz",
-    "hrrr_interpolated": "benchmarking-site/data/hrrr_interpolated/hrrr_interpolated_2025.npz",
-    "linear_regression": "benchmarking-site/data/linear_regression/linear_regression_2025.npz",
-    "persistence":       "benchmarking-site/data/persistence/persistence_2025.npz",
+    method: str(REPO_ROOT / "data" / "benchmarks" / method / f"{method}_2025.npz")
+    for method in (
+        "climatology", "ecmwf_aifs", "gefs_mean", "gfs_analysis", "gfs_interpolated",
+        "graphcast", "hrrr_interpolated", "linear_regression", "persistence",
+    )
 }
 
 # Flat, deterministic 9x12 = 108 combos. Dict order is insertion order (py3.7+), so this is stable.
@@ -43,7 +40,7 @@ def run_sweep(station, variable, method, npz, lead, n_trials, out_base):
 
     print(f"{tag} START", flush=True)
     cmd = [
-        sys.executable, str(Path(__file__).parent / "sweep.py"),
+        sys.executable, str(Path(__file__).resolve().parent / "sweep.py"),
         "--npz",       npz,
         "--station",   station,
         "--variable",  variable,
@@ -76,7 +73,10 @@ def main():
     p.add_argument("--variable",  default="t2m")
     p.add_argument("--workers",   type=int, default=4)
     p.add_argument("--n_trials",  type=int, default=100)
-    p.add_argument("--out_dir",   default="lstm_training/output")
+    p.add_argument(
+        "--out_dir",
+        default=str(REPO_ROOT / "outputs" / "lstm_training" / "sweeps"),
+    )
     args = p.parse_args()
 
     task_id = int(os.environ.get("SLURM_ARRAY_TASK_ID", 1))

@@ -9,7 +9,7 @@ For each initialization in a date range, joins four series on valid time:
     actual       the station observation that verified it
 
 Output is one JSON per station/variable/lead under
-``benchmarking-site/data/hindcast/``, served to the frontend at
+``data/benchmarks/hindcast/``, served to the frontend at
 ``/data/hindcast/...``.
 
 The reference series is optional: if the Open-Meteo file for this
@@ -34,7 +34,7 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-DATA = ROOT / "benchmarking-site" / "data"
+DATA = ROOT / "data" / "benchmarks"
 OUT_ROOT = DATA / "hindcast"
 
 sys.path.insert(0, str(ROOT / "lstm_training"))
@@ -72,7 +72,7 @@ def main() -> None:
     p.add_argument("--start", required=True, help="YYYY-MM-DD inclusive")
     p.add_argument("--end", required=True, help="YYYY-MM-DD inclusive")
     p.add_argument("--retrain-dir", dest="retrain_root", default=None,
-                   help="Alternate retrain_output root")
+                   help="Alternate LSTM retrained-output root")
     args = p.parse_args()
 
     from infer_recent import predict_range  # imported late; needs torch

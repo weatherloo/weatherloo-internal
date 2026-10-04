@@ -2,10 +2,10 @@
 """Shared config + helpers for the raw HRRR/ERA5 training-data downloaders.
 
 Both ``download_hrrr.py`` and ``download_era5.py`` subset the same
-Kitchener-Waterloo bounding box (from ``lit-review/weather-forecasting.md``) and
+Kitchener-Waterloo bounding box (from ``docs/research/lit-review/weather-forecasting.md``) and
 write to the same configurable data root. This module centralises those constants
 plus the retry/backoff HTTP helper (lifted from
-``benchmarking-site/data/hrrr_interpolated/compute_benchmark.py``).
+``pipelines/benchmarking/hrrr_interpolated/compute_benchmark.py``).
 """
 
 from __future__ import annotations
@@ -31,18 +31,18 @@ PAD_DEG = 0.5
 
 
 def resolve_data_root(cli_value: str | None) -> Path:
-    """Where downloads land. Precedence: ``--data-root`` -> env -> repo ``data/``.
+    """Where downloads land. Precedence: ``--data-root`` -> env -> ``~/weatherloo-data``.
 
     The env fallback (``WEATHERLOO_DATA_ROOT``) lets the same script target
     WATcloud bulk storage (``/mnt/wato-drive*``) on the cluster without editing
-    code, while defaulting to the gitignored repo-root ``data/`` locally.
+    code, while keeping local raw datasets out of the repository by default.
     """
     if cli_value:
         return Path(cli_value).expanduser().resolve()
     env = os.environ.get("WEATHERLOO_DATA_ROOT")
     if env:
         return Path(env).expanduser().resolve()
-    return REPO_ROOT / "data"
+    return Path.home() / "weatherloo-data"
 
 
 def resolve_hrrr_cache_dir(data_root: Path, cli_value: str | None = None) -> Path:

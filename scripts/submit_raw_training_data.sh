@@ -18,7 +18,7 @@ BATCH_SIZE="${BATCH_SIZE:-6}"
 POLL_SECS="${POLL_SECS:-60}"
 WORKERS="${WORKERS:-4}"
 
-mkdir -p logs "$DATA_ROOT"
+mkdir -p outputs/logs "$DATA_ROOT"
 
 SBATCH_OPTS=(
   --partition=compute
@@ -27,8 +27,8 @@ SBATCH_OPTS=(
   --time=12:00:00
   --chdir="$REPO_ROOT"
   --export=ALL
-  --output=logs/%x-%j.out
-  --error=logs/%x-%j.err
+  --output=outputs/logs/%x-%j.out
+  --error=outputs/logs/%x-%j.err
 )
 
 wait_for_jobs() {
@@ -112,4 +112,4 @@ done
 
 echo ""
 echo "All done: submitted $submitted job(s) in $batch_num batch(es)."
-echo "Logs: $REPO_ROOT/logs/weatherloo-raw-download-*-*.out"
+echo "Logs: $REPO_ROOT/outputs/logs/weatherloo-raw-download-*-*.out"

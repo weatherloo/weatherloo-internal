@@ -93,8 +93,8 @@ GB. Set `--workers 4` (DataLoader workers) on multi-core nodes.
 | File | What |
 |---|---|
 | `best_model.pt` | best-val-loss checkpoint: model weights + normalization stats + epoch metadata |
-| `training_log.csv` | per-epoch `train_loss,val_loss,lr` |
-| `stats.json` | per-channel normalization stats (also embedded in the checkpoint) |
+| `training_log.csv` | per-epoch `train_loss,val_loss,lr` under `outputs/models/unet-hrrr/training_logs/` |
+| `stats.json` | per-channel normalization stats under `outputs/models/unet-hrrr/stats/` (also embedded in the checkpoint) |
 
 Training prints per-epoch losses, early-stops after 10 epochs without val
 improvement, then reports **denormalized validation skill**: raw-GFS t2m RMSE

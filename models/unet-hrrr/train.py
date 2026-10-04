@@ -21,8 +21,19 @@ sys.path.insert(0, str(HERE / "model"))
 from hrrr_dataset import HRRRDataset  # noqa: E402
 from unet import ResidualUNet  # noqa: E402
 
-CKPT_DIR = HERE / "checkpoints"
-LOG_PATH = HERE / "training_log.csv"
+REPO_ROOT = HERE.parents[1]
+OUTPUT_ROOT = REPO_ROOT / "outputs" / "models" / "unet-hrrr"
+DATA_ROOT = Path(
+    os.environ.get(
+        "UNET_DATA_ROOT",
+        os.environ.get(
+            "WEATHERLOO_DATA_ROOT",
+            f"/mnt/wato-drive/{os.environ.get('USER', 'weatherloo')}/weatherloo-data",
+        ),
+    )
+)
+CKPT_DIR = OUTPUT_ROOT / "checkpoints"
+LOG_PATH = OUTPUT_ROOT / "training_logs" / "training_log.csv"
 
 
 def pick_device() -> torch.device:
@@ -189,8 +200,8 @@ def train(args):
 
 def parse_args():
     p = argparse.ArgumentParser(description="Train U-Net on HRRR/ERA5 data")
-    p.add_argument("--data-dir", default="/mnt/wato-drive/c52li/weatherloo-data")
-    p.add_argument("--output-dir", default=str(HERE / "checkpoints"))
+    p.add_argument("--data-dir", default=str(DATA_ROOT))
+    p.add_argument("--output-dir", default=str(CKPT_DIR))
     p.add_argument("--ckpt-name", default="best_model.pt")
     p.add_argument("--log-name", default="training_log.csv")
     p.add_argument("--epochs", type=int, default=8)

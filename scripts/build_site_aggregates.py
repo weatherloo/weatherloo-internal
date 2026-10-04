@@ -44,7 +44,7 @@ from pathlib import Path
 import numpy as np
 
 ROOT = Path(__file__).resolve().parents[1]
-DATA = ROOT / "benchmarking-site" / "data"
+DATA = ROOT / "data" / "benchmarks"
 OUT_DIR = DATA / "aggregates"
 
 DECIMALS = 3

@@ -33,7 +33,7 @@ if [[ -n "$TMPDISK_MIB" ]]; then
   GRES="${GRES},tmpdisk:${TMPDISK_MIB}"
 fi
 
-mkdir -p logs
+mkdir -p outputs/logs
 
 SBATCH_OPTS=(
   --partition="$PARTITION"
@@ -44,8 +44,8 @@ SBATCH_OPTS=(
   --chdir="$REPO_ROOT"
   --export=ALL
   --job-name="$JOB_NAME"
-  --output=logs/%x-%j.out
-  --error=logs/%x-%j.err
+  --output=outputs/logs/%x-%j.out
+  --error=outputs/logs/%x-%j.err
 )
 
 echo "Submitting training job:"
@@ -58,5 +58,5 @@ jid=$(sbatch --parsable \
 
 echo "Submitted job $jid"
 echo "Monitor:  squeue -j $jid"
-echo "Logs:     tail -f $REPO_ROOT/logs/${JOB_NAME}-${jid}.out"
+echo "Logs:     tail -f $REPO_ROOT/outputs/logs/${JOB_NAME}-${jid}.out"
 echo "Summary:  sacct -j $jid --format=JobID,JobName,State,ExitCode,Elapsed"

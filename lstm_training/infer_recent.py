@@ -44,7 +44,8 @@ from train import BiasLSTM, build_features, parse_timestamps
 
 LSTM_DIR = os.path.dirname(os.path.abspath(__file__))
 REPO_ROOT = os.path.dirname(LSTM_DIR)
-DATA_ROOT = os.path.join(REPO_ROOT, "benchmarking-site", "data")
+DATA_ROOT = os.path.join(REPO_ROOT, "data", "benchmarks")
+OUTPUT_ROOT = os.path.join(REPO_ROOT, "outputs", "lstm_training")
 
 CYCLE_HOURS = 6  # nominal spacing between inits
 
@@ -154,7 +155,7 @@ def predict_range(
     the comparison site does not have to shell out to this script.
 
     `retrain_root` overrides where trained combos are read from, for building
-    against an alternate model set without disturbing retrain_output/.
+    against an alternate model set without disturbing outputs/lstm_training/retrained/.
     """
     args = argparse.Namespace(
         station=station, variable=variable, method=method, lead_time=lead_time,
@@ -173,7 +174,7 @@ def main():
     p.add_argument("--end-date", required=True, help="YYYY-MM-DD inclusive")
     p.add_argument("--out", default=None, help="Output JSON path")
     p.add_argument("--retrain-dir", dest="retrain_root", default=None,
-                   help="Alternate retrain_output root")
+                   help="Alternate LSTM retrained-output root")
     args = p.parse_args()
 
     results, combo_dir = _run(args)
@@ -188,7 +189,7 @@ def main():
 
 def _run(args, verbose=True):
     retrain_root = getattr(args, "retrain_root", None) or os.path.join(
-        LSTM_DIR, "retrain_output"
+        OUTPUT_ROOT, "retrained"
     )
     combo_dir = os.path.join(
         retrain_root, f"{args.station}_{args.variable}",

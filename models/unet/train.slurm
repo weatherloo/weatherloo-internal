@@ -20,17 +20,17 @@
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=32G
 #SBATCH --time=12:00:00
-#SBATCH --output=/home/c52li/weatherloo-internal/models/unet/slurm_logs/%x-%j.out
-#SBATCH --error=/home/c52li/weatherloo-internal/models/unet/slurm_logs/%x-%j.err
+#SBATCH --output=outputs/logs/slurm/unet/%x-%j.out
+#SBATCH --error=outputs/logs/slurm/unet/%x-%j.err
 
 set -euo pipefail
 
-REPO=/home/c52li/weatherloo-internal
+REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$REPO"
-mkdir -p models/unet/slurm_logs
+mkdir -p outputs/logs/slurm/unet
 
-DATA_DIR="${DATA_DIR:-/mnt/wato-drive/c52li/weatherloo-data/unet}"
-OUTPUT_DIR="${OUTPUT_DIR:-$REPO/models/unet/checkpoints}"
+DATA_DIR="${DATA_DIR:-${WEATHERLOO_DATA_ROOT:-/mnt/wato-drive/${USER:-weatherloo}/weatherloo-data}/unet}"
+OUTPUT_DIR="${OUTPUT_DIR:-$REPO/outputs/models/unet/checkpoints}"
 EPOCHS="${EPOCHS:-50}"
 BATCH_SIZE="${BATCH_SIZE:-16}"
 LR="${LR:-1e-3}"
