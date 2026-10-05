@@ -7,6 +7,7 @@ _ADAPTERS = {}
 # pay for torch unless the config actually asks for a torch-based adapter.
 _BUILTINS = {
     "lstm_bias_correction": "training_framework.adapters.lstm_bias_correction",
+    "ridge_bias_correction": "training_framework.adapters.ridge_bias_correction",
 }
 
 

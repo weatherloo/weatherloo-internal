@@ -49,7 +49,8 @@ def _substitute(value, env):
 
 
 def load_env(env_name, repo_root):
-    env_path = Path(repo_root) / "configs" / f"env.{env_name}.json"
+    # --env may be a name (configs/env.<name>.json) or a direct path to an env JSON
+    env_path = Path(env_name) if str(env_name).endswith(".json") else Path(repo_root) / "configs" / f"env.{env_name}.json"
     if not env_path.exists():
         raise FileNotFoundError(
             f"No env file for '{env_name}': {env_path} "

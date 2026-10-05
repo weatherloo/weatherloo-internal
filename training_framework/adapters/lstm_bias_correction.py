@@ -27,6 +27,8 @@ from training_framework.registry import register
 
 @register("lstm_bias_correction")
 class LstmBiasCorrectionAdapter:
+    checkpoint_name = "checkpoint.pt"
+    model_label = "LSTM bias correction"
 
     # -- dry-run: cheap checks, no model, no full training arrays kept around --
     @staticmethod

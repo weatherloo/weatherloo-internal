@@ -6,6 +6,11 @@ manifest.json tracking its status. The rule that matters: a run marked
 """
 import hashlib
 import json
+import os
+import platform
+import socket
+import subprocess
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -26,9 +31,59 @@ def config_hash(resolved_config):
     return hashlib.sha256(blob.encode()).hexdigest()[:16]
 
 
+def file_sha256(path):
+    h = hashlib.sha256()
+    with open(path, "rb") as f:
+        for chunk in iter(lambda: f.read(1 << 20), b""):
+            h.update(chunk)
+    return h.hexdigest()
+
+
+def _git(repo_root, *args):
+    try:
+        return subprocess.run(["git", *args], cwd=repo_root, capture_output=True,
+                              text=True, timeout=10).stdout.strip() or None
+    except (OSError, subprocess.SubprocessError):
+        return None  # no git (e.g. a copied tree on a compute node) -> recorded as null
+
+
+def provenance(resolved_config, repo_root):
+    """Everything needed to reproduce/audit a run besides the resolved config itself."""
+    import importlib.metadata as md
+
+    def version(pkg):
+        try:
+            return md.version(pkg)
+        except md.PackageNotFoundError:
+            return None
+
+    npz = resolved_config.get("data", {}).get("npz")
+    status = _git(repo_root, "status", "--porcelain")
+    return {
+        "git_commit": _git(repo_root, "rev-parse", "HEAD"),
+        "git_branch": _git(repo_root, "rev-parse", "--abbrev-ref", "HEAD"),
+        "git_dirty": bool(status),
+        "data": {"path": npz, "sha256": file_sha256(npz) if npz and os.path.exists(npz) else None},
+        "seed": resolved_config.get("run", {}).get("seed"),
+        "env_name": resolved_config.get("_env_name"),
+        "python": sys.version.split()[0],
+        "platform": platform.platform(),
+        "hostname": socket.gethostname(),
+        "slurm_job_id": os.environ.get("SLURM_JOB_ID"),
+        "packages": {p: version(p) for p in ("numpy", "torch", "tensorflow", "optuna")},
+    }
+
+
 def dataset_tag(data_cfg):
-    method = data_cfg.get("method", "data")
-    return f"{data_cfg['station']}_{data_cfg['variable']}_{method}_{data_cfg['lead_time']}h"
+    """<station>_<variable>_<method>_<lead>. Scalars keep the original LSTM
+    format (cyyz_t2m_gfs_interpolated_6h); lists join with '-', missing/"all"
+    becomes 'all', so multi-station or multi-lead models get a stable dir too."""
+    def part(key, suffix=""):
+        v = data_cfg.get(key, "all")
+        if isinstance(v, list):
+            return "-".join(str(x) for x in v) + suffix
+        return "all" if v == "all" else f"{v}{suffix}"
+    return f"{part('station')}_{part('variable')}_{data_cfg.get('method', 'data')}_{part('lead_time', 'h')}"
 
 
 def run_dir_path(runs_root, adapter_name, tag, run_id):
