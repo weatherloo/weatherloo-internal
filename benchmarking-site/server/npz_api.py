@@ -148,8 +148,18 @@ def aggregate_from_npz(
             result[metric] = [None] * len(lead_times)
             continue
         with np.errstate(all="ignore"):
-            means = np.nanmean(slab, axis=0)
-        result[metric] = json_list(means)
+            if metric == "rmse":
+                # Each per-init entry is a single forecast/obs pair, so its
+                # stored rmse is |error|. Averaging those yields mae; pooling a
+                # real RMSE means squaring first and taking the root last.
+                agg = np.sqrt(np.nanmean(np.square(slab), axis=0))
+            elif metric == "acc":
+                # Single-sample ACC degenerates to +/-1; an average of that is
+                # not a correlation. Report nothing rather than something wrong.
+                agg = np.full(len(lead_times), np.nan)
+            else:
+                agg = np.nanmean(slab, axis=0)
+        result[metric] = json_list(agg)
         n_samples = np.maximum(
             n_samples, np.sum(~np.isnan(slab), axis=0).astype(np.int64)
         )

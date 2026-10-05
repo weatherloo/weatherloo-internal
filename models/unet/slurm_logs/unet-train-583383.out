@@ -1,0 +1,66 @@
+job 583383 on tr-slurm2
+=== U-Net pipeline: train ===
+  data dir   : /mnt/wato-drive/c52li/weatherloo-data/unet  (55831 cached samples, 2021-03-23 .. 2025-12-31)
+  output dir : /home/c52li/weatherloo-internal/models/unet/checkpoints
+
+device: cpu
+range: 2021-03-23 .. 2025-12-31   epochs: 50   batch: 16   workers: 4
+split: chronological
+[stats] stats.json: sample space changed None -> {'cycles': [0, 6, 12, 18], 'leads': [6, 12, 18, 24, 30, 36, 42, 48]}; recomputing
+samples: train 44665  /  val 11166
+stats file: /home/c52li/weatherloo-internal/models/unet/checkpoints/stats.json   checkpoint: best_model.pt
+model params: 117,539
+
+epoch  train_loss   val_loss        lr
+    1    0.62150    0.62402  1.00e-03  *best
+    2    0.53291    0.57816  1.00e-03  *best
+    3    0.50763    0.57932  1.00e-03
+    4    0.49112    0.56717  1.00e-03  *best
+    5    0.47910    0.56113  1.00e-03  *best
+    6    0.46963    0.56931  1.00e-03
+    7    0.46204    0.56365  1.00e-03
+    8    0.45497    0.55506  1.00e-03  *best
+    9    0.44922    0.57229  1.00e-03
+   10    0.44453    0.55749  1.00e-03
+   11    0.43962    0.55842  1.00e-03
+   12    0.43552    0.56043  1.00e-03
+   13    0.43140    0.56442  1.00e-03
+   14    0.42809    0.55854  5.00e-04
+   15    0.41123    0.55422  5.00e-04  *best
+   16    0.40767    0.56905  5.00e-04
+   17    0.40578    0.55754  5.00e-04
+   18    0.40389    0.56048  5.00e-04
+   19    0.40251    0.57066  5.00e-04
+   20    0.40105    0.56186  5.00e-04
+   21    0.39954    0.56337  2.50e-04
+   22    0.39062    0.56594  2.50e-04
+   23    0.38898    0.56462  2.50e-04
+   24    0.38798    0.56415  2.50e-04
+   25    0.38721    0.57334  2.50e-04
+
+Early stopping: val loss has not improved for 10 epochs.
+
+training log -> /home/c52li/weatherloo-internal/models/unet/checkpoints/training_log.csv
+best val loss (normalized MSE): 0.55422   checkpoint -> /home/c52li/weatherloo-internal/models/unet/checkpoints/best_model.pt
+
+loaded best checkpoint from epoch 15 (val_loss=0.55422)
+
+=== Validation skill (denormalized, real units) ===
+  channel   resid_RMSE  resid_MAE  rawGFS_RMSE  corrected_RMSE   improve
+  t2m           1.379      1.027       2.050          1.379   +0.671  (degC)
+  u10           0.995      0.707       1.349          0.995   +0.354  (m/s)
+  v10           1.037      0.731       1.384          1.037   +0.347  (m/s)
+
+=== t2m headline (compare vs benchmarks ~1.4-1.5 degC at cyyz) ===
+  raw GFS t2m RMSE (no correction): 2.050 degC
+  corrected t2m RMSE (GFS - pred):  1.379 degC
+  -> U-Net REDUCES t2m RMSE by 0.671 degC (32.7%). Model is helping.
+
+=== train summary ===
+  elapsed : 1h 02m
+  outputs under /home/c52li/weatherloo-internal/models/unet/checkpoints:
+    best_model.pt      483.7 KB
+    training_log.csv   1.2 KB
+    stats.json         685 B
+--- stats.json sample space ---
+{'cycles': [0, 6, 12, 18], 'leads': [6, 12, 18, 24, 30, 36, 42, 48]}

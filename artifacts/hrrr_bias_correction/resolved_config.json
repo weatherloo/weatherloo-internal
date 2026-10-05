@@ -1,0 +1,42 @@
+{
+  "paths": {
+    "hrrr_root": "/mnt/wato-drive/c52li/weatherloo-data/hrrr",
+    "obs_root": "benchmarking-site/data/observations/eric_d_soulis/raw",
+    "zarr_store": "/mnt/wato-drive/gguirgui/weatherloo-data/hrrr_bias_correction/hrrr",
+    "artifact_dir": "artifacts/hrrr_bias_correction"
+  },
+  "data": {
+    "train_split": "train",
+    "val_split": "val",
+    "test_split": "test",
+    "fill_x_nan": 0.0,
+    "fill_y_nan": 0.0,
+    "shuffle_train": true,
+    "shuffle_seed": 42
+  },
+  "model": {
+    "n_leads": 49,
+    "crop": 30,
+    "n_channels": 3,
+    "n_targets": 2,
+    "conv1_filters": 16,
+    "conv2_filters": 32,
+    "lstm_units": 64
+  },
+  "training": {
+    "batch_size": 32,
+    "epochs": 30,
+    "learning_rate": 0.001,
+    "weight_decay": 0.0,
+    "clipnorm": 1.0,
+    "early_stopping_patience": 5,
+    "reduce_lr_patience": 3,
+    "reduce_lr_factor": 0.5,
+    "min_learning_rate": 1e-06
+  },
+  "runtime": {
+    "seed": 42,
+    "mixed_precision": false,
+    "save_best_only": true
+  }
+}

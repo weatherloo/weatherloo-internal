@@ -1,0 +1,17 @@
+{
+  "schema_version": "1",
+  "methods": [
+    "climatology",
+    "cnn_lstm_bias_correction",
+    "ecmwf_aifs",
+    "gefs_mean",
+    "gfs_analysis",
+    "gfs_interpolated",
+    "graphcast",
+    "hrrr_interpolated",
+    "linear_regression",
+    "lstm_ecmwf_aifs",
+    "persistence",
+    "unet"
+  ]
+}

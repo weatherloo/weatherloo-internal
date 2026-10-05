@@ -1,0 +1,2 @@
+[2026-07-27T06:47:01Z] cron raw babysit start DATA_ROOT=/mnt/wato-drive/c52li/weatherloo-data
+[2026-07-27T06:47:01Z] Another babysit holds /home/c52li/weatherloo-internal/.locks/raw-babysit.lock; exiting.

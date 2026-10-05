@@ -55,7 +55,7 @@ All written to `--out_dir` (default `lstm_training/output/`):
 | `--station` | `cyyz` | Station id |
 | `--variable` | `t2m` | Variable name |
 | `--lead_time` | `6` | Lead time in hours |
-| `--seq_len` | `24` | Sliding window length |
+| `--seq_len` | `24` | Sliding window length (see *Window cutoff* below) |
 | `--hidden_size` | `64` | LSTM hidden units |
 | `--num_layers` | `2` | LSTM layers |
 | `--dropout` | `0.1` | Dropout between LSTM layers |
@@ -65,3 +65,29 @@ All written to `--out_dir` (default `lstm_training/output/`):
 | `--patience` | `15` | Early stopping patience |
 | `--max_norm` | `1.0` | Gradient clipping max norm |
 | `--out_dir` | `lstm_training/output` | Output directory |
+
+## Window cutoff (why the window is not adjacent to the target)
+
+`bias[i] = forecast(init_i, L) - obs(init_i + L)` is not observable until `L`
+hours after `init_i` — it needs the observation that verifies that forecast. A
+correction issued at target init `T` may therefore only read biases from inits
+`j` where `init_j + L <= T`.
+
+`make_sequences` enforces this: the window ends at the latest such `j`, not at
+`T - 6h`. At `L = 6h` those coincide, which is why 6h models are unaffected by
+the cutoff; at `L = 48h` there are 8 six-hourly steps between the window's end
+and the target, and 12 at `L = 72h`.
+
+Consequence: longer leads yield fewer usable sequences, since `seq_len + L/6`
+consecutive samples must precede the first valid target. `train.py` raises
+rather than training on an empty set, and `sweep.py` prunes such trials.
+
+The cutoff is resolved against timestamps, not a fixed index offset — NaN
+biases are dropped before sequencing, so array positions are not evenly spaced
+in time.
+
+`test_sequence_cutoff.py` covers these invariants:
+
+```bash
+python lstm_training/test_sequence_cutoff.py
+```

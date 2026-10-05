@@ -7,7 +7,8 @@
     "dev:api": "bash server/run_api.sh",
     "dev:vite": "vite",
     "build": "vite build",
-    "preview": "concurrently -k -n api,vite -c blue,green \"npm:dev:api\" \"vite preview\""
+    "preview": "concurrently -k -n api,vite -c blue,green \"npm:dev:api\" \"vite preview\"",
+    "build:data": "python3 ../scripts/build_site_aggregates.py"
   },
   "dependencies": {
     "chart.js": "^4.4.1",

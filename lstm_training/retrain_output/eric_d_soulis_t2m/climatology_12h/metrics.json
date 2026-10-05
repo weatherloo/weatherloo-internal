@@ -14,26 +14,26 @@
     "max_norm": 2.0
   },
   "n_samples": 1249,
-  "n_sequences": 1237,
+  "n_sequences": 1236,
   "split": {
     "train": 865,
     "val": 185,
-    "test": 187
+    "test": 186
   },
-  "epochs_trained": 116,
-  "best_val_loss": 0.1707520553791845,
+  "epochs_trained": 85,
+  "best_val_loss": 0.25292333839712916,
   "metrics_normalized": {
-    "rmse": 0.488033264875412,
-    "mae": 0.3686181604862213,
-    "bias": -0.0231802836060524
+    "rmse": 0.6321322321891785,
+    "mae": 0.4945216774940491,
+    "bias": -0.07773659378290176
   },
   "metrics_original": {
-    "rmse": 3.52683162689209,
-    "mae": 2.6638636589050293,
-    "bias": -0.16751514375209808
+    "rmse": 4.568180561065674,
+    "mae": 3.573721170425415,
+    "bias": -0.561772882938385
   },
   "original_sweep_best_rmse": 3.3950581550598145,
-  "original_sweep_source": "output\\eric_d_soulis_t2m\\climatology_12h\\sweep_results.json",
+  "original_sweep_source": "output/eric_d_soulis_t2m/climatology_12h/sweep_results.json",
   "device": "cpu",
-  "retrained_at": "2026-07-15T23:30:32Z"
+  "retrained_at": "2026-07-27T08:48:49Z"
 }

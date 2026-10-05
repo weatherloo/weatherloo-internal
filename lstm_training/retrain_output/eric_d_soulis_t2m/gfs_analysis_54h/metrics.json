@@ -14,26 +14,26 @@
     "max_norm": 2.0
   },
   "n_samples": 1242,
-  "n_sequences": 1230,
+  "n_sequences": 1222,
   "split": {
-    "train": 861,
-    "val": 184,
-    "test": 185
+    "train": 855,
+    "val": 183,
+    "test": 184
   },
-  "epochs_trained": 40,
-  "best_val_loss": 0.5485064037468123,
+  "epochs_trained": 33,
+  "best_val_loss": 0.6469492470957542,
   "metrics_normalized": {
-    "rmse": 0.7025423049926758,
-    "mae": 0.56297367811203,
-    "bias": 0.18297845125198364
+    "rmse": 0.8825141191482544,
+    "mae": 0.6702532172203064,
+    "bias": -0.04114244505763054
   },
   "metrics_original": {
-    "rmse": 4.9854631423950195,
-    "mae": 3.9950404167175293,
-    "bias": 1.2984730005264282
+    "rmse": 6.262600421905518,
+    "mae": 4.756329536437988,
+    "bias": -0.29195985198020935
   },
   "original_sweep_best_rmse": 4.674644470214844,
-  "original_sweep_source": "output\\eric_d_soulis_t2m\\gfs_analysis_54h\\sweep_results.json",
+  "original_sweep_source": "output/eric_d_soulis_t2m/gfs_analysis_54h/sweep_results.json",
   "device": "cpu",
-  "retrained_at": "2026-07-16T00:09:07Z"
+  "retrained_at": "2026-07-27T09:10:45Z"
 }

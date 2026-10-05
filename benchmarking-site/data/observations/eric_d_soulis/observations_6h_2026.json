@@ -1216,19 +1216,19 @@
     {
       "valid_time": "2026-02-02T18:00:00Z",
       "t2m": -5.96,
-      "wind_speed": NaN,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
       "valid_time": "2026-02-03T00:00:00Z",
       "t2m": -7.66,
-      "wind_speed": NaN,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
@@ -7354,10 +7354,10 @@
     {
       "valid_time": "2026-07-23T06:00:00Z",
       "t2m": 10.21,
-      "wind_speed": NaN,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {

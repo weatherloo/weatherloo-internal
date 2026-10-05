@@ -23,7 +23,21 @@ export default defineConfig({
   plugins: [
     react(),
     viteStaticCopy({
-      targets: [{ src: "data", dest: "." }],
+      // Ship only what the browser fetches. Copying all of data/ put ~440 MB in
+      // dist -- 271 MB of it raw CSVs and 13 MB of npz that no client code can
+      // read -- which blows past static-host deployment limits.
+      targets: [
+        { src: "data/aggregates", dest: "data" },
+        { src: "data/observations/stations.json", dest: "data/observations" },
+        {
+          src: "data/observations/cyyz/observations_6h_*.json",
+          dest: "data/observations/cyyz",
+        },
+        {
+          src: "data/observations/eric_d_soulis/observations_6h_*.json",
+          dest: "data/observations/eric_d_soulis",
+        },
+      ],
     }),
     {
       name: "serve-benchmark-data",

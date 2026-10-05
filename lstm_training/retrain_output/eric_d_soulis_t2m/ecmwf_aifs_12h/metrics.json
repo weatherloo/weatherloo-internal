@@ -14,26 +14,26 @@
     "max_norm": 0.5
   },
   "n_samples": 1241,
-  "n_sequences": 1229,
+  "n_sequences": 1228,
   "split": {
-    "train": 860,
+    "train": 859,
     "val": 184,
     "test": 185
   },
-  "epochs_trained": 29,
-  "best_val_loss": 0.5601362586021423,
+  "epochs_trained": 42,
+  "best_val_loss": 0.4791394433249598,
   "metrics_normalized": {
-    "rmse": 1.0283397436141968,
-    "mae": 0.654187798500061,
-    "bias": 0.14239320158958435
+    "rmse": 1.067635416984558,
+    "mae": 0.6453810334205627,
+    "bias": 0.09070898592472076
   },
   "metrics_original": {
-    "rmse": 1.8588303327560425,
-    "mae": 1.1825121641159058,
-    "bias": 0.25739040970802307
+    "rmse": 1.9298614263534546,
+    "mae": 1.1665927171707153,
+    "bias": 0.1639658510684967
   },
   "original_sweep_best_rmse": 1.832422137260437,
-  "original_sweep_source": "output\\eric_d_soulis_t2m\\ecmwf_aifs_12h\\sweep_results.json",
+  "original_sweep_source": "output/eric_d_soulis_t2m/ecmwf_aifs_12h/sweep_results.json",
   "device": "cpu",
-  "retrained_at": "2026-07-15T23:31:00Z"
+  "retrained_at": "2026-07-27T08:49:31Z"
 }

@@ -1,0 +1,5 @@
+device: cpu
+data root: 
+val year: 2025
+input vars: t2m,u10,v10,q2,psfc,tp
+target vars: t2m,u10,v10

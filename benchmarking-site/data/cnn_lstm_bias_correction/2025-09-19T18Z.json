@@ -1,0 +1,306 @@
+{
+  "method": "cnn_lstm_bias_correction",
+  "initialization": "2025-09-19T18:00:00Z",
+  "locations": {
+    "cyyz": {
+      "lat": 43.6777,
+      "lon": -79.6248,
+      "variables": {
+        "t2m": {
+          "lead_times_hours": [
+            6,
+            12,
+            18,
+            24,
+            30,
+            36,
+            42,
+            48,
+            54,
+            60,
+            66,
+            72
+          ],
+          "rmse": [
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          "mae": [
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          "bias": [
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          "acc": [
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ]
+        },
+        "wind_speed": {
+          "lead_times_hours": [
+            6,
+            12,
+            18,
+            24,
+            30,
+            36,
+            42,
+            48,
+            54,
+            60,
+            66,
+            72
+          ],
+          "rmse": [
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          "mae": [
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          "bias": [
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          "acc": [
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ]
+        }
+      }
+    },
+    "eric_d_soulis": {
+      "lat": 43.4668,
+      "lon": -80.5164,
+      "variables": {
+        "t2m": {
+          "lead_times_hours": [
+            6,
+            12,
+            18,
+            24,
+            30,
+            36,
+            42,
+            48,
+            54,
+            60,
+            66,
+            72
+          ],
+          "rmse": [
+            2.4035484790802,
+            null,
+            0.7015764713287354,
+            null,
+            1.7404462099075317,
+            2.3583924770355225,
+            2.29636549949646,
+            1.0520312786102295,
+            null,
+            null,
+            null,
+            null
+          ],
+          "mae": [
+            2.4035484790802,
+            null,
+            0.7015764713287354,
+            null,
+            1.7404462099075317,
+            2.3583924770355225,
+            2.29636549949646,
+            1.0520312786102295,
+            null,
+            null,
+            null,
+            null
+          ],
+          "bias": [
+            -2.4035484790802,
+            null,
+            -0.7015764713287354,
+            null,
+            -1.7404462099075317,
+            -2.3583924770355225,
+            -2.29636549949646,
+            1.0520312786102295,
+            null,
+            null,
+            null,
+            null
+          ],
+          "acc": [
+            -1.0,
+            null,
+            1.0,
+            null,
+            1.0,
+            1.0,
+            -1.0,
+            1.0,
+            null,
+            null,
+            null,
+            null
+          ]
+        },
+        "wind_speed": {
+          "lead_times_hours": [
+            6,
+            12,
+            18,
+            24,
+            30,
+            36,
+            42,
+            48,
+            54,
+            60,
+            66,
+            72
+          ],
+          "rmse": [
+            3.2705326080322266,
+            null,
+            2.2884726524353027,
+            null,
+            3.4926300048828125,
+            3.8759102821350098,
+            6.2185187339782715,
+            0.036060333251953125,
+            null,
+            null,
+            null,
+            null
+          ],
+          "mae": [
+            3.2705326080322266,
+            null,
+            2.2884726524353027,
+            null,
+            3.4926300048828125,
+            3.8759102821350098,
+            6.2185187339782715,
+            0.036060333251953125,
+            null,
+            null,
+            null,
+            null
+          ],
+          "bias": [
+            3.2705326080322266,
+            null,
+            -2.2884726524353027,
+            null,
+            3.4926300048828125,
+            -3.8759102821350098,
+            -6.2185187339782715,
+            -0.036060333251953125,
+            null,
+            null,
+            null,
+            null
+          ],
+          "acc": [
+            null,
+            null,
+            -1.0,
+            null,
+            null,
+            -1.0,
+            -1.0,
+            1.0,
+            null,
+            null,
+            null,
+            null
+          ]
+        }
+      }
+    }
+  }
+}

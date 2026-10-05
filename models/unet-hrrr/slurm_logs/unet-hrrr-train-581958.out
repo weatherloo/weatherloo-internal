@@ -1,0 +1,4 @@
+Looking in indexes: https://download.pytorch.org/whl/cpu
+Collecting torch==2.3.1
+  Downloading https://download-r2.pytorch.org/whl/cpu/torch-2.3.1%2Bcpu-cp310-cp310-linux_x86_64.whl (190.4 MB)
+     ━━━━━━━━━━╸                             52.4/190.4 MB 34.1 MB/s eta 0:00:05

@@ -1,0 +1,13 @@
+/var/spool/slurmd/job582138/slurm_script: line 12: /mnt/wato-drive/c52li/venvs/unet-hrrr/bin/activate: No such file or directory
+/home/c52li/weatherloo-internal/models/unet-hrrr/data/hrrr_dataset.py:93: FutureWarning: In a future version, xarray will not decode timedelta values based on the presence of a timedelta-like units attribute by default. Instead it will rely on the presence of a timedelta64 dtype attribute, which is now xarray's default way of encoding timedelta64 values. To continue decoding timedeltas based on the presence of a timedelta-like units attribute, users will need to explicitly opt-in by passing True or CFTimedeltaCoder(decode_via_units=True) to decode_timedelta. To silence this warning, set decode_timedelta to True, False, or a 'CFTimedeltaCoder' instance.
+  ds = xr.open_dataset(file)
+Traceback (most recent call last):
+  File "/home/c52li/weatherloo-internal/models/unet-hrrr/train.py", line 211, in <module>
+    train(parse_args())
+  File "/home/c52li/weatherloo-internal/models/unet-hrrr/train.py", line 104, in train
+    train_ds = HRRRDataset(
+  File "/home/c52li/weatherloo-internal/models/unet-hrrr/data/hrrr_dataset.py", line 68, in __init__
+    self.samples = self._build_samples()
+  File "/home/c52li/weatherloo-internal/models/unet-hrrr/data/hrrr_dataset.py", line 101, in _build_samples
+    valid_dt = init_dt + timedelta(hours=int(lead))
+OverflowError: Python int too large to convert to C int

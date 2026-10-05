@@ -20,20 +20,20 @@
     "val": 185,
     "test": 187
   },
-  "epochs_trained": 17,
-  "best_val_loss": 0.6370759735236297,
+  "epochs_trained": 14,
+  "best_val_loss": 0.5707650788732477,
   "metrics_normalized": {
-    "rmse": 0.8321449160575867,
-    "mae": 0.5454148650169373,
-    "bias": -0.00442950613796711
+    "rmse": 0.8721485733985901,
+    "mae": 0.5625767707824707,
+    "bias": -0.12843437492847443
   },
   "metrics_original": {
-    "rmse": 2.111884117126465,
-    "mae": 1.38419771194458,
-    "bias": -0.011241545900702477
+    "rmse": 2.2134087085723877,
+    "mae": 1.4277524948120117,
+    "bias": -0.3259510397911072
   },
   "original_sweep_best_rmse": 2.089420795440674,
-  "original_sweep_source": "output\\eric_d_soulis_t2m\\linear_regression_6h\\sweep_results.json",
+  "original_sweep_source": "output/eric_d_soulis_t2m/linear_regression_6h/sweep_results.json",
   "device": "cpu",
-  "retrained_at": "2026-07-15T23:37:39Z"
+  "retrained_at": "2026-07-27T08:58:34Z"
 }

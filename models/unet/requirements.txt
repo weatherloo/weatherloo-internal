@@ -1,0 +1,22 @@
+# U-Net post-processing pipeline — Python dependencies
+# (Step 1 needs everything except torch; torch is listed for the later
+#  dataset/model/training steps.)
+
+# Config
+pyyaml>=6.0
+
+# ERA5 (GCP ARCO zarr store) — xarray + gcsfs + zarr v2
+xarray>=2024.1
+gcsfs>=2024.2
+zarr>=2.17,<3          # arco-era5 "ar" stores are zarr v2 format — including
+                       # full_37-1h-...-chunk-1.zarr-v3 ("-v3" = dataset version)
+fsspec>=2024.2
+
+# GFS (AWS Open Data, byte-range GRIB)
+cfgrib>=0.9.14
+eccodes>=1.6.0
+scipy>=1.11
+numpy>=1.26
+
+# Model / training (used by model/unet.py, train.py, evaluate.py — later steps)
+torch>=2.2

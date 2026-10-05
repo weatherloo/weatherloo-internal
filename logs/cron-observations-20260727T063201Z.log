@@ -1,0 +1,12 @@
+[2026-07-27T06:32:01Z] cron observations start DATA_ROOT=/mnt/wato-drive/c52li/weatherloo-data
+[eccc] stations=43 year_files_written=0
+[soulis] 2018 -> /mnt/wato-drive/c52li/weatherloo-data/observations/uwaterloo/eric_d_soulis/15min/uw_hobo_15min_2018.csv
+[soulis] 2019 -> /mnt/wato-drive/c52li/weatherloo-data/observations/uwaterloo/eric_d_soulis/15min/uw_hobo_15min_2019.csv
+[soulis] 2020 -> /mnt/wato-drive/c52li/weatherloo-data/observations/uwaterloo/eric_d_soulis/15min/uw_hobo_15min_2020.csv
+[soulis] 2021 -> /mnt/wato-drive/c52li/weatherloo-data/observations/uwaterloo/eric_d_soulis/15min/uw_hobo_15min_2021.csv
+[soulis] 2022 -> /mnt/wato-drive/c52li/weatherloo-data/observations/uwaterloo/eric_d_soulis/15min/uw_hobo_15min_2022.csv
+[soulis] 2023 -> /mnt/wato-drive/c52li/weatherloo-data/observations/uwaterloo/eric_d_soulis/15min/uw_hobo_15min_2023.csv
+[soulis] 2024 -> /mnt/wato-drive/c52li/weatherloo-data/observations/uwaterloo/eric_d_soulis/15min/uw_hobo_15min_2024.csv
+[soulis] 2025 -> /mnt/wato-drive/c52li/weatherloo-data/observations/uwaterloo/eric_d_soulis/15min/uw_hobo_15min_2025.csv
+[soulis] 2026 -> /mnt/wato-drive/c52li/weatherloo-data/observations/uwaterloo/eric_d_soulis/15min/uw_hobo_15min_2026.csv
+Done. observations_root=/mnt/wato-drive/c52li/weatherloo-data/observations

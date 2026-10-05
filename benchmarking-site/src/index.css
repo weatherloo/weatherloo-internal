@@ -137,3 +137,79 @@ select {
 .chart-wrap {
   height: 180px;
 }
+
+.chart-card--tall .chart-wrap {
+  height: 220px;
+}
+
+.method-picker {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.8rem;
+}
+
+.picker-label {
+  font-size: 0.8rem;
+}
+
+.picker-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  min-width: 160px;
+  padding: 0.25rem 0.5rem;
+  font: inherit;
+  background: #fff;
+  border: 1px solid #ccc;
+  cursor: pointer;
+  text-align: left;
+}
+
+.picker-caret {
+  font-size: 0.65rem;
+  opacity: 0.6;
+}
+
+.method-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  z-index: 100;
+  min-width: 220px;
+  max-height: 220px;
+  overflow-y: auto;
+  background: #fff;
+  border: 1px solid #ccc;
+  padding: 0.35rem 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.clear-all-btn {
+  align-self: flex-start;
+  font: inherit;
+  font-size: 0.75rem;
+  padding: 0.1rem 0.4rem;
+  background: none;
+  border: 1px solid #aaa;
+  cursor: pointer;
+  margin-bottom: 0.25rem;
+}
+
+.clear-all-btn:hover {
+  background: #f0f0f0;
+}
+
+.method-option {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
