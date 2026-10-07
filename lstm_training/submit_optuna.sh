@@ -4,9 +4,9 @@
 #SBATCH --cpus-per-task=2
 #SBATCH --mem=4G
 #SBATCH --time=04:00:00
-#SBATCH --output=./logs/optuna-%A-%a.out
+#SBATCH --output=outputs/logs/optuna-%A-%a.out
 
-mkdir -p ./logs
+mkdir -p outputs/logs
 
 source "$(conda info --base)/etc/profile.d/conda.sh"
 conda activate lstm-env

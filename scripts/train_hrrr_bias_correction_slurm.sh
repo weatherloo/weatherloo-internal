@@ -20,7 +20,7 @@ if [[ ! -x "$PYTHON" ]]; then
   exit 1
 fi
 
-mkdir -p logs
+mkdir -p outputs/logs
 
 echo "=== weatherloo hrrr bias-correction training ==="
 echo "host=$(hostname) job=${SLURM_JOB_ID:-local} date=$(date -u +%Y-%m-%dT%H:%M:%SZ)"

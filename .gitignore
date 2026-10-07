@@ -1,10 +1,17 @@
 .venv/
+**/.venv/
+node_modules/
 artifacts/
 data/hrrr/
 data/era5/
+data/raw/
+data/processed/
+data/cache/
+data/tmp/
 test_sprint/__pycache__/
 test_sprint/src/**/__pycache__/
 **/__pycache__/
 .DS_Store
 .cache/
 .ipynb_checkpoints/
+outputs/

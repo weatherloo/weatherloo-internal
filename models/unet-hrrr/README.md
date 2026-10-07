@@ -115,19 +115,19 @@ python3 -m venv .venv
 
 1. ~~`data/dataset.py`~~ **[DONE]** — PyTorch `Dataset`: stacks GFS `(t2m,u10,v10)` region
    grids as input channels, target = `GFS − ERA5` residual; per-channel z-score normalization
-   (stats cached to `data/stats.json`), un-normalized grids cached under `.cache/unet_training/`,
+   (stats cached to `outputs/models/unet-hrrr/stats/stats.json`), un-normalized grids cached under `.cache/unet_training/`,
    chronological 80/20 train/val split. Self-test: `.venv/bin/python models/unet/data/dataset.py`.
 2. ~~`model/unet.py`~~ **[DONE]** — small 2-level U-Net (`ResidualUNet`, 3→3 channels, 16→32→64
    features, ~117k params). Reflect-pads 21×41→24×48 internally so downsampling stays clean, crops
    back to 21×41. Self-test: `.venv/bin/python models/unet/model/unet.py`.
 3. ~~`train.py`~~ **[DONE]** — residual regression (MSE on the normalized correction), Adam +
-   ReduceLROnPlateau, early stopping (patience 10), best checkpoint → `checkpoints/best_model.pt`,
-   per-epoch metrics → `training_log.csv`. After training, reports **denormalized** validation
+   ReduceLROnPlateau, early stopping (patience 10), best checkpoint → `outputs/models/unet-hrrr/checkpoints/best_model.pt`,
+   per-epoch metrics → `outputs/models/unet-hrrr/training_logs/training_log.csv`. After training, reports **denormalized** validation
    RMSE/MAE and corrected-vs-raw-GFS t2m skill. Sanity: `python train.py --sanity` (5 epochs, June
    week). Full: `python train.py`. Pre-warm the grid cache first with `data/precache.py`.
 4. ~~`evaluate.py`~~ **[DONE]** — applies `corrected = GFS − pred_error`, bilinearly interpolates raw
    GFS and corrected grids to CYYZ / Eric D. Soulis, and scores both against **real 2021 station obs**.
-   Summary → `eval_results/unet_postprocessing_val2021_summary.json`. Run: `python evaluate.py`.
+   Summary → `outputs/models/unet-hrrr/eval_results/unet_postprocessing_val2021_summary.json`. Run: `python evaluate.py`.
 
 ### ⚠️ Step 5 finding — NOT dashboard-ready
 
@@ -162,7 +162,7 @@ model beat the seasonal-mean baseline — if a 117k-param U-Net can't, it's over
 Splitting per month (valid-day ≤ 24 → train, else val) so **every month appears in both** sets fixes the
 chronological split's "val is an unseen season" artifact: the val set now spans Mar–Dec (528 samples) and
 the seasonal baseline gets a real DJF (December) field — no fallback. Retrained same arch/hyperparams
-(`checkpoints/best_model_interleaved.pt`), t2m RMSE (degC) vs real obs:
+(`outputs/models/unet-hrrr/checkpoints/best_model_interleaved.pt`), t2m RMSE (degC) vs real obs:
 
 | station | raw GFS | seasonal bias | U-Net | ERA5 oracle |
 |---|---|---|---|---|

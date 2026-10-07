@@ -115,7 +115,7 @@ python3 -m venv .venv
 
 1. ~~`data/dataset.py`~~ **[DONE]** — PyTorch `Dataset`: stacks GFS `(t2m,u10,v10)` region
    grids as input channels, target = `GFS − ERA5` residual; per-channel z-score normalization
-   (stats cached to `data/stats.json`), un-normalized grids cached under `.cache/unet_training/`,
+   (stats cached to `outputs/models/unet/stats/stats.json`), un-normalized grids cached under `.cache/unet_training/`,
    chronological 80/20 train/val split. Self-test: `.venv/bin/python models/unet/data/dataset.py`.
 2. ~~`model/unet.py`~~ **[DONE]** — small 2-level U-Net (`ResidualUNet`, 4→3 channels, 16→32→64
    features, ~117k params). Reflect-pads 21×41→24×48 internally so downsampling stays clean, crops
@@ -236,10 +236,10 @@ Or submit stages individually:
 |---|---|---|
 | fetch | `models/unet/fetch.slurm` | `--array=1-N` splits `[START, END]` into contiguous date chunks. Resumable — cached samples are skipped. Prunes GRIB by default. Succeeds when coverage ≥ `MIN_COVERAGE` (0.95). |
 | train | `models/unet/train.slurm` | Reads only cached `.npz`; no network. |
-| benchmark | `benchmarking-site/data/unet/run_benchmark.slurm` | Writes the dashboard JSON + NPZ and rebuilds the static aggregate. |
+| benchmark | `pipelines/benchmarking/unet/run_benchmark.slurm` | Writes the dashboard JSON + NPZ and rebuilds the static aggregate. |
 
-Logs land in `models/unet/slurm_logs/` and
-`benchmarking-site/data/unet/slurm_logs/`, named `<jobname>-<jobid>`. Check the
+Logs land in `outputs/logs/slurm/unet/` and
+`outputs/logs/slurm/benchmark-unet/`, named `<jobname>-<jobid>`. Check the
 `.err` as well as the `.out` — tracebacks go to the former.
 
 `DATA_DIR` must be the **cache root** (the parent of `unet_training/`);

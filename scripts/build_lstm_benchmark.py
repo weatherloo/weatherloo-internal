@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Score the LSTM bias-corrected forecasts as a benchmark method.
 
-The trained LSTMs in lstm_training/retrain_output/ correct one NWP source at
+The trained LSTMs in outputs/lstm_training/retrained/ correct one NWP source at
 one lead time each. Nothing on the benchmarking site read them, so their skill
 was never visible next to the raw models they exist to improve. This writes
 them out in the same npz layout every other method uses, so the site can plot
@@ -37,8 +37,8 @@ from pathlib import Path
 import numpy as np
 
 ROOT = Path(__file__).resolve().parents[1]
-DATA = ROOT / "benchmarking-site" / "data"
-RETRAIN = ROOT / "lstm_training" / "retrain_output"
+DATA = ROOT / "data" / "benchmarks"
+RETRAIN = ROOT / "outputs" / "lstm_training" / "retrained"
 
 sys.path.insert(0, str(ROOT / "lstm_training"))
 

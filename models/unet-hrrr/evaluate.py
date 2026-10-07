@@ -18,8 +18,8 @@ cyyz t2m RMSE 1.430, raw GFS 1.510) are for **2025**. Ours is the held-out
 **2021** validation period, so compare *raw vs corrected here* for the U-Net's
 effect; cross-year absolute values differ by season/sample.
 
-Writes a summary aggregate JSON under ``models/unet/eval_results/`` (NOT into
-``benchmarking-site/data/``) and prints the comparison table.
+Writes a summary aggregate JSON under ``outputs/models/unet-hrrr/eval_results/``
+(NOT into ``data/benchmarks/``) and prints the comparison table.
 
     .venv/bin/python models/unet/evaluate.py
 """
@@ -45,9 +45,11 @@ from dataset import (  # noqa: E402
 )
 from unet import ResidualUNet  # noqa: E402
 
-CKPT_PATH = HERE / "checkpoints" / "best_model.pt"
-OUT_DIR = HERE / "eval_results"
-OBS_ROOT = HERE.parents[1] / "benchmarking-site" / "data" / "observations"
+REPO_ROOT = HERE.parents[1]
+OUTPUT_ROOT = REPO_ROOT / "outputs" / "models" / "unet-hrrr"
+CKPT_PATH = OUTPUT_ROOT / "checkpoints" / "best_model.pt"
+OUT_DIR = OUTPUT_ROOT / "eval_results"
+OBS_ROOT = REPO_ROOT / "data" / "benchmarks" / "observations"
 
 STATIONS = {
     "cyyz": {"lat": 43.6777, "lon": -79.6248},
@@ -163,8 +165,8 @@ def main(args) -> None:
     cfg = load_config()
 
     suffix = "" if args.split_mode == "chronological" else "_interleaved"
-    ckpt_path = HERE / "checkpoints" / f"best_model{suffix}.pt"
-    stats_path = HERE / "data" / f"stats{suffix}.json"
+    ckpt_path = OUTPUT_ROOT / "checkpoints" / f"best_model{suffix}.pt"
+    stats_path = OUTPUT_ROOT / "stats" / f"stats{suffix}.json"
 
     # Rebuild the exact train/val splits + stats used in training.
     train_ds = GFSResidualDataset("train", DEFAULT_START, DEFAULT_END, cfg=cfg,
@@ -283,7 +285,7 @@ def main(args) -> None:
     print("season applied (val_season->trained_season): "
           + ", ".join(f"{k}:{n}" for k, n in sorted(season_applied.items())))
 
-    # Write summary aggregate (NOT into benchmarking-site/data/).
+    # Write summary aggregate (NOT into data/benchmarks/).
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     summary = {
         "method": "unet_postprocessing",
@@ -305,7 +307,7 @@ def main(args) -> None:
         },
         "interpolation": "bilinear (scipy RegularGridInterpolator) on region grid",
         "wind": "sqrt(u10^2 + v10^2) from corrected 10 m u/v components, m/s -> km/h",
-        "observations_source": f"benchmarking-site/data/observations/*/observations_6h_{OBS_YEAR}.json",
+        "observations_source": f"data/benchmarks/observations/*/observations_6h_{OBS_YEAR}.json",
         "stations": results,
         "generated": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
     }

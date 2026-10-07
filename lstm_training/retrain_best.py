@@ -7,7 +7,7 @@ sweeps. Two sweep_results.json sources are read and merged:
      anywhere in those zips/JSONs -- confirmed by inspection, not assumed --
      so they're tagged with --station/--variable (default cyyz/t2m).
 
-  2. lstm_training/output/<station>_<variable>/<method>_<lead>h/sweep_results.json
+  2. outputs/lstm_training/sweeps/<station>_<variable>/<method>_<lead>h/sweep_results.json
      -- run_all.py's own output layout. Station and variable ARE encoded in
      the path here, so results for a new station (e.g. after running
      `python lstm_training/run_all.py --station eric_d_soulis`) are picked up
@@ -54,18 +54,19 @@ from train import (
 
 LSTM_DIR  = os.path.dirname(os.path.abspath(__file__))
 REPO_ROOT = os.path.dirname(LSTM_DIR)
+OUTPUT_ROOT = os.path.join(REPO_ROOT, "outputs", "lstm_training")
 
 # Same mapping as run_all.py -- method name -> NPZ path relative to repo root.
 METHODS = {
-    "climatology":       "benchmarking-site/data/climatology/climatology_2025.npz",
-    "ecmwf_aifs":        "benchmarking-site/data/ecmwf_aifs/ecmwf_aifs_2025.npz",
-    "gefs_mean":         "benchmarking-site/data/gefs_mean/gefs_mean_2025.npz",
-    "gfs_analysis":      "benchmarking-site/data/gfs_analysis/gfs_analysis_2025.npz",
-    "gfs_interpolated":  "benchmarking-site/data/gfs_interpolated/gfs_interpolated_2025.npz",
-    "graphcast":         "benchmarking-site/data/graphcast/graphcast_2025.npz",
-    "hrrr_interpolated": "benchmarking-site/data/hrrr_interpolated/hrrr_interpolated_2025.npz",
-    "linear_regression": "benchmarking-site/data/linear_regression/linear_regression_2025.npz",
-    "persistence":       "benchmarking-site/data/persistence/persistence_2025.npz",
+    "climatology":       "climatology/climatology_2025.npz",
+    "ecmwf_aifs":        "ecmwf_aifs/ecmwf_aifs_2025.npz",
+    "gefs_mean":         "gefs_mean/gefs_mean_2025.npz",
+    "gfs_analysis":      "gfs_analysis/gfs_analysis_2025.npz",
+    "gfs_interpolated":  "gfs_interpolated/gfs_interpolated_2025.npz",
+    "graphcast":         "graphcast/graphcast_2025.npz",
+    "hrrr_interpolated": "hrrr_interpolated/hrrr_interpolated_2025.npz",
+    "linear_regression": "linear_regression/linear_regression_2025.npz",
+    "persistence":       "persistence/persistence_2025.npz",
 }
 
 ENTRY_RE      = re.compile(r"^(?P<method>[a-z_]+)_(?P<lead>\d+)h/sweep_results\.json$")
@@ -160,7 +161,7 @@ def find_sweep_results(lstm_dir, default_station, default_variable):
     the run_all.py output-dir source wins (self-describing, likely fresher).
     """
     zip_combos = find_sweep_results_in_zips(lstm_dir, default_station, default_variable)
-    dir_combos = find_sweep_results_in_output_dir(os.path.join(lstm_dir, "output"))
+    dir_combos = find_sweep_results_in_output_dir(os.path.join(OUTPUT_ROOT, "sweeps"))
 
     by_key = {}
     for c in zip_combos + dir_combos:  # dir_combos listed second so it overwrites on collision
@@ -176,7 +177,7 @@ def retrain_one(combo, data_dir, out_root, device, tag=""):
     lead     = combo["lead_time"]
     params   = combo["best_params"]
 
-    npz_path = os.path.join(data_dir, os.path.relpath(METHODS[method], "benchmarking-site/data"))
+    npz_path = os.path.join(data_dir, METHODS[method])
     if not os.path.exists(npz_path):
         raise FileNotFoundError(
             f"NPZ not found for method '{method}': {npz_path}\n"
@@ -325,9 +326,9 @@ def main():
     p.add_argument("--station",   default="cyyz")
     p.add_argument("--variable",  default="t2m")
     p.add_argument("--leads",     type=int, nargs="+", default=[6, 12])
-    p.add_argument("--data_dir",  default=os.path.join(REPO_ROOT, "benchmarking-site", "data"),
+    p.add_argument("--data_dir",  default=os.path.join(REPO_ROOT, "data", "benchmarks"),
                    help="Folder containing <method>/<method>_2025.npz for every method")
-    p.add_argument("--out_dir",   default=os.path.join(LSTM_DIR, "retrain_output"))
+    p.add_argument("--out_dir",   default=os.path.join(OUTPUT_ROOT, "retrained"))
     p.add_argument("--smoke_test", action="store_true", help="Train only the first matching combo")
     p.add_argument("--all",        action="store_true", help="Train every matching combo (required beyond --smoke_test)")
     args = p.parse_args()
@@ -341,7 +342,7 @@ def main():
         if c["station"] == args.station and c["variable"] == args.variable and c["lead_time"] in args.leads
     ]
 
-    print(f"\nFound {len(all_combos)} sweep_results.json total (zips + lstm_training/output/)", flush=True)
+    print(f"\nFound {len(all_combos)} sweep_results.json total (zips + outputs/lstm_training/sweeps/)", flush=True)
     print(f"{len(combos)} combos match station={args.station}, variable={args.variable}, "
           f"lead_time in {args.leads}:", flush=True)
     for c in combos:

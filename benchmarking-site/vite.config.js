@@ -6,7 +6,7 @@ import { defineConfig } from "vite";
 import { viteStaticCopy } from "vite-plugin-static-copy";
 
 const root = path.dirname(fileURLToPath(import.meta.url));
-const dataRoot = path.join(root, "data");
+const dataRoot = path.resolve(root, "..", "data", "benchmarks");
 const apiTarget = process.env.BENCHMARK_API_URL ?? "http://127.0.0.1:5174";
 
 export default defineConfig({
@@ -27,14 +27,17 @@ export default defineConfig({
       // dist -- 271 MB of it raw CSVs and 13 MB of npz that no client code can
       // read -- which blows past static-host deployment limits.
       targets: [
-        { src: "data/aggregates", dest: "data" },
-        { src: "data/observations/stations.json", dest: "data/observations" },
+        { src: "../data/benchmarks/aggregates", dest: "data" },
         {
-          src: "data/observations/cyyz/observations_6h_*.json",
+          src: "../data/benchmarks/observations/stations.json",
+          dest: "data/observations",
+        },
+        {
+          src: "../data/benchmarks/observations/cyyz/observations_6h_*.json",
           dest: "data/observations/cyyz",
         },
         {
-          src: "data/observations/eric_d_soulis/observations_6h_*.json",
+          src: "../data/benchmarks/observations/eric_d_soulis/observations_6h_*.json",
           dest: "data/observations/eric_d_soulis",
         },
       ],
@@ -50,8 +53,11 @@ export default defineConfig({
           const rel = decodeURIComponent(
             req.url.slice("/data/".length).split("?")[0],
           );
-          const filePath = path.normalize(path.join(dataRoot, rel));
-          if (!filePath.startsWith(dataRoot)) {
+          const filePath = path.resolve(dataRoot, rel);
+          if (
+            filePath !== dataRoot &&
+            !filePath.startsWith(`${dataRoot}${path.sep}`)
+          ) {
             res.statusCode = 403;
             res.end();
             return;

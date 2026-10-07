@@ -57,7 +57,7 @@ REPO_ROOT = Path(__file__).resolve().parents[3]
 # var (not a function arg) so DataLoader worker subprocesses inherit it too.
 CACHE_ROOT = Path(os.environ.get("UNET_DATA_DIR", str(REPO_ROOT / ".cache")))
 CACHE_DIR = CACHE_ROOT / "unet_training"
-STATS_PATH = Path(__file__).resolve().parent / "stats.json"
+STATS_PATH = REPO_ROOT / "outputs" / "models" / "unet" / "stats" / "stats.json"
 
 CHANNELS = ("t2m", "u10", "v10")
 

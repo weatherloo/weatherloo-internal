@@ -33,15 +33,15 @@ Run all commands below from the **repo root**.
 
 | Method | NPZ path |
 |---|---|
-| `climatology` | `benchmarking-site/data/climatology/climatology_2025.npz` |
-| `ecmwf_aifs` | `benchmarking-site/data/ecmwf_aifs/ecmwf_aifs_2025.npz` |
-| `gefs_mean` | `benchmarking-site/data/gefs_mean/gefs_mean_2025.npz` |
-| `gfs_analysis` | `benchmarking-site/data/gfs_analysis/gfs_analysis_2025.npz` |
-| `gfs_interpolated` | `benchmarking-site/data/gfs_interpolated/gfs_interpolated_2025.npz` |
-| `graphcast` | `benchmarking-site/data/graphcast/graphcast_2025.npz` |
-| `hrrr_interpolated` | `benchmarking-site/data/hrrr_interpolated/hrrr_interpolated_2025.npz` |
-| `linear_regression` | `benchmarking-site/data/linear_regression/linear_regression_2025.npz` |
-| `persistence` | `benchmarking-site/data/persistence/persistence_2025.npz` |
+| `climatology` | `data/benchmarks/climatology/climatology_2025.npz` |
+| `ecmwf_aifs` | `data/benchmarks/ecmwf_aifs/ecmwf_aifs_2025.npz` |
+| `gefs_mean` | `data/benchmarks/gefs_mean/gefs_mean_2025.npz` |
+| `gfs_analysis` | `data/benchmarks/gfs_analysis/gfs_analysis_2025.npz` |
+| `gfs_interpolated` | `data/benchmarks/gfs_interpolated/gfs_interpolated_2025.npz` |
+| `graphcast` | `data/benchmarks/graphcast/graphcast_2025.npz` |
+| `hrrr_interpolated` | `data/benchmarks/hrrr_interpolated/hrrr_interpolated_2025.npz` |
+| `linear_regression` | `data/benchmarks/linear_regression/linear_regression_2025.npz` |
+| `persistence` | `data/benchmarks/persistence/persistence_2025.npz` |
 
 All methods have all 12 lead times: **6, 12, 18, 24, 30, 36, 42, 48, 54, 60, 66, 72**
 
@@ -55,10 +55,10 @@ python lstm_training/sweep.py \
   --variable <variable> \
   --lead_time <lead> \
   --n_trials 100 \
-  --out_dir lstm_training/output/<station>_<variable>/<method>_<lead>h
+  --out_dir outputs/lstm_training/sweeps/<station>_<variable>/<method>_<lead>h
 ```
 
-Run sequentially (108 sweeps total per station+variable pair). Name the output dir exactly as shown — `output/<station>_<variable>/<method>_<lead>h`.
+Run sequentially (108 sweeps total per station+variable pair). Name the output dir exactly as shown — `outputs/lstm_training/sweeps/<station>_<variable>/<method>_<lead>h`.
 
 ### 5. Collect best RMSE values
 
@@ -67,7 +67,7 @@ After all sweeps finish:
 ```bash
 python -c "
 import json, glob, os
-base = 'lstm_training/output'
+base = 'outputs/lstm_training/sweeps'
 for f in sorted(glob.glob(f'{base}/*/*/sweep_results.json')):
     d = json.load(open(f))
     parts = f.replace('\\\\', '/').split('/')
@@ -80,13 +80,11 @@ for f in sorted(glob.glob(f'{base}/*/*/sweep_results.json')):
 
 Fill in **Best RMSE** for every row you trained. Mark Status as `done`.
 
-### 7. Commit
+### 7. Record results
 
-```bash
-git add lstm_training/output/<station>_<variable>/
-git add lstm_training/AGENTS.md
-git commit -m "feat: lstm sweep <station> <variable> all methods all leads"
-```
+Generated checkpoints, sweep logs, and predictions belong in `outputs/` and
+are ignored by Git. Record the best RMSE values in this runbook; do not commit
+the generated run directory.
 
 ---
 
@@ -550,7 +548,7 @@ One row per (station, variable, method, lead). Claim a block by adding your name
 
 ## Reference: what each sweep produces
 
-Each `output/<station>_<variable>/<method>_<lead>h/` contains:
+Each `outputs/lstm_training/sweeps/<station>_<variable>/<method>_<lead>h/` contains:
 
 | File | Contents |
 |---|---|

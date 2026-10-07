@@ -7,8 +7,8 @@ This version is deliberately lightweight and data-driven:
 - auxiliary loss: weather-station observations (Toronto area) interpolated
   from the model output grid to the station location
 
-The data lives under /mnt/wato-drive/c52li/weatherloo-data/ and is assumed to
-be available locally.
+The data root is configured with ``UNET_DATA_ROOT`` or
+``WEATHERLOO_DATA_ROOT`` and is assumed to be available locally.
 """
 
 from __future__ import annotations
@@ -28,7 +28,15 @@ from torch.utils.data import Dataset
 
 HERE = Path(__file__).resolve().parent
 REPO_ROOT = HERE.parents[1]
-DATA_ROOT = Path(os.environ.get("UNET_DATA_ROOT", "/mnt/wato-drive/c52li/weatherloo-data"))
+DATA_ROOT = Path(
+    os.environ.get(
+        "UNET_DATA_ROOT",
+        os.environ.get(
+            "WEATHERLOO_DATA_ROOT",
+            f"/mnt/wato-drive/{os.environ.get('USER', 'weatherloo')}/weatherloo-data",
+        ),
+    )
+)
 
 DEFAULT_VARIABLES = ("t2m", "u10", "v10", "q2", "psfc", "tp")
 DEFAULT_STATIONS = ("stn_51459_toronto_intl_a",)

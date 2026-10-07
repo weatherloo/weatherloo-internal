@@ -25,7 +25,7 @@ from urllib.parse import parse_qs, urlparse
 import numpy as np
 
 SITE_ROOT = Path(__file__).resolve().parents[1]
-DATA_ROOT = SITE_ROOT / "data"
+DATA_ROOT = SITE_ROOT.parent / "data" / "benchmarks"
 DEFAULT_YEAR = 2025
 DEFAULT_PORT = 5174
 

@@ -33,7 +33,7 @@ Notes / caveats:
     use ``acc[f]``). f00 is the 0–0 h bucket (zeros). Missing APCP -> NaN.
 
 Mirrors the download/cache patterns in
-``benchmarking-site/data/hrrr_interpolated/compute_benchmark.py``.
+``pipelines/benchmarking/hrrr_interpolated/compute_benchmark.py``.
 """
 
 from __future__ import annotations
@@ -543,7 +543,7 @@ def daterange(start: date, end: date):
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--data-root", default=None, help="Output root (else $WEATHERLOO_DATA_ROOT, else repo data/)")
+    parser.add_argument("--data-root", default=None, help="Output root (else $WEATHERLOO_DATA_ROOT, else ~/weatherloo-data)")
     parser.add_argument(
         "--cache-dir",
         default=None,

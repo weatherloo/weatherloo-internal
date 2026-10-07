@@ -13,6 +13,7 @@ from __future__ import annotations
 
 from dataclasses import asdict, dataclass, field
 import json
+import os
 from pathlib import Path
 from typing import Any
 
@@ -21,29 +22,47 @@ def _repo_root() -> Path:
     return Path(__file__).resolve().parents[2]
 
 
+def _data_root() -> Path:
+    return Path(
+        os.environ.get(
+            "WEATHERLOO_DATA_ROOT",
+            f"/mnt/wato-drive/{os.environ.get('USER', 'weatherloo')}/weatherloo-data",
+        )
+    )
+
+
+def _repo_relative_path(value: str | Path | None, default: Path) -> Path:
+    path = Path(value) if value is not None else default
+    return path if path.is_absolute() else _repo_root() / path
+
+
 @dataclass
 class PathsConfig:
     """Filesystem paths used across preprocessing, loading, and training."""
 
-    hrrr_root: Path = Path("/mnt/wato-drive/c52li/weatherloo-data/hrrr")
+    hrrr_root: Path = field(default_factory=lambda: _data_root() / "hrrr")
     obs_root: Path = field(
         default_factory=lambda: _repo_root()
-        / "benchmarking-site"
         / "data"
+        / "benchmarks"
         / "observations"
         / "eric_d_soulis"
         / "raw"
     )
-    zarr_store: Path = Path("/mnt/wato-drive/gguirgui/weatherloo-data/hrrr_bias_correction/hrrr")
-    artifact_dir: Path = field(default_factory=lambda: _repo_root() / "artifacts" / "hrrr_bias_correction")
+    zarr_store: Path = field(
+        default_factory=lambda: _data_root() / "hrrr_bias_correction" / "hrrr"
+    )
+    artifact_dir: Path = field(
+        default_factory=lambda: _repo_root() / "outputs" / "artifacts" / "hrrr_bias_correction"
+    )
 
     @classmethod
     def from_dict(cls, payload: dict[str, Any]) -> PathsConfig:
         return cls(
-            hrrr_root=Path(payload.get("hrrr_root", cls().hrrr_root)),
-            obs_root=Path(payload.get("obs_root", cls().obs_root)),
-            zarr_store=Path(payload.get("zarr_store", cls().zarr_store)),
-            artifact_dir=Path(payload.get("artifact_dir", cls().artifact_dir)),
+            hrrr_root=_repo_relative_path(payload.get("hrrr_root"), cls().hrrr_root),
+            obs_root=_repo_relative_path(payload.get("obs_root"), cls().obs_root),
+            zarr_store=_repo_relative_path(payload.get("zarr_store"), cls().zarr_store),
+            artifact_dir=_repo_relative_path(payload.get("artifact_dir"), cls().artifact_dir),
         )
 
 

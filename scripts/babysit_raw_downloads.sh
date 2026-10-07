@@ -25,8 +25,8 @@ HRRR_V4_START="20201202"
 SKIP_PRUNE="${SKIP_PRUNE:-0}"
 
 # Single-flight with cron_update_weatherloo_data.sh raw
-LOCK_FILE="${REPO_ROOT}/.locks/raw-babysit.lock"
-mkdir -p "${REPO_ROOT}/.locks"
+LOCK_FILE="${REPO_ROOT}/outputs/.locks/raw-babysit.lock"
+mkdir -p "${REPO_ROOT}/outputs/.locks"
 exec 9>"$LOCK_FILE"
 if ! flock -n 9; then
   echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Another babysit holds $LOCK_FILE; exiting."
@@ -34,7 +34,7 @@ if ! flock -n 9; then
 fi
 
 PYTHON="${REPO_ROOT}/.venv/bin/python"
-mkdir -p logs "$DATA_ROOT"
+mkdir -p outputs/logs "$DATA_ROOT"
 
 log() { echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] $*"; }
 
@@ -45,8 +45,8 @@ SBATCH_OPTS=(
   --time=12:00:00
   --chdir="$REPO_ROOT"
   --export=ALL
-  --output=logs/%x-%j.out
-  --error=logs/%x-%j.err
+  --output=outputs/logs/%x-%j.out
+  --error=outputs/logs/%x-%j.err
 )
 
 wait_for_jobs() {

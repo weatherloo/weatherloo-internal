@@ -13,8 +13,8 @@ Kitchener-Waterloo bounding box, and writes one compact NetCDF per month:
 Month granularity bounds memory and gives natural resume. ARCO-ERA5 lags
 real-time by ~2-3 months; months with no data yet are skipped.
 
-Precedent for zarr-via-xarray access: ``tpm/take_home/README.md`` and
-``benchmarking-site/data/ecmwf_aifs/compute_benchmark.py``.
+Precedent for zarr-via-xarray access: ``docs/project-management/take_home/README.md`` and
+``pipelines/benchmarking/ecmwf_aifs/compute_benchmark.py``.
 """
 
 from __future__ import annotations
@@ -213,7 +213,7 @@ def process_month(ds: xr.Dataset, y: int, m: int, data_root: Path, resume: bool)
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--data-root", default=None, help="Output root (else $WEATHERLOO_DATA_ROOT, else repo data/)")
+    parser.add_argument("--data-root", default=None, help="Output root (else $WEATHERLOO_DATA_ROOT, else ~/weatherloo-data)")
     parser.add_argument("--start-date", default=DEFAULT_START, help="YYYY-MM inclusive (default 2018-01)")
     parser.add_argument("--end-date", default=None, help="YYYY-MM inclusive (default: current month UTC)")
     parser.add_argument("--store", default=DEFAULT_STORE, help="Override the ARCO-ERA5 zarr path")

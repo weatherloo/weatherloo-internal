@@ -3,7 +3,7 @@
 
 This is the "forecast you would have seen" reference series for the
 retrospective comparison site. Unlike the benchmark files under
-``benchmarking-site/data/<method>/``, which store *error metrics* against the
+``data/benchmarks/<method>/``, which store *error metrics* against the
 verifying observation, this stores the forecast **values** directly, so the
 site can show a reference forecast without reconstructing it from the truth it
 is meant to be compared against.
@@ -18,7 +18,7 @@ sourced here; other leads raise rather than silently snapping to a
 neighbouring offset.
 
 Units are requested explicitly as degC / km/h to match
-``data/observations/<station>/observations_6h_*.json``.
+``data/benchmarks/observations/<station>/observations_6h_*.json``.
 
 Caveat carried from the station metadata: Open-Meteo reports wind at 10 m,
 while the Eric D. Soulis HOBO archive reports ~4.4 m. Those are not the same
@@ -39,7 +39,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-OUT_ROOT = ROOT / "benchmarking-site" / "data" / "openmeteo_previous"
+OUT_ROOT = ROOT / "data" / "benchmarks" / "openmeteo_previous"
 
 API = "https://api.open-meteo.com/v1/forecast"
 

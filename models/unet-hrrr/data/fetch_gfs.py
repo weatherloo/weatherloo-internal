@@ -50,7 +50,7 @@ CACHE_DIR = Path(os.environ.get("UNET_DATA_DIR", str(REPO_ROOT / ".cache"))) / "
 
 
 # ---------------------------------------------------------------------------
-# Byte-range GRIB download (mirrors benchmarking-site/data/gfs_interpolated)
+# Byte-range GRIB download (mirrors pipelines/benchmarking/gfs_interpolated)
 # ---------------------------------------------------------------------------
 def download_bytes(url: str, retries: int, start: int | None = None,
                    end: int | None = None) -> bytes:

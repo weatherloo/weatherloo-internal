@@ -102,7 +102,13 @@ def main():
     p.add_argument("--variable",  default="t2m")
     p.add_argument("--lead_time", type=int, default=6)
     p.add_argument("--n_trials",  type=int, default=100)
-    p.add_argument("--out_dir",   default="lstm_training/output")
+    p.add_argument(
+        "--out_dir",
+        default=os.path.join(
+            os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+            "outputs", "lstm_training", "sweeps",
+        ),
+    )
     args = p.parse_args()
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")

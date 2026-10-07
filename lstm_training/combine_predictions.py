@@ -1,5 +1,5 @@
 """
-Combine all retrain_output/<station>_<variable>/<method>_<lead>h/predictions.npz
+Combine all outputs/lstm_training/retrained/<station>_<variable>/<method>_<lead>h/predictions.npz
 files into one CSV: method, lead_time, timestamp, predicted, actual.
 
 timestamp is the actual init timestamp (ISO-8601) each test-set prediction
@@ -18,6 +18,7 @@ import re
 import numpy as np
 
 LSTM_DIR = os.path.dirname(os.path.abspath(__file__))
+OUTPUT_ROOT = os.path.join(os.path.dirname(LSTM_DIR), "outputs", "lstm_training")
 
 DIR_RE = re.compile(r"^(?P<method>[a-z_]+)_(?P<lead>\d+)h$")
 
@@ -29,7 +30,7 @@ def main():
     args = p.parse_args()
 
     combo_key = f"{args.station}_{args.variable}"
-    retrain_dir = os.path.join(LSTM_DIR, "retrain_output", combo_key)
+    retrain_dir = os.path.join(OUTPUT_ROOT, "retrained", combo_key)
     out_csv = os.path.join(retrain_dir, "combined_predictions.csv")
 
     rows = []

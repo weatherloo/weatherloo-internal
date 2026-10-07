@@ -4,15 +4,15 @@
 #SBATCH --gres=gpu:1
 #SBATCH --mem=4G
 #SBATCH --cpus-per-task=2
-#SBATCH --output=logs/%j.out
-#SBATCH --error=logs/%j.err
+#SBATCH --output=outputs/logs/%j.out
+#SBATCH --error=outputs/logs/%j.err
 
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_DIR="$(dirname "$SCRIPT_DIR")"
 
-mkdir -p "$SCRIPT_DIR/logs"
+mkdir -p "$REPO_DIR/outputs/logs"
 
 # Load modules (failures are non-fatal)
 module load python/3.11 2>/dev/null || echo "python/3.11 module not available, using system python"
@@ -29,8 +29,8 @@ fi
 
 source "$VENV_DIR/bin/activate"
 
-NPZ="$REPO_DIR/benchmarking-site/data/gfs_interpolated/gfs_interpolated_2025.npz"
-OUT_DIR="$SCRIPT_DIR/output"
+NPZ="$REPO_DIR/data/benchmarks/gfs_interpolated/gfs_interpolated_2025.npz"
+OUT_DIR="$REPO_DIR/outputs/lstm_training/sweeps"
 
 echo "NPZ:     $NPZ"
 echo "Out dir: $OUT_DIR"
