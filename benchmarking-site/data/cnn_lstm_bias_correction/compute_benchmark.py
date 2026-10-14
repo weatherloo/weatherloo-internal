@@ -46,6 +46,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
@@ -58,9 +59,14 @@ OUT_DIR = METHOD_DIR
 OBS_ROOT = BENCHMARKING_SITE / "data" / "observations"
 
 # Defaults mirror src/hrrr_bias_correction/config.default.json.
-DEFAULT_ZARR_STORE = Path(
-    "/mnt/wato-drive/gguirgui/weatherloo-data/hrrr_bias_correction/hrrr"
-)
+def _default_data_root() -> Path:
+    env = os.environ.get("WEATHERLOO_DATA_ROOT")
+    if env:
+        return Path(env).expanduser().resolve()
+    return REPO_ROOT / "data"
+
+
+DEFAULT_ZARR_STORE = _default_data_root() / "processed" / "hrrr_bias_correction" / "hrrr"
 DEFAULT_MODEL_PATH = REPO_ROOT / "artifacts" / "hrrr_bias_correction" / "final_model.keras"
 
 INIT_HOURS_UTC = (0, 6, 12, 18)

@@ -13,16 +13,16 @@
 #SBATCH --cpus-per-task=2
 #SBATCH --mem=8G
 #SBATCH --time=00:30:00
-#SBATCH --output=/home/c52li/weatherloo-internal/benchmarking-site/data/unet/slurm_logs/%x-%j.out
-#SBATCH --error=/home/c52li/weatherloo-internal/benchmarking-site/data/unet/slurm_logs/%x-%j.err
+#SBATCH --output=benchmarking-site/data/unet/slurm_logs/%x-%j.out
+#SBATCH --error=benchmarking-site/data/unet/slurm_logs/%x-%j.err
 
 set -euo pipefail
 
-REPO=/home/c52li/weatherloo-internal
+REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 cd "$REPO"
 mkdir -p benchmarking-site/data/unet/slurm_logs
 
-DATA_DIR="${DATA_DIR:-/mnt/wato-drive/c52li/weatherloo-data/unet}"
+DATA_DIR="${DATA_DIR:-${WEATHERLOO_DATA_ROOT:-$REPO/data}/experiments/unet}"
 YEAR="${YEAR:-2025}"
 
 source "$REPO/.venv/bin/activate"

@@ -18,10 +18,10 @@ only when T0 itself has no observation in that window. Missing leads / later
 obs → NaN (partial samples allowed).
 
 Default paths:
-  HRRR:  /mnt/wato-drive/c52li/weatherloo-data/hrrr/{YYYY}/{YYYYMMDD}/hrrr_*.nc
+  HRRR:  ${WEATHERLOO_DATA_ROOT}/raw/hrrr/{YYYY}/{YYYYMMDD}/hrrr_*.nc
   Obs:   <repo>/benchmarking-site/data/observations/eric_d_soulis/raw/
          uw_hobo_15min_{YYYY}.csv
-  Out:   /mnt/wato-drive/gguirgui/weatherloo-data/hrrr_bias_correction/hrrr
+  Out:   ${WEATHERLOO_DATA_ROOT}/processed/hrrr_bias_correction/hrrr
 
 Splits: train=2021–2023, val=2024, test=2025.
 Single Zarr store with one group per split.
@@ -32,6 +32,7 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import os
 import sys
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -45,11 +46,20 @@ from scipy.interpolate import griddata
 # ---------------------------------------------------------------------------
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-DEFAULT_HRRR_ROOT = Path("/mnt/wato-drive/c52li/weatherloo-data/hrrr")
+
+
+def _default_data_root() -> Path:
+    env = os.environ.get("WEATHERLOO_DATA_ROOT")
+    if env:
+        return Path(env).expanduser().resolve()
+    return REPO_ROOT / "data"
+
+
+DEFAULT_HRRR_ROOT = _default_data_root() / "raw" / "hrrr"
 DEFAULT_OBS_ROOT = (
     REPO_ROOT / "benchmarking-site" / "data" / "observations" / "eric_d_soulis" / "raw"
 )
-DEFAULT_OUT = Path("/mnt/wato-drive/gguirgui/weatherloo-data/hrrr_bias_correction/hrrr")
+DEFAULT_OUT = _default_data_root() / "processed" / "hrrr_bias_correction" / "hrrr"
 
 STATION = {"id": "eric_d_soulis", "lat": 43.4668, "lon": -80.5164}
 # UW archive clock is local standard time (EST, no DST).

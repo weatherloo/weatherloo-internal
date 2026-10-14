@@ -28,16 +28,16 @@
 # %j, not %A_%a: for a non-array job %a expands to the NO_VAL sentinel and you
 # get "...-12345_4294967294.out". %j is the per-task job id, so array tasks
 # still land in separate files; the script logs its own shard index below.
-#SBATCH --output=/home/c52li/weatherloo-internal/benchmarking-site/data/unet/slurm_logs/%x-%j.out
-#SBATCH --error=/home/c52li/weatherloo-internal/benchmarking-site/data/unet/slurm_logs/%x-%j.err
+#SBATCH --output=benchmarking-site/data/unet/slurm_logs/%x-%j.out
+#SBATCH --error=benchmarking-site/data/unet/slurm_logs/%x-%j.err
 
 set -euo pipefail
 
-REPO=/home/c52li/weatherloo-internal
+REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 cd "$REPO"
 mkdir -p benchmarking-site/data/unet/slurm_logs
 
-DATA_DIR="${DATA_DIR:-/mnt/wato-drive/c52li/weatherloo-data/unet}"
+DATA_DIR="${DATA_DIR:-${WEATHERLOO_DATA_ROOT:-$REPO/data}/experiments/unet}"
 YEAR="${YEAR:-2025}"
 WORKERS="${WORKERS:-${SLURM_CPUS_PER_TASK:-6}}"
 

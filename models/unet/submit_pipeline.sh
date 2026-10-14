@@ -19,7 +19,7 @@ set -euo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$REPO_ROOT"
 
-DATA_DIR="${DATA_DIR:-/mnt/wato-drive/c52li/weatherloo-data/unet}"
+DATA_DIR="${DATA_DIR:-${WEATHERLOO_DATA_ROOT:-$REPO_ROOT/data}/experiments/unet}"
 START="${START:-2021-03-23}"
 END="${END:-2025-12-31}"
 SHARDS="${SHARDS:-8}"

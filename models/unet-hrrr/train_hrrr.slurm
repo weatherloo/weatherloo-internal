@@ -6,21 +6,24 @@
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=32G
 #SBATCH --time=12:00:00
-#SBATCH --output=/home/c52li/weatherloo-internal/models/unet-hrrr/slurm_logs/%x-%j.out
-#SBATCH --error=/home/c52li/weatherloo-internal/models/unet-hrrr/slurm_logs/%x-%j.err
+#SBATCH --output=models/unet-hrrr/slurm_logs/%x-%j.out
+#SBATCH --error=models/unet-hrrr/slurm_logs/%x-%j.err
 
 set -euo pipefail
 
-cd /home/c52li/weatherloo-internal/models/unet-hrrr
+REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+cd "$REPO/models/unet-hrrr"
+mkdir -p slurm_logs
 
-export UNET_DATA_ROOT=/mnt/wato-drive/c52li/weatherloo-data
+export UNET_DATA_ROOT="${UNET_DATA_ROOT:-${WEATHERLOO_DATA_ROOT:+${WEATHERLOO_DATA_ROOT}/raw}}"
+UNET_DATA_ROOT="${UNET_DATA_ROOT:-$REPO/data/raw}"
 
 # whichever venv actually has torch — your home one, or the mount one you created
-source /home/c52li/weatherloo-internal/.venv/bin/activate
+source "$REPO/.venv/bin/activate"
 
 python3 train.py \
   --data-dir "$UNET_DATA_ROOT" \
-  --output-dir /home/c52li/weatherloo-internal/models/unet-hrrr/checkpoints \
+  --output-dir "$REPO/models/unet-hrrr/checkpoints" \
   --epochs 20 \
   --batch-size 4 \
   --patience 3 \
