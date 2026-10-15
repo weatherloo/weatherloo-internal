@@ -1,0 +1,17 @@
+{
+  "model": {
+    "adapter": "ridge_bias_correction",
+    "seq_len": 24,
+    "alpha": 1.0
+  },
+  "data": {
+    "method": "fixture",
+    "npz": "${data_root}/fixture/tiny.npz",
+    "station": "cyyz",
+    "variable": "t2m",
+    "lead_time": 6
+  },
+  "run": {
+    "seed": 42
+  }
+}

@@ -8,3 +8,9 @@ test_sprint/src/**/__pycache__/
 .DS_Store
 .cache/
 .ipynb_checkpoints/
+training_framework/runs/
+benchmarking-site/data/
+.env*
+# Per-user framework env files; commit the .example.json templates instead
+configs/env.*.json
+!configs/env.*.example.json
