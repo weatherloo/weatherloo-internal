@@ -236,7 +236,7 @@ Or submit stages individually:
 |---|---|---|
 | fetch | `models/unet/fetch.slurm` | `--array=1-N` splits `[START, END]` into contiguous date chunks. Resumable — cached samples are skipped. Prunes GRIB by default. Succeeds when coverage ≥ `MIN_COVERAGE` (0.95). |
 | train | `models/unet/train.slurm` | Reads only cached `.npz`; no network. |
-| benchmark | `benchmarking-site/data/unet/run_benchmark.slurm` | Writes the dashboard JSON + NPZ and rebuilds the static aggregate. |
+| benchmark | `pipelines/benchmarks/methods/unet/run_benchmark.slurm` | Writes the dashboard JSON + NPZ and rebuilds the static aggregate. |
 
 Logs land in `models/unet/slurm_logs/` and
 `benchmarking-site/data/unet/slurm_logs/`, named `<jobname>-<jobid>`. Check the

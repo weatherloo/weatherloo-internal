@@ -72,5 +72,5 @@ A slot can still be `null` when no observation exists near that **UTC** instant 
 ## Regenerate
 
 ```bash
-python3 scripts/fetch_station_observations.py --year 2025
+python3 pipelines/download/fetch_station_observations.py --year 2025
 ```

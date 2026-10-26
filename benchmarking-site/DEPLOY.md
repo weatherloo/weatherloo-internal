@@ -16,7 +16,7 @@ npm run build
 
 `npm run build` runs two steps:
 
-1. **`npm run build:data`** — `scripts/build_site_aggregates.py` (repo root)
+1. **`npm run build:data`** — `pipelines/benchmarks/build_site_aggregates.py` (repo root)
    (via a wrapper that picks the repo `.venv` Python or any `python3` with
    numpy) reads each method's consolidated `<method_id>_<year>.npz` and
    writes `data/<method_id>/aggregate.json`: the mean across all inits per
@@ -59,7 +59,7 @@ vercel --prod
 Only rebuild one method's aggregate if you prefer:
 
 ```bash
-python3 ../scripts/build_site_aggregates.py
+python3 ../pipelines/benchmarks/build_site_aggregates.py
 ```
 
 ## What works where
