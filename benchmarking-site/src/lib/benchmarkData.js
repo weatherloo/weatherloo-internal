@@ -126,7 +126,7 @@ const aggregateSourceCache = new Map();
 
 /**
  * One compact per-method file of per-init bias values, built by
- * scripts/build_site_aggregates.py. This is what makes the site work on static
+ * pipelines/benchmarks/build_site_aggregates.py. This is what makes the site work on static
  * hosting: one request per method instead of a backend call or thousands of
  * per-init fetches.
  * @param {string} methodId
@@ -217,7 +217,7 @@ export function aggregateFromBias(source, locationId, variableKey, filters = {})
 
 /**
  * Fetch (and cache) the static aggregate.json for a method.
- * Built by scripts/build_static_aggregates.py; null when the method has none.
+ * Built by pipelines/benchmarks/build_site_aggregates.py; null when the method has none.
  * @param {string} methodId
  * @returns {Promise<object|null>}
  */

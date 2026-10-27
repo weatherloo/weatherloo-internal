@@ -42,18 +42,18 @@ npm run dev
 
 Open http://localhost:5173 — click a station on the map, pick a method, view RMSE / MAE / bias / ACC vs lead time. The UI **averages** metrics across all loaded init files for the selected location.
 
-When a method has a consolidated `<method_id>_2025.npz`, the dashboard loads its precomputed **site aggregate** (`data/aggregates/<method_id>.json`, built by `scripts/build_site_aggregates.py` at the **repo root** — also `npm run build:data`). Cycle/month filters recombine its per-(month × cycle) partial sums client-side, so the site needs no backend. Without an aggregate it falls back to per-init JSON (via `index.json` or sample file), which is hundreds of sequential fetches — always build the aggregate.
+When a method has a consolidated `<method_id>_2025.npz`, the dashboard loads its precomputed **site aggregate** (`data/aggregates/<method_id>.json`, built by `pipelines/benchmarks/build_site_aggregates.py` at the **repo root** — also `npm run build:data`). Cycle/month filters recombine its per-(month × cycle) partial sums client-side, so the site needs no backend. Without an aggregate it falls back to per-init JSON (via `index.json` or sample file), which is hundreds of sequential fetches — always build the aggregate.
 
 Rebuild the consolidated NPZ from existing JSON without re-fetching:
 
 ```bash
-python3 data/gfs_interpolated/compute_benchmark.py --export-npz-only
+python3 pipelines/benchmarks/methods/gfs_interpolated/compute_benchmark.py --export-npz-only  # from repo root
 ```
 
 After (re)building an NPZ, refresh the static aggregate:
 
 ```bash
-npm run build:data       # or: python3 ../scripts/build_site_aggregates.py
+npm run build:data       # or: python3 ../pipelines/benchmarks/build_site_aggregates.py
 ```
 
 Production build (bundles `dist/` with `aggregate.json` files copied in; see `DEPLOY.md` for Vercel):
@@ -73,53 +73,53 @@ The UI is a **React** app (`src/`) built with Vite. Benchmark JSON stays in `dat
 |------|------|
 | Ground truth (use as-is unless extending) | `data/observations/<station_id>/observations_6h_2025.json` |
 | Method benchmark output | `data/<method_id>/` |
-| Method compute script (when present) | `data/<method_id>/compute_benchmark.py` |
-| Method Python deps (when present) | `data/<method_id>/requirements.txt` |
+| Method compute script (when present) | `pipelines/benchmarks/methods/<method_id>/compute_benchmark.py` (repo root) |
+| Method Python deps (when present) | `pipelines/benchmarks/methods/<method_id>/requirements.txt` (repo root) |
 | Consolidated analysis | `data/<method_id>/<method_id>_<year>.npz` |
 | Sample output shape | `data/climatology/climatology_sample.json` |
 | Observations spec | `data/observations/README.md` |
-| Regenerate observations | `python3 scripts/fetch_station_observations.py --year 2025` (from repo root) |
+| Regenerate observations | `python3 pipelines/download/fetch_station_observations.py --year 2025` (from repo root) |
 | GRIB download cache (GFS) | `.cache/gfs_grib/` (repo root; not committed) |
 | GRIB download cache (GEFS) | `.cache/gefs_grib/` (repo root; not committed) |
 | GRIB download cache (HRDPS) | `.cache/hrdps_grib/` (repo root; not committed) |
 
 ## Compute scripts
 
-Each method's pipeline lives **alongside its output** under `data/<method_id>/`:
+Each method's pipeline code lives under `pipelines/benchmarks/methods/<method_id>/` (repo root), separate from its published output in `benchmarking-site/data/<method_id>/`:
 
-- `compute_benchmark.py` — fetches/processes forecasts, writes per-init JSON and consolidated NPZ into the same folder
+- `compute_benchmark.py` — fetches/processes forecasts, writes per-init JSON and consolidated NPZ into `benchmarking-site/data/<method_id>/`
 - `requirements.txt` — method-specific Python dependencies
 
 Run from repo root or from the method folder:
 
 ```bash
 python3 -m venv .venv
-.venv/bin/pip install -r benchmarking-site/data/gfs_interpolated/requirements.txt
-.venv/bin/python benchmarking-site/data/gfs_interpolated/compute_benchmark.py --workers 6
+.venv/bin/pip install -r pipelines/benchmarks/methods/gfs_interpolated/requirements.txt
+.venv/bin/python pipelines/benchmarks/methods/gfs_interpolated/compute_benchmark.py --workers 6
 ```
 
 Rebuild NPZ from existing JSON without re-fetching:
 
 ```bash
-.venv/bin/python benchmarking-site/data/gfs_interpolated/compute_benchmark.py --export-npz-only
+.venv/bin/python pipelines/benchmarks/methods/gfs_interpolated/compute_benchmark.py --export-npz-only
 ```
 
 | `method_id` | Script | Notes |
 |-------------|--------|-------|
-| `gfs_interpolated` | `data/gfs_interpolated/compute_benchmark.py` | GFS 0.25° at **00/06/12/18Z**; bilinear interp; wind from 10 m u/v. `--resume` skips existing init JSONs. Use `--workers 2` if AWS connection resets; downloads retry automatically. |
-| `gfs_analysis` | `data/gfs_analysis/compute_benchmark.py` | GFS **f000** analysis; one value per init reused at all leads. Same interp/wind rules as `gfs_interpolated`. |
-| `hrdps_analysis` | `data/hrdps_analysis/compute_benchmark.py` | HRDPS **PT000H** from MSC Datamart; geographic bilinear interp on curvilinear grid; one analysis value per init at all leads. Datamart ~30-day retention — cache under `.cache/hrdps_grib/` for reruns. **Live archive:** run `data/hrdps_analysis/cache_daily.sh` on a cron (see `crontab.example`). |
-| `climatology` | `data/climatology/compute_benchmark.py` | Multi-year (2010-2024) DOY+UTC-hour station climatology; no GRIB needed. `--fetch-historical` downloads historical obs. ACC is always null (forecast = climatology). |
-| `ecmwf_aifs` | `data/ecmwf_aifs/compute_benchmark.py` | ECMWF AIFS Single 0.25° at **00/06/12/18Z** via [dynamical.org catalog](https://dynamical.org/catalog/ecmwf-aifs-single-forecast/) (`dynamical-catalog`); 6-hourly steps; bilinear interp of `temperature_2m` / `wind_u_10m` / `wind_v_10m`. Archive 2024-04-01–present includes full 2025. `--resume` skips existing init JSONs. |
-| `gefs_mean` | `data/gefs_mean/compute_benchmark.py` | GEFS **ensemble mean** (`geavg`) at **0.5°** from AWS `noaa-gefs-pds`; 00/06/12/18Z; bilinear interp; wind from 10 m u/v. Pre-averaged 21-member mean on grid — no per-member downloads. `--resume` skips existing init JSONs. |
-| `unet` | `data/unet/compute_benchmark.py` | **U-Net post-processing of GFS** (`models/unet/`). Thin adapter over the real model code; `corrected = GFS − predicted_residual` on the 21×41 southern Ontario grid, then interpolated to the station. Scored over the checkpoint’s recorded `sample_space` (now 00/06/12/18Z, f006–f048); other cells null unless `--all-cells`. Reuses `run_pipeline.py fetch` output via `--data-dir`. See **U-Net post-processing** below. |
-| `cnn_lstm_bias_correction` | `data/cnn_lstm_bias_correction/compute_benchmark.py` | Scores the trained CNN-LSTM (`src/hrrr_bias_correction`) on the 2025 **test** split. Predicts HRRR-minus-obs bias; scores `corrected = HRRR − bias`. Reads the Keras model + Zarr store — no GRIB download. **eric_d_soulis only** (model is Soulis-trained; `cyyz` null by design); horizon **f48** (leads 54–72h null by design). Needs the model trained first (`scripts/submit_training_slurm.sh`). `--model-path`/`--zarr-store` override defaults; `--resume`/`--export-npz-only` as usual. |
+| `gfs_interpolated` | `pipelines/benchmarks/methods/gfs_interpolated/compute_benchmark.py` | GFS 0.25° at **00/06/12/18Z**; bilinear interp; wind from 10 m u/v. `--resume` skips existing init JSONs. Use `--workers 2` if AWS connection resets; downloads retry automatically. |
+| `gfs_analysis` | `pipelines/benchmarks/methods/gfs_analysis/compute_benchmark.py` | GFS **f000** analysis; one value per init reused at all leads. Same interp/wind rules as `gfs_interpolated`. |
+| `hrdps_analysis` | `pipelines/benchmarks/methods/hrdps_analysis/compute_benchmark.py` | HRDPS **PT000H** from MSC Datamart; geographic bilinear interp on curvilinear grid; one analysis value per init at all leads. Datamart ~30-day retention — cache under `.cache/hrdps_grib/` for reruns. **Live archive:** run `data/hrdps_analysis/cache_daily.sh` on a cron (see `crontab.example`). |
+| `climatology` | `pipelines/benchmarks/methods/climatology/compute_benchmark.py` | Multi-year (2010-2024) DOY+UTC-hour station climatology; no GRIB needed. `--fetch-historical` downloads historical obs. ACC is always null (forecast = climatology). |
+| `ecmwf_aifs` | `pipelines/benchmarks/methods/ecmwf_aifs/compute_benchmark.py` | ECMWF AIFS Single 0.25° at **00/06/12/18Z** via [dynamical.org catalog](https://dynamical.org/catalog/ecmwf-aifs-single-forecast/) (`dynamical-catalog`); 6-hourly steps; bilinear interp of `temperature_2m` / `wind_u_10m` / `wind_v_10m`. Archive 2024-04-01–present includes full 2025. `--resume` skips existing init JSONs. |
+| `gefs_mean` | `pipelines/benchmarks/methods/gefs_mean/compute_benchmark.py` | GEFS **ensemble mean** (`geavg`) at **0.5°** from AWS `noaa-gefs-pds`; 00/06/12/18Z; bilinear interp; wind from 10 m u/v. Pre-averaged 21-member mean on grid — no per-member downloads. `--resume` skips existing init JSONs. |
+| `unet` | `pipelines/benchmarks/methods/unet/compute_benchmark.py` | **U-Net post-processing of GFS** (`models/unet/`). Thin adapter over the real model code; `corrected = GFS − predicted_residual` on the 21×41 southern Ontario grid, then interpolated to the station. Scored over the checkpoint’s recorded `sample_space` (now 00/06/12/18Z, f006–f048); other cells null unless `--all-cells`. Reuses `run_pipeline.py fetch` output via `--data-dir`. See **U-Net post-processing** below. |
+| `cnn_lstm_bias_correction` | `pipelines/benchmarks/methods/cnn_lstm_bias_correction/compute_benchmark.py` | Scores the trained CNN-LSTM (`src/hrrr_bias_correction`) on the 2025 **test** split. Predicts HRRR-minus-obs bias; scores `corrected = HRRR − bias`. Reads the Keras model + Zarr store — no GRIB download. **eric_d_soulis only** (model is Soulis-trained; `cyyz` null by design); horizon **f48** (leads 54–72h null by design). Needs the model trained first (`ops/slurm/submit_training_slurm.sh`). `--model-path`/`--zarr-store` override defaults; `--resume`/`--export-npz-only` as usual. |
 
 Add a row here when implementing other methods.
 
 ### U-Net post-processing
 
-All of the modelling lives in `models/unet/` — `data/unet/compute_benchmark.py`
+All of the modelling lives in `models/unet/` — `pipelines/benchmarks/methods/unet/compute_benchmark.py`
 is a thin **adapter** that imports it (`model/unet.py`, `data/dataset.py`,
 `config.yaml`) rather than reimplementing it, so the dashboard can never
 disagree with `models/unet/evaluate.py` about geometry, normalization, or sign.
@@ -153,10 +153,10 @@ Adding it roughly doubles the error instead of removing it.
 **Running a full year on WATcloud Slurm:**
 
 ```bash
-sbatch benchmarking-site/data/unet/run_benchmark.slurm            # single node
-sbatch --array=1-8 benchmarking-site/data/unet/run_benchmark.slurm  # sharded
+sbatch pipelines/benchmarks/methods/unet/run_benchmark.slurm            # single node
+sbatch --array=1-8 pipelines/benchmarks/methods/unet/run_benchmark.slurm  # sharded
 sbatch --dependency=afterok:<jobid> \
-    benchmarking-site/data/unet/finalize_benchmark.slurm
+    pipelines/benchmarks/methods/unet/finalize_benchmark.slurm
 ```
 
 `DATA_DIR`, `YEAR`, and `WORKERS` are overridable (`--export=ALL,YEAR=2024`).
@@ -191,21 +191,21 @@ saw. Checkpoints predating that record fall back to config and say so.
 MSC Datamart only keeps HRDPS on the server for about **30 days**. To build a local archive for backfill:
 
 ```bash
-chmod +x benchmarking-site/data/hrdps_analysis/cache_daily.sh
-benchmarking-site/data/hrdps_analysis/cache_daily.sh
+chmod +x pipelines/benchmarks/methods/hrdps_analysis/cache_daily.sh
+pipelines/benchmarks/methods/hrdps_analysis/cache_daily.sh
 ```
 
 Install cron (four times daily, shortly after each 00/06/12/18Z cycle):
 
 ```bash
-# Edit paths, then paste from benchmarking-site/data/hrdps_analysis/crontab.example
+# Edit paths, then paste from pipelines/benchmarks/methods/hrdps_analysis/crontab.example
 crontab -e
 ```
 
 Backfill benchmark JSON from cached GRIB (when obs year matches):
 
 ```bash
-.venv/bin/python benchmarking-site/data/hrdps_analysis/compute_benchmark.py \
+.venv/bin/python pipelines/benchmarks/methods/hrdps_analysis/compute_benchmark.py \
   --start-date 2026-06-01 --end-date 2026-06-07 --resume
 ```
 
@@ -225,7 +225,7 @@ When a method reads **gridded** model output (NWP, AI global models, ensemble me
 - **t2m:** bilinear interp on the 2 m temperature grid.
 - **Wind:** bilinear interp on **u** and **v** separately at 10 m, then `wind_speed = √(u² + v²)` — do not interpolate speed directly.
 
-Reference implementation: `data/gfs_interpolated/compute_benchmark.py` (`scipy.interpolate.RegularGridInterpolator` with `method="linear"` on a 2D lat/lon grid).
+Reference implementation: `pipelines/benchmarks/methods/gfs_interpolated/compute_benchmark.py` (`scipy.interpolate.RegularGridInterpolator` with `method="linear"` on a 2D lat/lon grid).
 
 Analysis methods (`*_analysis`) use the same rule on the init-time analysis field (`f000`).
 
@@ -267,7 +267,7 @@ The dashboard **averages over whatever loads**; sparse or in-progress datasets a
 
 ### NPZ export
 
-Compute scripts write a **single consolidated NPZ** alongside the per-init JSON files. The dashboard reads NPZ **indirectly via the site aggregate** `data/aggregates/<method_id>.json`, built from it by `scripts/build_site_aggregates.py` (repo root); without NPZ it falls back to per-init JSON. `server/npz_api.py` is a legacy local tool (run manually with `bash server/run_api.sh`) kept for ad-hoc NPZ inspection; nothing in the site calls it anymore.
+Compute scripts write a **single consolidated NPZ** alongside the per-init JSON files. The dashboard reads NPZ **indirectly via the site aggregate** `data/aggregates/<method_id>.json`, built from it by `pipelines/benchmarks/build_site_aggregates.py` (repo root); without NPZ it falls back to per-init JSON. `server/npz_api.py` is a legacy local tool (run manually with `bash server/run_api.sh`) kept for ad-hoc NPZ inspection; nothing in the site calls it anymore.
 
 - **Filename:** `data/<method_id>/<method_id>_<year>.npz` (e.g. `gfs_interpolated_2025.npz`).
 - **Document in** `data/<method_id>/metadata.json` via `"npz_file"` and `"npz_schema": "see benchmarking-site/AGENTS.md"`.
