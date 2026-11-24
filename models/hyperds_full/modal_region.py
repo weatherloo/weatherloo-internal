@@ -32,7 +32,7 @@ if modal.is_local():
     for source in sorted(site.glob("*/*_2025.npz")) + sorted(site.glob("observations/*/observations_6h_2025.json")):
         cpu_image = cpu_image.add_local_file(str(source), "/benchmark/" + str(source.relative_to(site)))
 STAGES = ("points", "patches", "gbm", "cnn", "blend", "export")
-COMPUTE = {"points": "cpu x months", "patches": "cpu x months", "gbm": "16 cpu", "cnn": "L4/A10 gpu",
+COMPUTE = {"points": "cpu x months", "patches": "cpu x months (all fields + chunk view)", "gbm": "16 cpu", "cnn": "L4/A10 gpu",
            "blend": "2 cpu", "export": "2 cpu"}
 
 
@@ -95,19 +95,6 @@ def point_month(name: str, key: str):
     return {"month": key, "samples": manifest["samples"], "planned": manifest["planned"]}
 
 
-@app.function(image=cpu_image, cpu=8, memory=16384, timeout=3 * 60 * 60, max_containers=20, retries=1,
-              volumes={"/data": data_volume})
-def patch_month(name: str, target: str, key: str):
-    from points import build_patch_month
-
-    data_volume.reload()
-    region = region_of(name)
-    site = next(s for s in stations_of(region) if s["id"] == target)
-    manifest = build_patch_month(key, site, Path(region.patch_root(target)) / key, region.patch_half)
-    data_volume.commit()
-    return {"month": key, "samples": manifest["samples"], "planned": manifest["planned"]}
-
-
 @app.function(image=cpu_image, cpu=16, memory=65536, timeout=4 * 60 * 60, volumes={"/data": data_volume})
 def gbm(name: str, target: str):
     from mos import run_study_v2
@@ -133,8 +120,11 @@ def cnn(name: str, target: str):
     region = region_of(name)
     out = Path(region.outputs(target)["cnn"])
     out.parent.mkdir(parents=True, exist_ok=True)
+    from points import PATCH_VARIABLES
+
+    options = {"variables": list(PATCH_VARIABLES), **region.target(target).cnn_options}
     report = run_cnn(region.point_root, region.patch_root(target), region.station_root, target,
-                     out=out.with_suffix(".json"))
+                     out=out.with_suffix(".json"), **options)
     data_volume.commit()
     return json.loads(json.dumps({"val_rmse": report["val_rmse"], "test_rmse": {
         m: {v: r[v]["rmse"] for v in r} for m, r in report["methods"].items()}}, default=float))
@@ -185,7 +175,7 @@ def main(region: str = "waterloo", execute: bool = False, force: str = ""):
         print(json.dumps({"points": sum(r["samples"] for r in results), "planned": sum(r["planned"] for r in results)}))
     patch_jobs = [(region, s["target"], k) for s in steps if s["stage"] == "patches" for k in months]
     if patch_jobs:
-        results = list(patch_month.starmap(patch_jobs))
+        results = list(context_month.starmap(patch_jobs))
         print(json.dumps({"patches": sum(r["samples"] for r in results), "planned": sum(r["planned"] for r in results)}))
     # Independent model fits run concurrently; blending waits for all of them.
     calls = [(s, (gbm if s["stage"] == "gbm" else cnn).spawn(region, s["target"]))
@@ -194,3 +184,82 @@ def main(region: str = "waterloo", execute: bool = False, force: str = ""):
         print(json.dumps({step["stage"]: step["target"], "result": call.get()}))
     result = finalize.remote(region, pending["method"])
     print(json.dumps(result, indent=2))
+
+
+# CNN input ablations: all catalog fields + whole-chunk view, time context, site trajectory.
+
+def context_root(region, target):
+    return region.patch_root(target)
+
+
+@app.function(image=cpu_image, cpu=8, memory=32768, timeout=3 * 60 * 60, max_containers=20, retries=1,
+              volumes={"/data": data_volume})
+def context_month(name: str, target: str, key: str):
+    from points import build_context_month
+
+    data_volume.reload()
+    region = region_of(name)
+    site = next(s for s in stations_of(region) if s["id"] == target)
+    manifest = build_context_month(key, site, Path(context_root(region, target)) / key, region.patch_half)
+    data_volume.commit()
+    return {"month": key, "samples": manifest["samples"], "planned": manifest["planned"],
+            "failures": len(manifest["failures"])}
+
+
+@app.function(image=gpu_image, gpu=["L4", "A10"], cpu=8, memory=98304, timeout=6 * 60 * 60,
+              volumes={"/data": data_volume})
+def cnn_ablation(name: str, target: str, tag: str, options: str):
+    """One CNN variant; options is JSON: context, trajectory, wide, variables, source ("v1" or "context")."""
+    from cnn_correction import run_cnn
+
+    data_volume.reload()
+    region = region_of(name)
+    opts = json.loads(options)
+    source = opts.pop("source", "v1")
+    legacy = f"/data/processed/patches/hrrr_{target}_{2 * region.patch_half + 1}_v1"  # Pa/rate float16 bug
+    patch_root = region.patch_root(target) if source == "context" else legacy
+    out = Path(region.target_root(target)) / "cnn_ablation" / f"{tag}.json"
+    out.parent.mkdir(parents=True, exist_ok=True)
+    report = run_cnn(region.point_root, patch_root, region.station_root, target,
+                     gbm_export=region.outputs(target)["gbm"], out=out, **opts)
+    data_volume.commit()
+    return json.loads(json.dumps({"tag": tag, "options": report["options"] | {"source": source},
+                                  "val_rmse": report["val_rmse"],
+                                  "test_rmse": {m: {v: r[v]["rmse"] for v in r} for m, r in report["methods"].items()}},
+                                 default=float))
+
+
+# All variants read the context extraction (float16-safe units). The control uses the original 15
+# fields, so a3 isolates the extra fields and a1/a2/a4 isolate one input each.
+ORIGINAL = ["temperature_2m", "dew_point_temperature_2m", "relative_humidity_2m", "wind_u_10m", "wind_v_10m",
+            "wind_u_80m", "wind_v_80m", "wind_gust_surface", "pressure_surface", "total_cloud_cover_atmosphere",
+            "downward_short_wave_radiation_flux_surface", "downward_long_wave_radiation_flux_surface",
+            "snow_area_fraction_surface", "precipitable_water_atmosphere", "precipitation_surface"]  # = PATCH_VARIABLES
+ABLATIONS = {
+    "a0_control": {"source": "context", "variables": ORIGINAL},
+    "a1_time_context": {"source": "context", "variables": ORIGINAL, "context": [-3, 0, 3]},
+    "a2_trajectory": {"source": "context", "variables": ORIGINAL, "trajectory": True},
+    "a3_all_fields": {"source": "context"},
+    "a4_wide_view": {"source": "context", "variables": ORIGINAL, "wide": True},
+    # Combinations of the inputs that improved 2024 validation (a1, a2; a4 for wind only).
+    "a5_traj_context": {"source": "context", "variables": ORIGINAL, "trajectory": True, "context": [-3, 0, 3]},
+    "a6_traj_context_wide": {"source": "context", "variables": ORIGINAL, "trajectory": True, "context": [-3, 0, 3],
+                             "wide": True},
+}
+
+
+@app.local_entrypoint()
+def ablate(region: str = "waterloo", target: str = "eric_d_soulis", tags: str = "", extract: bool = False,
+           options: str = ""):
+    """--extract builds the context patches; --tags runs named ablations (or --options JSON with one tag)."""
+    if extract:
+        months = plan.remote(region)["months"]
+        results = list(context_month.starmap([(region, target, k) for k in months]))
+        print(json.dumps({"context_samples": sum(r["samples"] for r in results),
+                          "planned": sum(r["planned"] for r in results),
+                          "failures": sum(r["failures"] for r in results)}))
+    names = [t for t in tags.split(",") if t]
+    jobs = [(t, json.dumps(json.loads(options) if options else ABLATIONS[t])) for t in names]
+    calls = [(t, cnn_ablation.spawn(region, target, t, o)) for t, o in jobs]
+    for tag, call in calls:
+        print(json.dumps(call.get()), flush=True)

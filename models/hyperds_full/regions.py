@@ -20,6 +20,7 @@ class Target:
     id: str                      # station id in the station table
     site_id: str | None = None   # benchmarking-site station id, when the site scores it
     models: tuple = ("gbm",)
+    cnn_options: dict = field(default_factory=dict)  # cnn_correction.run_cnn options (context, trajectory, ...)
 
 
 @dataclass(frozen=True)
@@ -39,7 +40,8 @@ class Region:
         return f"/data/processed/points/hrrr_{self.anchor}_{self.version}"
 
     def patch_root(self, target):
-        return f"/data/processed/patches/hrrr_{target}_{2 * self.patch_half + 1}_{self.version}"
+        """All catalog fields on the patch plus the whole-chunk view, in float16-safe units (points.ContextReader)."""
+        return f"/data/processed/patches/hrrr_{target}_context_{2 * self.patch_half + 1}_b8_{self.version}"
 
     @property
     def output_root(self):
@@ -63,7 +65,13 @@ def parse(document):
         unknown = set(models) - set(MODELS)
         if unknown or "gbm" not in models:
             raise ValueError(f"{entry['id']}: models must include gbm and come from {MODELS}")
-        targets.append(Target(entry["id"], entry.get("site_id"), models))
+        options = dict(entry.get("cnn_options", {}))
+        if options and "cnn" not in models:
+            raise ValueError(f"{entry['id']}: cnn_options without the cnn model")
+        unknown = set(options) - {"context", "trajectory", "wide", "variables"}
+        if unknown:
+            raise ValueError(f"{entry['id']}: unknown cnn_options {sorted(unknown)}")
+        targets.append(Target(entry["id"], entry.get("site_id"), models, options))
     if len({t.id for t in targets}) != len(targets):
         raise ValueError("duplicate target")
     known = {"name", "anchor", "targets", "station_root", "k_neighbors", "patch_half", "version", "description"}

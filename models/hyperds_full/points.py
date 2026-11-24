@@ -191,3 +191,106 @@ def build_patch_month(key, site, destination, half=8, reader=None):
                 "site": site["id"], "catalog": CATALOG}
     (destination / "manifest.json").write_text(json.dumps(manifest, indent=2) + "\n")
     return manifest
+
+
+ALL_VARIABLES = PATCH_VARIABLES + (
+    "pressure_reduced_to_mean_sea_level", "geopotential_height_cloud_ceiling", "composite_reflectivity",
+    "visible_beam_downward_solar_flux_surface", "snow_thickness_surface", "snow_water_equivalent_surface",
+    "snowfall_surface", "percent_frozen_precipitation_surface", "categorical_rain_surface",
+    "categorical_snow_surface", "categorical_freezing_rain_surface", "categorical_ice_pellets_surface",
+)
+WIDE_VARIABLES = (
+    "temperature_2m", "dew_point_temperature_2m", "wind_u_10m", "wind_v_10m", "pressure_reduced_to_mean_sea_level",
+    "total_cloud_cover_atmosphere", "precipitation_surface", "precipitable_water_atmosphere",
+)
+
+# Catalog unit -> float16-safe storage unit (factor, unit).
+STORAGE_UNITS = {
+    "pressure_surface": (0.01, "hPa"), "pressure_reduced_to_mean_sea_level": (0.01, "hPa"),
+    "precipitation_surface": (3600.0, "mm h-1"), "snowfall_surface": (3.6e6, "mm h-1"),
+}
+
+
+class ContextReader:
+    """Every catalog field on the native patch, plus a block-averaged view of the whole native chunk.
+
+    The anchor chunk is read once per initialization; the patch and the wide view are cut from it in
+    memory, so the wide view costs no extra download. Both are stored south-up (row 0 = south).
+    """
+
+    def __init__(self, site, half=8, block=8):
+        import dynamical_catalog
+        from pyproj import CRS, Transformer
+
+        ds = dynamical_catalog.open(CATALOG, chunks=None)
+        chunk_y, chunk_x = ds["temperature_2m"].encoding["chunks"][-2:]
+        transform = Transformer.from_crs("EPSG:4326", CRS.from_cf(ds.spatial_ref.attrs), always_xy=True)
+        px, py = transform.transform(site["lon"], site["lat"])
+        xi = int(np.argmin(np.abs(ds.x.values - px)))
+        yi = int(np.argmin(np.abs(ds.y.values - py)))
+        y0, x0 = yi // chunk_y * chunk_y, xi // chunk_x * chunk_x
+        ny, nx = len(ds.y), len(ds.x)
+        self.chunk = {"y": slice(y0, min(y0 + chunk_y, ny)), "x": slice(x0, min(x0 + chunk_x, nx))}
+        self.local = (yi - y0, xi - x0)
+        size_y, size_x = self.chunk["y"].stop - y0, self.chunk["x"].stop - x0
+        if not (half <= self.local[0] < size_y - half and half <= self.local[1] < size_x - half):
+            raise ValueError("patch crosses the native chunk edge; not supported by ContextReader")
+        self.half, self.block = half, block
+        self.subset = ds[list(ALL_VARIABLES)].isel(self.chunk)
+        self.wide_index = [ALL_VARIABLES.index(v) for v in WIDE_VARIABLES]
+        self.scale = [(ALL_VARIABLES.index(v), factor) for v, (factor, _) in STORAGE_UNITS.items()]
+        self.units = {v: STORAGE_UNITS.get(v, (1, ds[v].attrs.get("units")))[1] for v in ALL_VARIABLES}
+        self.y_descending = bool(ds.y.values[0] > ds.y.values[-1])
+        self.window = {"y": [y0, self.chunk["y"].stop], "x": [x0, self.chunk["x"].stop], "site_local": list(self.local)}
+
+    def read(self, init):
+        def load():
+            return self.subset.sel(init_time=np.datetime64(init.replace(tzinfo=None))).to_array().values
+        values = retry(load).astype(np.float32)  # [variable, lead, y, x]
+        # float16 storage: Pa overflows (max 65504) and kg m-2 s-1 / m s-1 rates underflow.
+        for index, factor in self.scale:
+            values[index] *= factor
+        (ly, lx), h, b = self.local, self.half, self.block
+        patch = values[:, :, ly - h:ly + h + 1, lx - h:lx + h + 1]
+        wide = values[self.wide_index]
+        wy, wx = wide.shape[2] // b * b, wide.shape[3] // b * b
+        wide = np.nanmean(wide[:, :, :wy, :wx].reshape(len(self.wide_index), wide.shape[1], wy // b, b, wx // b, b),
+                          axis=(3, 5))
+        if self.y_descending:
+            patch, wide = patch[:, :, ::-1], wide[:, :, ::-1]
+        return (patch.transpose(1, 0, 2, 3).astype(np.float16), wide.transpose(1, 0, 2, 3).astype(np.float16))
+
+
+def build_context_month(key, site, destination, half=8, block=8, reader=None):
+    destination = Path(destination)
+    if (destination / "manifest.json").is_file():
+        return json.loads((destination / "manifest.json").read_text())
+    reader = reader or ContextReader(site, half, block)
+    inits = month_inits(key)
+
+    def fetch(init):
+        try:
+            return reader.read(init), None
+        except Exception as error:
+            return None, f"{type(error).__name__}: {error}"
+
+    patches, wides, kept, failures = [], [], [], []
+    with ThreadPoolExecutor(max_workers=4) as pool:  # each read holds a whole chunk of 27 fields
+        for init, (values, error) in zip(inits, pool.map(fetch, inits)):
+            if error:
+                failures.append({"initialization": init.isoformat(), "error": error})
+            else:
+                patches.append(values[0])
+                wides.append(values[1])
+                kept.append(int(init.timestamp()))
+    destination.mkdir(parents=True, exist_ok=True)
+    side = 2 * half + 1
+    np.save(destination / "patches.npy", np.stack(patches) if patches else
+            np.zeros((0, 49, len(ALL_VARIABLES), side, side), np.float16))
+    np.save(destination / "wide.npy", np.stack(wides) if wides else np.zeros((0, 49, len(WIDE_VARIABLES), 1, 1), np.float16))
+    np.save(destination / "init_time.npy", np.array(kept, dtype=np.int64))
+    manifest = {"month": key, "samples": len(kept), "planned": len(inits), "failures": failures,
+                "variables": list(ALL_VARIABLES), "wide_variables": list(WIDE_VARIABLES), "units": reader.units,
+                "half": half, "block": block, "window": reader.window, "site": site["id"], "catalog": CATALOG}
+    (destination / "manifest.json").write_text(json.dumps(manifest, indent=2) + "\n")
+    return manifest

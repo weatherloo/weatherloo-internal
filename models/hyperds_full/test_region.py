@@ -38,7 +38,9 @@ class RegionConfigTest(unittest.TestCase):
         self.assertEqual([t.id for t in region.targets], ["eric_d_soulis", "eccc_51459"])
         # Paths match the caches already extracted for Soulis.
         self.assertEqual(region.point_root, "/data/processed/points/hrrr_eric_d_soulis_v1")
-        self.assertEqual(region.patch_root("eric_d_soulis"), "/data/processed/patches/hrrr_eric_d_soulis_17_v1")
+        self.assertEqual(region.patch_root("eric_d_soulis"),
+                         "/data/processed/patches/hrrr_eric_d_soulis_context_17_b8_v1")
+        self.assertEqual(region.target("eric_d_soulis").cnn_options, {"trajectory": True})
         self.assertEqual(region.target("eccc_51459").site_id, "cyyz")
 
     def test_invalid_configs_are_rejected(self):
@@ -50,6 +52,10 @@ class RegionConfigTest(unittest.TestCase):
             regions.parse({**base, "targets": [{"id": "a"}, {"id": "a"}]})
         with self.assertRaises(ValueError):
             regions.parse({**base, "anchor": "b"})
+        with self.assertRaises(ValueError):  # options for a model the target does not train
+            regions.parse({**base, "targets": [{"id": "a", "cnn_options": {"trajectory": True}}]})
+        with self.assertRaises(ValueError):
+            regions.parse({**base, "targets": [{"id": "a", "models": ["gbm", "cnn"], "cnn_options": {"lr": 1}}]})
 
     def test_check_reports_missing_and_out_of_chunk_targets(self):
         region = regions.load("waterloo")

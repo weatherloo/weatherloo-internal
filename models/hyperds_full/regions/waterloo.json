@@ -14,7 +14,10 @@
       "models": [
         "gbm",
         "cnn"
-      ]
+      ],
+      "cnn_options": {
+        "trajectory": true
+      }
     },
     {
       "id": "eccc_51459",

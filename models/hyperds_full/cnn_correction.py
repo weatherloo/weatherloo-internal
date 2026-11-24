@@ -18,21 +18,22 @@ import mos
 STATION_CONSTANT = ("station_lat", "station_lon", "station_elev", "station_index")
 
 
-def load_patches(root):
+def load_patches(root, name="patches.npy"):
     root = Path(root)
     patches, inits, meta = [], [], None
     for path in sorted(root.glob("*/manifest.json")):
         detail = json.loads(path.read_text())
         meta = meta or detail
         if detail["samples"]:
-            patches.append(np.load(path.parent / "patches.npy", mmap_mode="r"))
+            patches.append(np.load(path.parent / name, mmap_mode="r"))
             inits.append(np.load(path.parent / "init_time.npy"))
     inits = np.concatenate(inits)
     order = np.argsort(inits)
-    return np.concatenate(patches)[order], inits[order], meta["variables"]
+    return np.concatenate(patches)[order], inits[order], meta
 
 
-def assemble(point_root, patch_root, station_root, target):
+def assemble(point_root, patch_root, station_root, target, wide=False):
+    """Scalars, residuals and HRRR at leads 1..48; patches (and the wide view) at all leads 0..48."""
     values, inits, point_ids, variables = mos.load_points(point_root)
     station_root = Path(station_root)
     meta = json.loads((station_root / "stations.json").read_text())["stations"]
@@ -40,17 +41,23 @@ def assemble(point_root, patch_root, station_root, target):
         label_times, labels = saved["times"], saved["labels"]
     X, names, y, base, split = mos.build(values, inits, point_ids, variables, meta, label_times, labels,
                                          [s["id"] for s in meta], [target])
-    patches, patch_inits, patch_vars = load_patches(patch_root)
+    patches, patch_inits, patch_meta = load_patches(patch_root)
     common, a, b = np.intersect1d(inits, patch_inits, return_indices=True)
     keep = [i for i, n in enumerate(names) if n not in STATION_CONSTANT]
-    scalars = X[a][:, :, 0][:, :, keep]  # [init, lead(1..48), feature]
-    residual = np.stack((y["t2m"][a][:, :, 0], y["wind"][a][:, :, 0]), -1)  # [init, lead, 2]
-    hrrr = np.stack((base["t2m"][a][:, :, 0], base["wind"][a][:, :, 0]), -1)
-    return {"inits": common, "split": split[a], "patches": patches[b][:, 1:], "scalars": scalars,
-            "scalar_names": [names[i] for i in keep], "residual": residual, "hrrr": hrrr, "patch_vars": patch_vars}
+    out = {"inits": common, "split": split[a], "patches": patches[b], "scalars": X[a][:, :, 0][:, :, keep],
+           "scalar_names": [names[i] for i in keep],
+           "residual": np.stack((y["t2m"][a][:, :, 0], y["wind"][a][:, :, 0]), -1),  # [init, lead 1..48, 2]
+           "hrrr": np.stack((base["t2m"][a][:, :, 0], base["wind"][a][:, :, 0]), -1),
+           "patch_vars": patch_meta["variables"]}
+    if wide:
+        view, view_inits, view_meta = load_patches(patch_root, "wide.npy")
+        if not np.array_equal(view_inits, patch_inits):
+            raise ValueError("wide view and patches cover different initializations")
+        out["wide"], out["wide_vars"] = view[b], view_meta["wide_variables"]
+    return out
 
 
-def build_model(n_channels, n_scalars, width=32):
+def build_model(n_channels, n_scalars, width=32, traj_channels=0, wide_channels=0):
     import torch
     from torch import nn
 
@@ -66,89 +73,126 @@ def build_model(n_channels, n_scalars, width=32):
                 nn.AdaptiveAvgPool2d(1), nn.Flatten())
             self.centre = nn.Sequential(nn.Linear(n_channels * 9, 2 * width), act())  # 3x3 around the site
             self.scalar = nn.Sequential(nn.Linear(2 * n_scalars, 128), act(), nn.Linear(128, 128), act())
-            self.head = nn.Sequential(nn.Linear(4 * width + 2 * width + 128, 256), act(), nn.Dropout(0.1),
-                                      nn.Linear(256, 2))
+            features = 4 * width + 2 * width + 128
+            if traj_channels:
+                # Site trajectory over leads 0..48 plus a one-hot of the lead being predicted.
+                self.traj = nn.Sequential(nn.Conv1d(traj_channels + 1, 64, 5, padding=2), act(),
+                                          nn.Conv1d(64, 64, 5, padding=2), act())
+                features += 128
+            if wide_channels:
+                self.wide = nn.Sequential(nn.Conv2d(wide_channels, width, 3, padding=1), act(),
+                                          nn.Conv2d(width, 2 * width, 3, stride=2, padding=1), act(),
+                                          nn.Conv2d(2 * width, 2 * width, 3, stride=2, padding=1), act(),
+                                          nn.AdaptiveAvgPool2d(1), nn.Flatten())
+                features += 2 * width
+            self.head = nn.Sequential(nn.Linear(features, 256), act(), nn.Dropout(0.1), nn.Linear(256, 2))
 
-        def forward(self, patch, scalars):
+        def forward(self, patch, scalars, traj=None, lead=None, wide=None):
             mid = patch.shape[-1] // 2
             centre = patch[:, :, mid - 1:mid + 2, mid - 1:mid + 2].flatten(1)
-            return self.head(torch.cat((self.conv(patch), self.centre(centre), self.scalar(scalars)), 1))
+            parts = [self.conv(patch), self.centre(centre), self.scalar(scalars)]
+            if traj_channels:
+                onehot = torch.zeros(traj.shape[0], 1, traj.shape[2], device=traj.device, dtype=traj.dtype)
+                onehot[torch.arange(len(lead)), 0, lead] = 1
+                hidden = self.traj(torch.cat((traj, onehot), 1))
+                parts += [hidden[torch.arange(len(lead)), :, lead], hidden.mean(-1)]
+            if wide_channels:
+                parts.append(self.wide(wide))
+            return self.head(torch.cat(parts, 1))
 
     return PatchNet()
 
 
 def run_cnn(point_root, patch_root, station_root, target="eric_d_soulis", gbm_export=None, r5_predictions=None,
-            out=None, seeds=3, max_epochs=40, patience=5, batch_size=512):
+            out=None, seeds=3, max_epochs=40, patience=5, batch_size=512, context=(0,), trajectory=False,
+            variables=None, wide=False):
+    """Train the CNN ensemble; options: context = patch lead offsets, trajectory = site 0..48 h sequence,
+    variables = patch fields to use (default all stored), wide = block-averaged whole-chunk view."""
     import torch
-    from torch.nn import functional as F
 
-    data = assemble(point_root, patch_root, station_root, target)
+    data = assemble(point_root, patch_root, station_root, target, wide=wide)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     split = data["split"]
     train_i, val_i, test_i = (np.flatnonzero(split == s) for s in ("train", "val", "test"))
-    # Normalization from the training split only.
-    sample = data["patches"][train_i[::7]].astype(np.float32)
-    p_mean = np.nanmean(sample, axis=(0, 1, 3, 4))
-    p_std = np.nanstd(sample, axis=(0, 1, 3, 4)) + 1e-3
+    channels = [data["patch_vars"].index(v) for v in (variables or data["patch_vars"])]
+    offsets = torch.tensor(sorted(set(context) | {0}), device=device)
+
+    def to_gpu(array, index, sample):
+        """Normalize with training statistics, NaN -> 0, float16 on the device, built in slices."""
+        stats = array[sample][:, :, index].astype(np.float32)
+        mean = np.nanmean(stats, axis=(0, 1, 3, 4))[None, None, :, None, None]
+        std = (np.nanstd(stats, axis=(0, 1, 3, 4)) + 1e-3)[None, None, :, None, None]
+        out_ = torch.empty((len(array),) + array.shape[1:2] + (len(index),) + array.shape[3:], dtype=torch.float16,
+                           device=device)
+        for s in range(0, len(array), 256):
+            block = (array[s:s + 256][:, :, index].astype(np.float32) - mean) / std
+            out_[s:s + 256] = torch.from_numpy(np.nan_to_num(block)).half()
+        return out_
+
+    patches = to_gpu(data["patches"], channels, train_i[::7])  # [init, lead 0..48, C, H, W]
+    views = to_gpu(data["wide"], list(range(data["wide"].shape[2])), train_i[::7]) if wide else None
+    mid = patches.shape[-1] // 2
+    traj = patches[:, :, :, mid, mid].transpose(1, 2).contiguous() if trajectory else None  # [init, C, 49]
     s_train = data["scalars"][train_i].reshape(-1, data["scalars"].shape[-1])
     s_mean, s_std = np.nanmean(s_train, axis=0), np.nanstd(s_train, axis=0) + 1e-3
-    r_train = data["residual"][train_i].reshape(-1, 2)
-    r_std = np.nanstd(r_train, axis=0)
+    s = (data["scalars"] - s_mean) / s_std
+    scalars = torch.tensor(np.concatenate((np.nan_to_num(s), np.isfinite(s)), -1), dtype=torch.float32, device=device)
+    r_std = np.nanstd(data["residual"][train_i].reshape(-1, 2), axis=0)
+    residual = torch.tensor(data["residual"] / r_std, dtype=torch.float32, device=device)
 
-    def tensors(index):
-        patch = (data["patches"][index].astype(np.float32) - p_mean[None, None, :, None, None]) / p_std[None, None, :, None, None]
-        patch = np.nan_to_num(patch)
-        s = (data["scalars"][index] - s_mean) / s_std
-        scalars = np.concatenate((np.nan_to_num(s), np.isfinite(s).astype(np.float32)), -1)
-        res = data["residual"][index] / r_std
-        lead = np.broadcast_to(np.arange(48), res.shape[:2])
-        flat = lambda a: a.reshape(-1, *a.shape[2:])
-        return (torch.tensor(flat(patch), dtype=torch.float16, device=device),
-                torch.tensor(flat(scalars), dtype=torch.float32, device=device),
-                torch.tensor(flat(res), dtype=torch.float32, device=device), flat(lead))
+    def batch(model, inits, leads):
+        """inits: init rows; leads: 1..48."""
+        idx = (leads[:, None] + offsets[None]).clamp(0, 48)
+        patch = patches[inits[:, None], idx].flatten(1, 2).float()
+        extra = {}
+        if trajectory:
+            extra.update(traj=traj[inits].float(), lead=leads)
+        if wide:
+            extra["wide"] = views[inits, leads].float()
+        return model(patch, scalars[inits, leads - 1], **extra)
 
-    train, val, test = tensors(train_i), tensors(val_i), tensors(test_i)
+    def samples(rows):
+        rows = torch.tensor(rows, device=device)
+        return rows.repeat_interleave(48), torch.arange(1, 49, device=device).repeat(len(rows))
 
-    def loss_on(model, part):
+    def predict(model, rows):
         model.eval()
-        total, count = 0., 0.
+        inits, leads = samples(rows)
         with torch.no_grad():
-            for start in range(0, len(part[0]), 4096):
-                pred = model(part[0][start:start + 4096].float(), part[1][start:start + 4096])
-                target_ = part[2][start:start + 4096]
-                mask = torch.isfinite(target_)
-                total += ((pred - torch.nan_to_num(target_)) ** 2 * mask).sum().item()
-                count += mask.sum().item()
-        return total / max(count, 1)
+            pred = torch.cat([batch(model, inits[k:k + 4096], leads[k:k + 4096]) for k in range(0, len(inits), 4096)])
+        return pred.cpu().numpy().reshape(len(rows), 48, 2)
 
-    def predict(model, part):
-        model.eval()
-        with torch.no_grad():
-            return torch.cat([model(part[0][s:s + 4096].float(), part[1][s:s + 4096])
-                              for s in range(0, len(part[0]), 4096)]).cpu().numpy()
+    def val_loss(model):
+        pred = torch.tensor(predict(model, val_i), device=device)
+        target_ = residual[torch.tensor(val_i, device=device)]
+        mask = torch.isfinite(target_)
+        return (((pred - torch.nan_to_num(target_)) ** 2) * mask).sum().item() / max(mask.sum().item(), 1)
 
+    n_channels = patches.shape[2] * len(offsets)
     members, history = [], []
+    train_inits, train_leads = samples(train_i)
     for seed in range(seeds):
         torch.manual_seed(seed)
         np.random.seed(seed)
-        model = build_model(train[0].shape[1], data["scalars"].shape[-1]).to(device)
+        model = build_model(n_channels, data["scalars"].shape[-1], traj_channels=patches.shape[2] if trajectory else 0,
+                            wide_channels=views.shape[2] if wide else 0).to(device)
         optimizer = torch.optim.AdamW(model.parameters(), lr=1e-3, weight_decay=1e-4)
         scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=max_epochs)
         best, best_state, stale = np.inf, None, 0
         for epoch in range(max_epochs):
             model.train()
-            order = torch.randperm(len(train[0]), device=device)
+            order = torch.randperm(len(train_inits), device=device)
             for start in range(0, len(order), batch_size):
                 pick = order[start:start + batch_size]
-                pred = model(train[0][pick].float(), train[1][pick])
-                target_ = train[2][pick]
+                pred = batch(model, train_inits[pick], train_leads[pick])
+                target_ = residual[train_inits[pick], train_leads[pick] - 1]
                 mask = torch.isfinite(target_)
                 loss = ((pred - torch.nan_to_num(target_)) ** 2 * mask).sum() / mask.sum().clamp_min(1)
                 optimizer.zero_grad()
                 loss.backward()
                 optimizer.step()
             scheduler.step()
-            score = loss_on(model, val)
+            score = val_loss(model)
             history.append({"seed": seed, "epoch": epoch + 1, "val_loss": score})
             if score < best:
                 best, stale = score, 0
@@ -158,17 +202,19 @@ def run_cnn(point_root, patch_root, station_root, target="eric_d_soulis", gbm_ex
                 if stale >= patience:
                     break
         model.load_state_dict(best_state)
-        members.append({"val_loss": best, "test": predict(model, test), "val": predict(model, val)})
-    pred_test = np.mean([m["test"] for m in members], axis=0) * r_std  # residual, physical units
-    pred_val = np.mean([m["val"] for m in members], axis=0) * r_std
+        members.append({"val_loss": best, "test": predict(model, test_i), "val": predict(model, val_i)})
+    pred_test = (np.mean([m["test"] for m in members], axis=0) * r_std).reshape(-1, 2)  # residual, physical units
+    pred_val = (np.mean([m["val"] for m in members], axis=0) * r_std).reshape(-1, 2)
     n_test = len(test_i)
     hrrr = data["hrrr"][test_i].reshape(-1, 2)
     obs = hrrr + data["residual"][test_i].reshape(-1, 2)
     cnn = hrrr + pred_test
-    lead = test[3]
+    lead = np.tile(np.arange(48), n_test)
     units = np.array([1.0, 3.6])
     report = {"target": target, "train_inits": int(len(train_i)), "val_inits": int(len(val_i)),
               "test_inits": int(n_test), "seed_val_loss": [m["val_loss"] for m in members], "history": history,
+              "options": {"context": list(map(int, offsets.tolist())), "trajectory": trajectory, "wide": wide,
+                          "variables": [data["patch_vars"][c] for c in channels]},
               "patch_variables": data["patch_vars"], "scalar_features": data["scalar_names"], "methods": {}}
     val_obs = data["hrrr"][val_i].reshape(-1, 2) + data["residual"][val_i].reshape(-1, 2)
     report["val_rmse"] = {v: mos.rmse(((data["hrrr"][val_i].reshape(-1, 2) + pred_val) - val_obs)[:, j] * units[j])
