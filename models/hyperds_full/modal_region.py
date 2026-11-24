@@ -119,9 +119,9 @@ def gbm(name: str, target: str):
     report = run_study_v2(region.point_root, region.station_root, target, k=region.k_neighbors,
                           out=out.with_suffix(".json"))
     data_volume.commit()
-    return {v: {"chosen": e["chosen_by_validation"], **{m: e["methods"][m]["test_rmse"]
+    return json.loads(json.dumps({v: {"chosen": e["chosen_by_validation"], **{m: e["methods"][m]["test_rmse"]
                                                         for m in ("raw_hrrr", "final_seed_ensemble")}}
-            for v, e in report["targets"].items()}
+            for v, e in report["targets"].items()}, default=float))
 
 
 @app.function(image=gpu_image, gpu=["L4", "A10"], cpu=8, memory=65536, timeout=4 * 60 * 60,
@@ -136,8 +136,8 @@ def cnn(name: str, target: str):
     report = run_cnn(region.point_root, region.patch_root(target), region.station_root, target,
                      out=out.with_suffix(".json"))
     data_volume.commit()
-    return {"val_rmse": report["val_rmse"], "test_rmse": {m: {v: r[v]["rmse"] for v in r}
-                                                         for m, r in report["methods"].items()}}
+    return json.loads(json.dumps({"val_rmse": report["val_rmse"], "test_rmse": {
+        m: {v: r[v]["rmse"] for v in r} for m, r in report["methods"].items()}}, default=float))
 
 
 @app.function(image=cpu_image, cpu=2, memory=8192, timeout=30 * 60, volumes={"/data": data_volume})
@@ -163,7 +163,9 @@ def finalize(name: str, method: str = ""):
     pooled = {base: {s: {v: {k: e["pooled"][k]["rmse"] for k in ("hyperds", "baseline")} if e["pooled"] else None
                          for v, e in by_var.items()} for s, by_var in by_station.items()}
               for base, by_station in comparison.items()}
-    return {"targets": summary, "site_export": str(exported), "pooled_vs_site_methods": pooled}
+    # JSON round trip: the local entrypoint has no numpy to unpickle numpy scalars.
+    return json.loads(json.dumps({"targets": summary, "site_export": str(exported), "pooled_vs_site_methods": pooled},
+                                 default=float))
 
 
 @app.local_entrypoint()

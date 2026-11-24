@@ -73,4 +73,32 @@ Each stage is idempotent. A month with a manifest is never re-read. A model stag
 
 ## Results (2025, unseen)
 
-Filled from the first full pipeline run; see `blend.json` and `site_export/comparison.json` on the data Volume.
+First full run, 2026-11-24 (`/data/processed/regions/waterloo/`). Two fits were re-run in one pipeline run: gradient boosting at both sites and the CNN at Soulis. Both reproduced the earlier experiment numbers.
+
+**Soulis, hourly leads 1–48 h, matched pairs (RMSE; temperature in °C, wind in km/h)**
+
+| Model | Temperature | Wind |
+| --- | ---: | ---: |
+| Raw HRRR | 2.181 | 10.862 |
+| Gradient boosting | 1.815 | 2.746 |
+| CNN | 1.819 | 2.781 |
+| Fixed 50/50 average | **1.785** | **2.724** |
+| Validation-weighted blend (pipeline output) | 1.789 | 2.763 |
+
+- **Weights:** the 2024 weights put 0.35 (temperature) and 0.10 (wind) on gradient boosting. The CNN was clearly better on 2024 (wind 2.43 vs 2.53 km/h), but it did not keep that lead in 2025.
+- **Validation curve:** the 2024 curve is almost flat between weights 0 and 0.5 (wind 2.433–2.454). The fitted weight therefore cost 0.04 km/h relative to the fixed 50/50 average.
+- **Pre-specified alternative:** the 50/50 average was specified before the first CNN test. Any rule adopted now, such as shrinking towards equal weights, would be chosen after seeing 2025.
+
+**Site-scored, 6-hourly leads, matched against each method's 2025 file (pipeline output vs method)**
+
+| Method | Soulis temperature | Soulis wind | CYYZ temperature | CYYZ wind |
+| --- | --- | --- | --- | --- |
+| hrrr_interpolated | 1.78 vs 2.28 | 2.74 vs 10.82 | 1.42 vs 1.98 | 5.41 vs 7.28 |
+| ecmwf_aifs | 1.78 vs 1.95 | 2.74 vs 10.05 | 1.42 vs 1.43 | 5.42 vs 7.05 |
+| graphcast | 1.78 vs 2.19 | 2.74 vs 10.00 | 1.42 vs 1.41 | 5.41 vs 7.30 |
+| cnn_lstm_bias_correction | 1.79 vs 2.23 | 2.74 vs 5.63 | n/a | n/a |
+| lstm_ecmwf_aifs (in-sample, see note) | 1.78 vs 1.73 | n/a | 1.19 vs 1.21 | n/a |
+
+- **CYYZ:** CYYZ uses gradient boosting only.
+- **`lstm_ecmwf_aifs`:** this file covers only its own late-2025 window. Its 2025 predictions include data it was trained on. On its held-out window, gradient boosting scored 2.18 vs 2.10 at Soulis and 1.11 vs 1.16 at CYYZ.
+- **Column label:** `comparison.json` labels our column `hyperds`, a name inherited from the HyperDS scorer.
