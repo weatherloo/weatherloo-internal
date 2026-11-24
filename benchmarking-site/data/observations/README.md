@@ -71,6 +71,17 @@ A slot can still be `null` when no observation exists near that **UTC** instant 
 
 ## Regenerate
 
+The 2020 Soulis HOBO file uses separate `Date`/`Time` columns. Its temperature
+measurements are retained independently of wind. That year's 4.4 m wind channel
+is missing; the available 2 m channel is not substituted. The corrected canonical
+2020 series contains 1,463 temperature slots and no valid wind slots.
+
+HOBO QC masks temperature outside [-80,60]°C, wind outside [0,360] km/h, and
+average wind above a valid same-height gust by more than 0.02 km/h (rounding
+tolerance). Measurements are masked independently. Corrupt 2018 wind and 2019
+temperature/wind rows were removed from the normalized series using these
+checks; the raw files are retained unchanged.
+
 ```bash
 python3 pipelines/download/fetch_station_observations.py --year 2025
 ```

@@ -3295,28 +3295,28 @@
     {
       "valid_time": "2018-04-01T12:00:00Z",
       "t2m": -5.37,
-      "wind_speed": 6.73,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
       "valid_time": "2018-04-01T18:00:00Z",
       "t2m": -0.59,
-      "wind_speed": 682.73,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
       "valid_time": "2018-04-02T00:00:00Z",
       "t2m": -0.64,
-      "wind_speed": 50.67,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
@@ -3331,28 +3331,28 @@
     {
       "valid_time": "2018-04-02T12:00:00Z",
       "t2m": -5.06,
-      "wind_speed": 8.53,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
       "valid_time": "2018-04-02T18:00:00Z",
       "t2m": 2.47,
-      "wind_speed": 870.07,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
       "valid_time": "2018-04-03T00:00:00Z",
       "t2m": 3.12,
-      "wind_speed": 53.33,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
@@ -3367,28 +3367,28 @@
     {
       "valid_time": "2018-04-03T12:00:00Z",
       "t2m": 0.75,
-      "wind_speed": 3.13,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
       "valid_time": "2018-04-03T18:00:00Z",
       "t2m": 4.29,
-      "wind_speed": 310.8,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
       "valid_time": "2018-04-04T00:00:00Z",
       "t2m": 1.45,
-      "wind_speed": 1.4,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
@@ -3412,19 +3412,19 @@
     {
       "valid_time": "2018-04-04T18:00:00Z",
       "t2m": -2.17,
-      "wind_speed": 422.6,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
       "valid_time": "2018-04-05T00:00:00Z",
       "t2m": -4.28,
-      "wind_speed": 53.73,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
@@ -3439,28 +3439,28 @@
     {
       "valid_time": "2018-04-05T12:00:00Z",
       "t2m": -7.64,
-      "wind_speed": 16.8,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
       "valid_time": "2018-04-05T18:00:00Z",
       "t2m": -2.7,
-      "wind_speed": 304.33,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
       "valid_time": "2018-04-06T00:00:00Z",
       "t2m": -0.75,
-      "wind_speed": 65.73,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
@@ -3475,28 +3475,28 @@
     {
       "valid_time": "2018-04-06T12:00:00Z",
       "t2m": -2.02,
-      "wind_speed": 3.87,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
       "valid_time": "2018-04-06T18:00:00Z",
       "t2m": 1.17,
-      "wind_speed": 163.8,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
       "valid_time": "2018-04-07T00:00:00Z",
       "t2m": -2.3,
-      "wind_speed": 22.13,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
@@ -3511,28 +3511,28 @@
     {
       "valid_time": "2018-04-07T12:00:00Z",
       "t2m": -7.27,
-      "wind_speed": 32.4,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
       "valid_time": "2018-04-07T18:00:00Z",
       "t2m": -2.1,
-      "wind_speed": 507.93,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
       "valid_time": "2018-04-08T00:00:00Z",
       "t2m": -3.37,
-      "wind_speed": 31.87,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
@@ -3547,28 +3547,28 @@
     {
       "valid_time": "2018-04-08T12:00:00Z",
       "t2m": -6.25,
-      "wind_speed": 22.6,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
       "valid_time": "2018-04-08T18:00:00Z",
       "t2m": -2.23,
-      "wind_speed": 890.67,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
       "valid_time": "2018-04-09T00:00:00Z",
       "t2m": -2.37,
-      "wind_speed": 62.27,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
@@ -3583,28 +3583,28 @@
     {
       "valid_time": "2018-04-09T12:00:00Z",
       "t2m": -6.06,
-      "wind_speed": 13.53,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
       "valid_time": "2018-04-09T18:00:00Z",
       "t2m": 2.64,
-      "wind_speed": 695.0,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
       "valid_time": "2018-04-10T00:00:00Z",
       "t2m": 0.74,
-      "wind_speed": 51.13,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
@@ -3619,28 +3619,28 @@
     {
       "valid_time": "2018-04-10T12:00:00Z",
       "t2m": -5.33,
-      "wind_speed": 30.53,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
       "valid_time": "2018-04-10T18:00:00Z",
       "t2m": 3.45,
-      "wind_speed": 797.8,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
       "valid_time": "2018-04-11T00:00:00Z",
       "t2m": 2.67,
-      "wind_speed": 80.2,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
@@ -3655,28 +3655,28 @@
     {
       "valid_time": "2018-04-11T12:00:00Z",
       "t2m": -0.53,
-      "wind_speed": 12.07,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
       "valid_time": "2018-04-11T18:00:00Z",
       "t2m": 2.26,
-      "wind_speed": 190.6,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
       "valid_time": "2018-04-12T00:00:00Z",
       "t2m": 4.0,
-      "wind_speed": 47.53,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
@@ -3691,28 +3691,28 @@
     {
       "valid_time": "2018-04-12T12:00:00Z",
       "t2m": 0.9,
-      "wind_speed": 2.53,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
       "valid_time": "2018-04-12T18:00:00Z",
       "t2m": 8.53,
-      "wind_speed": 513.07,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
       "valid_time": "2018-04-13T00:00:00Z",
       "t2m": 13.9,
-      "wind_speed": 62.73,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
@@ -3727,28 +3727,28 @@
     {
       "valid_time": "2018-04-13T12:00:00Z",
       "t2m": 2.68,
-      "wind_speed": 3.07,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
       "valid_time": "2018-04-13T18:00:00Z",
       "t2m": 4.59,
-      "wind_speed": 467.93,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
       "valid_time": "2018-04-14T00:00:00Z",
       "t2m": 3.69,
-      "wind_speed": 4.13,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
@@ -3763,28 +3763,28 @@
     {
       "valid_time": "2018-04-14T12:00:00Z",
       "t2m": 1.68,
-      "wind_speed": 1.4,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
       "valid_time": "2018-04-14T18:00:00Z",
       "t2m": -0.85,
-      "wind_speed": 55.4,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
       "valid_time": "2018-04-15T00:00:00Z",
       "t2m": -4.65,
-      "wind_speed": 26.13,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
@@ -3799,28 +3799,28 @@
     {
       "valid_time": "2018-04-15T12:00:00Z",
       "t2m": -4.03,
-      "wind_speed": 4.2,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
       "valid_time": "2018-04-15T18:00:00Z",
       "t2m": -1.31,
-      "wind_speed": 119.2,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
       "valid_time": "2018-04-16T00:00:00Z",
       "t2m": -0.99,
-      "wind_speed": 10.27,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
@@ -3835,19 +3835,19 @@
     {
       "valid_time": "2018-04-16T12:00:00Z",
       "t2m": 0.42,
-      "wind_speed": 5.8,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
       "valid_time": "2018-04-16T18:00:00Z",
       "t2m": 1.6,
-      "wind_speed": 323.27,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
@@ -4366,181 +4366,181 @@
     {
       "valid_time": "2018-05-01T06:00:00Z",
       "t2m": 6.7,
-      "wind_speed": 1.0,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
       "valid_time": "2018-05-01T12:00:00Z",
       "t2m": 11.73,
-      "wind_speed": 32.47,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
       "valid_time": "2018-05-01T18:00:00Z",
       "t2m": 24.47,
-      "wind_speed": 982.0,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
       "valid_time": "2018-05-02T00:00:00Z",
       "t2m": 22.82,
-      "wind_speed": 85.13,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
       "valid_time": "2018-05-02T06:00:00Z",
       "t2m": 18.65,
-      "wind_speed": 1.0,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
       "valid_time": "2018-05-02T12:00:00Z",
       "t2m": 15.6,
-      "wind_speed": 115.33,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
       "valid_time": "2018-05-02T18:00:00Z",
       "t2m": 24.34,
-      "wind_speed": 472.53,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
       "valid_time": "2018-05-03T00:00:00Z",
       "t2m": 24.76,
-      "wind_speed": 599.73,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
       "valid_time": "2018-05-03T06:00:00Z",
       "t2m": 24.76,
-      "wind_speed": 599.73,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
       "valid_time": "2018-05-03T12:00:00Z",
       "t2m": 24.76,
-      "wind_speed": 599.73,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
       "valid_time": "2018-05-03T18:00:00Z",
       "t2m": 24.76,
-      "wind_speed": 599.73,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
       "valid_time": "2018-05-04T00:00:00Z",
       "t2m": 24.76,
-      "wind_speed": 599.73,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
       "valid_time": "2018-05-04T06:00:00Z",
       "t2m": 24.76,
-      "wind_speed": 599.73,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
       "valid_time": "2018-05-04T12:00:00Z",
       "t2m": 24.76,
-      "wind_speed": 599.73,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
       "valid_time": "2018-05-04T18:00:00Z",
       "t2m": 24.76,
-      "wind_speed": 599.73,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
       "valid_time": "2018-05-05T00:00:00Z",
       "t2m": 8.94,
-      "wind_speed": 599.73,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
       "valid_time": "2018-05-05T06:00:00Z",
       "t2m": 7.39,
-      "wind_speed": 0.72,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
       "valid_time": "2018-05-05T12:00:00Z",
       "t2m": 9.61,
-      "wind_speed": 3.91,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
       "valid_time": "2018-05-05T18:00:00Z",
       "t2m": 20.99,
-      "wind_speed": 6.53,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
       "valid_time": "2018-05-06T00:00:00Z",
       "t2m": 20.23,
-      "wind_speed": 7.08,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
@@ -4564,37 +4564,37 @@
     {
       "valid_time": "2018-05-06T18:00:00Z",
       "t2m": 20.12,
-      "wind_speed": 2.47,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
       "valid_time": "2018-05-07T00:00:00Z",
       "t2m": 14.83,
-      "wind_speed": 2.35,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
       "valid_time": "2018-05-07T06:00:00Z",
       "t2m": 11.71,
-      "wind_speed": 0.9,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
       "valid_time": "2018-05-07T12:00:00Z",
       "t2m": 9.33,
-      "wind_speed": 1.8,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
@@ -7687,28 +7687,28 @@
     {
       "valid_time": "2018-08-01T12:00:00Z",
       "t2m": 20.74,
-      "wind_speed": 23.27,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
       "valid_time": "2018-08-01T18:00:00Z",
       "t2m": 24.13,
-      "wind_speed": 398.4,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
       "valid_time": "2018-08-02T00:00:00Z",
       "t2m": 21.47,
-      "wind_speed": 59.07,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
@@ -7723,28 +7723,28 @@
     {
       "valid_time": "2018-08-02T12:00:00Z",
       "t2m": 17.2,
-      "wind_speed": 43.8,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
       "valid_time": "2018-08-02T18:00:00Z",
       "t2m": 25.54,
-      "wind_speed": 670.4,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
       "valid_time": "2018-08-03T00:00:00Z",
       "t2m": 25.12,
-      "wind_speed": 306.47,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
@@ -7759,28 +7759,28 @@
     {
       "valid_time": "2018-08-03T12:00:00Z",
       "t2m": 16.17,
-      "wind_speed": 26.47,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
       "valid_time": "2018-08-03T18:00:00Z",
       "t2m": 27.71,
-      "wind_speed": 949.47,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
       "valid_time": "2018-08-04T00:00:00Z",
       "t2m": 27.45,
-      "wind_speed": 228.53,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
@@ -7795,28 +7795,28 @@
     {
       "valid_time": "2018-08-04T12:00:00Z",
       "t2m": 16.1,
-      "wind_speed": 36.0,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
       "valid_time": "2018-08-04T18:00:00Z",
       "t2m": 27.64,
-      "wind_speed": 661.0,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
       "valid_time": "2018-08-05T00:00:00Z",
       "t2m": 28.49,
-      "wind_speed": 213.87,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
@@ -7831,28 +7831,28 @@
     {
       "valid_time": "2018-08-05T12:00:00Z",
       "t2m": 18.09,
-      "wind_speed": 31.6,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
       "valid_time": "2018-08-05T18:00:00Z",
       "t2m": 30.89,
-      "wind_speed": 866.27,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
       "valid_time": "2018-08-06T00:00:00Z",
       "t2m": 29.13,
-      "wind_speed": 155.47,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
@@ -7867,28 +7867,28 @@
     {
       "valid_time": "2018-08-06T12:00:00Z",
       "t2m": 22.73,
-      "wind_speed": 46.33,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
       "valid_time": "2018-08-06T18:00:00Z",
       "t2m": 29.95,
-      "wind_speed": 438.87,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
       "valid_time": "2018-08-07T00:00:00Z",
       "t2m": 25.14,
-      "wind_speed": 72.4,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
@@ -7903,28 +7903,28 @@
     {
       "valid_time": "2018-08-07T12:00:00Z",
       "t2m": 19.96,
-      "wind_speed": 24.47,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
       "valid_time": "2018-08-07T18:00:00Z",
       "t2m": 26.83,
-      "wind_speed": 507.8,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
       "valid_time": "2018-08-08T00:00:00Z",
       "t2m": 26.51,
-      "wind_speed": 179.6,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
@@ -7939,28 +7939,28 @@
     {
       "valid_time": "2018-08-08T12:00:00Z",
       "t2m": 19.38,
-      "wind_speed": 11.13,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
       "valid_time": "2018-08-08T18:00:00Z",
       "t2m": 21.37,
-      "wind_speed": 47.27,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
       "valid_time": "2018-08-09T00:00:00Z",
       "t2m": 24.45,
-      "wind_speed": 198.0,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
@@ -7975,28 +7975,28 @@
     {
       "valid_time": "2018-08-09T12:00:00Z",
       "t2m": 14.93,
-      "wind_speed": 32.87,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
       "valid_time": "2018-08-09T18:00:00Z",
       "t2m": 26.96,
-      "wind_speed": 1004.73,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
       "valid_time": "2018-08-10T00:00:00Z",
       "t2m": 26.2,
-      "wind_speed": 191.2,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
@@ -8011,28 +8011,28 @@
     {
       "valid_time": "2018-08-10T12:00:00Z",
       "t2m": 16.16,
-      "wind_speed": 48.67,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
       "valid_time": "2018-08-10T18:00:00Z",
       "t2m": 23.5,
-      "wind_speed": 882.13,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
       "valid_time": "2018-08-11T00:00:00Z",
       "t2m": 25.47,
-      "wind_speed": 223.87,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
@@ -8047,28 +8047,28 @@
     {
       "valid_time": "2018-08-11T12:00:00Z",
       "t2m": 12.39,
-      "wind_speed": 25.93,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
       "valid_time": "2018-08-11T18:00:00Z",
       "t2m": 26.82,
-      "wind_speed": 928.73,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
       "valid_time": "2018-08-12T00:00:00Z",
       "t2m": 25.95,
-      "wind_speed": 198.27,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
@@ -8083,28 +8083,28 @@
     {
       "valid_time": "2018-08-12T12:00:00Z",
       "t2m": 14.92,
-      "wind_speed": 30.4,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
       "valid_time": "2018-08-12T18:00:00Z",
       "t2m": 26.96,
-      "wind_speed": 887.73,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
       "valid_time": "2018-08-13T00:00:00Z",
       "t2m": 26.16,
-      "wind_speed": 97.87,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
@@ -8119,28 +8119,28 @@
     {
       "valid_time": "2018-08-13T12:00:00Z",
       "t2m": 14.8,
-      "wind_speed": 20.0,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
       "valid_time": "2018-08-13T18:00:00Z",
       "t2m": 27.99,
-      "wind_speed": 809.87,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
       "valid_time": "2018-08-14T00:00:00Z",
       "t2m": 25.3,
-      "wind_speed": 117.13,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
@@ -8155,28 +8155,28 @@
     {
       "valid_time": "2018-08-14T12:00:00Z",
       "t2m": 16.9,
-      "wind_speed": 25.6,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
       "valid_time": "2018-08-14T18:00:00Z",
       "t2m": 28.19,
-      "wind_speed": 895.47,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
       "valid_time": "2018-08-15T00:00:00Z",
       "t2m": 26.94,
-      "wind_speed": 165.47,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
@@ -8191,28 +8191,28 @@
     {
       "valid_time": "2018-08-15T12:00:00Z",
       "t2m": 18.47,
-      "wind_speed": 23.67,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
       "valid_time": "2018-08-15T18:00:00Z",
       "t2m": 28.76,
-      "wind_speed": 765.27,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
       "valid_time": "2018-08-16T00:00:00Z",
       "t2m": 26.94,
-      "wind_speed": 131.93,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
@@ -8227,28 +8227,28 @@
     {
       "valid_time": "2018-08-16T12:00:00Z",
       "t2m": 18.1,
-      "wind_speed": 20.93,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
       "valid_time": "2018-08-16T18:00:00Z",
       "t2m": 27.29,
-      "wind_speed": 369.53,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
       "valid_time": "2018-08-17T00:00:00Z",
       "t2m": 22.55,
-      "wind_speed": 40.8,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
@@ -8263,28 +8263,28 @@
     {
       "valid_time": "2018-08-17T12:00:00Z",
       "t2m": 21.75,
-      "wind_speed": 3.33,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
       "valid_time": "2018-08-17T18:00:00Z",
       "t2m": 25.73,
-      "wind_speed": 317.2,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
       "valid_time": "2018-08-18T00:00:00Z",
       "t2m": 23.98,
-      "wind_speed": 58.67,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
@@ -8299,28 +8299,28 @@
     {
       "valid_time": "2018-08-18T12:00:00Z",
       "t2m": 18.47,
-      "wind_speed": 16.8,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
       "valid_time": "2018-08-18T18:00:00Z",
       "t2m": 24.78,
-      "wind_speed": 763.93,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
       "valid_time": "2018-08-19T00:00:00Z",
       "t2m": 22.99,
-      "wind_speed": 105.87,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
@@ -8335,28 +8335,28 @@
     {
       "valid_time": "2018-08-19T12:00:00Z",
       "t2m": 14.59,
-      "wind_speed": 17.0,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
       "valid_time": "2018-08-19T18:00:00Z",
       "t2m": 24.51,
-      "wind_speed": 816.6,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
       "valid_time": "2018-08-20T00:00:00Z",
       "t2m": 22.73,
-      "wind_speed": 72.47,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
@@ -8371,28 +8371,28 @@
     {
       "valid_time": "2018-08-20T12:00:00Z",
       "t2m": 14.9,
-      "wind_speed": 16.73,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
       "valid_time": "2018-08-20T18:00:00Z",
       "t2m": 24.17,
-      "wind_speed": 716.93,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
       "valid_time": "2018-08-21T00:00:00Z",
       "t2m": 23.44,
-      "wind_speed": 187.13,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
@@ -8407,28 +8407,28 @@
     {
       "valid_time": "2018-08-21T12:00:00Z",
       "t2m": 19.81,
-      "wind_speed": 1.13,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
       "valid_time": "2018-08-21T18:00:00Z",
       "t2m": 21.84,
-      "wind_speed": 99.67,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
       "valid_time": "2018-08-22T00:00:00Z",
       "t2m": 23.06,
-      "wind_speed": 97.4,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
@@ -8443,28 +8443,28 @@
     {
       "valid_time": "2018-08-22T12:00:00Z",
       "t2m": 17.89,
-      "wind_speed": 23.33,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
       "valid_time": "2018-08-22T18:00:00Z",
       "t2m": 17.97,
-      "wind_speed": 432.47,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
       "valid_time": "2018-08-23T00:00:00Z",
       "t2m": 18.69,
-      "wind_speed": 169.73,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
@@ -8479,10 +8479,10 @@
     {
       "valid_time": "2018-08-23T12:00:00Z",
       "t2m": 13.06,
-      "wind_speed": 14.93,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
@@ -8659,28 +8659,28 @@
     {
       "valid_time": "2018-08-28T12:00:00Z",
       "t2m": 22.78,
-      "wind_speed": 7.33,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
       "valid_time": "2018-08-28T18:00:00Z",
       "t2m": 28.85,
-      "wind_speed": 857.53,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
       "valid_time": "2018-08-29T00:00:00Z",
       "t2m": 29.32,
-      "wind_speed": 126.4,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
@@ -8695,10 +8695,10 @@
     {
       "valid_time": "2018-08-29T12:00:00Z",
       "t2m": 20.24,
-      "wind_speed": 11.33,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
@@ -13179,6 +13179,7 @@
     "time_interpretation": "Archive clock is local standard time (UTC-5, no DST); converted to UTC for valid_time.",
     "temperature": "HOBO Temperature column (\u00b0C).",
     "wind_speed": "Wind Speed - Average 4.4 m (km/h); not 10 m \u2014 height differs from benchmark label.",
-    "data_limitation": "Public bulk CSV for 2015+ is HOBO subset only; full main-logger yearly files stop at 2014."
+    "data_limitation": "Public bulk CSV for 2015+ is HOBO subset only; full main-logger yearly files stop at 2014.",
+    "quality_control": "Temperature outside [-80,60] C and wind outside [0,360] km/h are missing. Average wind above a valid same-height gust by more than 0.02 km/h is missing. Metrics are masked independently; missing 4.4 m wind is not replaced with another sensor height."
   }
 }

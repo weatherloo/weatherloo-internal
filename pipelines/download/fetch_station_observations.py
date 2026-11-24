@@ -258,20 +258,37 @@ def load_soulis_hobo_csv(path: Path) -> list[tuple[datetime, dict[str, float | N
     samples: list[tuple[datetime, dict[str, float | None]]] = []
     with path.open(newline="") as f:
         reader = csv.reader(f)
-        next(reader)  # header
+        header = next(reader)
+        dated = header[0].strip().lower()=="date"
+        temp_column = 2 if dated else 5
+        wind_column = next((i for i,name in enumerate(header) if "4.4 m wind speed" in name.lower()),None) if dated else 10
+        gust_column = next((i for i,name in enumerate(header) if "4.4 m wind gust" in name.lower()),None) if dated else 11
         for row in reader:
             if len(row) < 12:
                 continue
             try:
-                y, m, d, h, mi = (int(row[i].strip()) for i in range(5))
-                temp = float(row[5].strip())
-                wind = float(row[10].strip())
+                if dated:
+                    local = datetime.strptime(row[0].strip()+" "+row[1].strip(),"%Y-%m-%d %H:%M:%S")
+                else:
+                    y,m,d,h,mi = (int(row[i].strip()) for i in range(5))
+                    local = datetime(y,m,d,h,mi)
             except (ValueError, IndexError):
                 continue
             # Archive notes: local standard time (EST, no DST). Approximate as UTC-5.
-            dt = datetime(y, m, d, h, mi, tzinfo=UW_ARCHIVE_TZ).astimezone(timezone.utc)
-            t2m = clean_metric(round(temp, 2))
-            ws = clean_metric(round(wind, 2), non_negative=True)
+            dt = local.replace(tzinfo=UW_ARCHIVE_TZ).astimezone(timezone.utc)
+            def metric(column,non_negative=False):
+                try:
+                    return clean_metric(round(float(row[column]),2),non_negative=non_negative)
+                except (ValueError,IndexError,TypeError):
+                    return None
+            t2m = metric(temp_column)
+            # A 2 m sensor is not a replacement for missing 4.4 m wind.
+            ws = metric(wind_column,True)
+            gust = metric(gust_column,True)
+            if t2m is not None and not -80<=t2m<=60:
+                t2m = None
+            if ws is not None and (ws>360 or (gust is not None and ws>gust+.02)):
+                ws = None
             samples.append((dt, {"t2m": t2m, "wind_speed": ws}))
     return samples
 
@@ -343,6 +360,7 @@ def process_soulis(year: int, use_cached: bool = False) -> None:
             "temperature": "HOBO Temperature column (°C).",
             "wind_speed": "Wind Speed - Average 4.4 m (km/h); not 10 m — height differs from benchmark label.",
             "data_limitation": "Public bulk CSV for 2015+ is HOBO subset only; full main-logger yearly files stop at 2014.",
+            "quality_control": "Temperature outside [-80,60] C and wind outside [0,360] km/h are missing. Average wind above a valid same-height gust by more than 0.02 km/h is missing. Metrics are masked independently; missing 4.4 m wind is not replaced with another sensor height.",
         }
 
     if use_cached and raw_path.exists():
