@@ -25,12 +25,18 @@ HERE = Path(__file__).resolve().parent
 cpu_image = modal.Image.debian_slim(python_version="3.12").pip_install(
     "dynamical-catalog>=0.8.0,<1", "pyproj==3.7.0", "scipy", "numpy", "lightgbm==4.5.0", "scikit-learn==1.5.2")
 gpu_image = modal.Image.debian_slim(python_version="3.12").pip_install("numpy", "torch==2.5.1", "scikit-learn==1.5.2")
+precip_image = gpu_image.pip_install("lightgbm==4.5.0")
 if modal.is_local():
     cpu_image = cpu_image.add_local_dir(str(HERE), "/app")
     gpu_image = gpu_image.add_local_dir(str(HERE), "/app")
+    precip_image = precip_image.add_local_dir(str(HERE), "/app")
     site = HERE.parents[1] / "benchmarking-site/data"
     for source in sorted(site.glob("*/*_2025.npz")) + sorted(site.glob("observations/*/observations_6h_2025.json")):
         cpu_image = cpu_image.add_local_file(str(source), "/benchmark/" + str(source.relative_to(site)))
+    # Soulis HOBO 15-min files (tipping-bucket precipitation truth), HRRRv4 years only.
+    for year in range(2021, 2026):
+        source = site / f"observations/eric_d_soulis/raw/uw_hobo_15min_{year}.csv"
+        precip_image = precip_image.add_local_file(str(source), f"/soulis_raw/{source.name}")
 STAGES = ("points", "patches", "gbm", "cnn", "select", "export")
 COMPUTE = {"points": "cpu x months", "patches": "cpu x months (all fields + chunk view)", "gbm": "16 cpu", "cnn": "L4/A10 gpu",
            "select": "2 cpu", "export": "2 cpu"}
@@ -263,3 +269,80 @@ def ablate(region: str = "waterloo", target: str = "eric_d_soulis", tags: str = 
     calls = [(t, cnn_ablation.spawn(region, target, t, o)) for t, o in jobs]
     for tag, call in calls:
         print(json.dumps(call.get()), flush=True)
+
+
+# Precipitation (targets with "precip": true).
+
+@app.function(image=precip_image, cpu=4, memory=32768, timeout=60 * 60, volumes={"/data": data_volume})
+def precip_check(name: str, target: str = "eric_d_soulis"):
+    """Gauge coverage and timing: wet/dry correlation of the Soulis hourly series with HRRR (leads 1-6 at the
+    site) and with the nearest gauges, at lags -3..3 h, training period only."""
+    import numpy as np
+    import mos
+    from precip import soulis_hourly, lag_check, WET
+
+    data_volume.reload()
+    region = region_of(name)
+    meta = stations_of(region)
+    with np.load(Path(region.station_root) / "labels.npz") as saved:
+        label_times, labels = saved["times"], saved["labels"]
+    ids = [s["id"] for s in meta]
+    times, mm = soulis_hourly("/soulis_raw")
+    index = np.searchsorted(times, label_times)
+    hit = (index < len(times)) & (times[np.minimum(index, len(times) - 1)] == label_times)
+    soulis = np.full(len(label_times), np.nan)
+    soulis[hit] = mm[index[hit]]
+    years = {}
+    for year in range(2021, 2026):
+        start, end = (int(__import__("datetime").datetime(y, 1, 1, tzinfo=__import__("datetime").timezone.utc).timestamp())
+                      for y in (year, year + 1))
+        sel = (label_times >= start) & (label_times < end)
+        years[year] = {"coverage": float(np.isfinite(soulis[sel]).mean()), "total_mm": float(np.nansum(soulis[sel])),
+                       "wet_hour_rate": float(np.nanmean(soulis[sel] >= WET))}
+    values, inits, point_ids, variables = mos.load_points(region.point_root)
+    hrrr = np.full(len(label_times), np.nan)
+    pr = values[:, 1:7, point_ids.index(target), variables.index("precipitation_surface")] * 3600
+    for lead in range(6):
+        stamps = inits + (lead + 1) * 3600
+        i = np.searchsorted(label_times, stamps)
+        ok = (i < len(label_times)) & (label_times[np.minimum(i, len(label_times) - 1)] == stamps)
+        hrrr[i[ok]] = pr[ok, lead]
+    train = label_times < mos.TRAIN_END
+    coverage = np.isfinite(labels[train, :, 3]).mean(axis=0)
+    gauges = [i for i in ids if i != target and coverage[ids.index(i)] >= 0.3]
+    nearest = mos.nearest_stations(meta, gauges + [target], target, 3)[1:]
+    out = {"years": years, "lag_vs_hrrr": lag_check(label_times, soulis, hrrr, before=mos.TRAIN_END),
+           "note": "lag L correlates Soulis at t with the reference at t + L; the peak should be at 0"}
+    for station in nearest:
+        out[f"lag_vs_{station}"] = lag_check(label_times, soulis, labels[:, ids.index(station), 3].astype(float),
+                                             before=mos.TRAIN_END)
+    return json.loads(json.dumps(out, default=float))
+
+
+@app.function(image=precip_image, gpu=["L4", "A10"], cpu=16, memory=98304, timeout=6 * 60 * 60,
+              volumes={"/data": data_volume})
+def precip(name: str, target: str = "eric_d_soulis"):
+    from precip import run
+
+    data_volume.reload()
+    region = region_of(name)
+    out = Path(region.outputs(target)["precip"])
+    out.parent.mkdir(parents=True, exist_ok=True)
+    report = run(region.point_root, region.station_root, target, k=region.k_neighbors,
+                 soulis_raw="/soulis_raw" if target == "eric_d_soulis" else None,
+                 patch_root=region.patch_root(target), out=out)
+    data_volume.commit()
+    summary = {"selection": report["selection"]}
+    for product, by_season in report["scores"].items():
+        summary[product] = {season: {k: (v["brier"] if "brier" in v else v["rmse"]) if isinstance(v, dict) else v
+                                     for k, v in entry.items()} for season, entry in by_season.items()}
+    return json.loads(json.dumps(summary, default=float))
+
+
+@app.local_entrypoint()
+def rain(region: str = "waterloo", target: str = "eric_d_soulis", check: bool = False):
+    """--check reports gauge coverage and timing only; otherwise trains and scores the precipitation models."""
+    if check:
+        print(json.dumps(precip_check.remote(region, target), indent=1))
+    else:
+        print(json.dumps(precip.remote(region, target), indent=1))

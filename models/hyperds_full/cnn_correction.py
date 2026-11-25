@@ -57,7 +57,7 @@ def assemble(point_root, patch_root, station_root, target, wide=False):
     return out
 
 
-def build_model(n_channels, n_scalars, width=32, traj_channels=0, wide_channels=0):
+def build_model(n_channels, n_scalars, width=32, traj_channels=0, wide_channels=0, n_out=2):
     import torch
     from torch import nn
 
@@ -85,7 +85,7 @@ def build_model(n_channels, n_scalars, width=32, traj_channels=0, wide_channels=
                                           nn.Conv2d(2 * width, 2 * width, 3, stride=2, padding=1), act(),
                                           nn.AdaptiveAvgPool2d(1), nn.Flatten())
                 features += 2 * width
-            self.head = nn.Sequential(nn.Linear(features, 256), act(), nn.Dropout(0.1), nn.Linear(256, 2))
+            self.head = nn.Sequential(nn.Linear(features, 256), act(), nn.Dropout(0.1), nn.Linear(256, n_out))
 
         def forward(self, patch, scalars, traj=None, lead=None, wide=None):
             mid = patch.shape[-1] // 2

@@ -21,6 +21,7 @@ class Target:
     site_id: str | None = None   # benchmarking-site station id, when the site scores it
     models: tuple = ("gbm",)
     cnn_options: dict = field(default_factory=dict)  # cnn_correction.run_cnn options (context, trajectory, ...)
+    precip: bool = False  # also forecast precipitation (needs a gauge record for the target)
 
 
 @dataclass(frozen=True)
@@ -55,7 +56,8 @@ class Region:
 
     def outputs(self, target_id):
         root = self.target_root(target_id)
-        return {"gbm": f"{root}/gbm.npz", "cnn": f"{root}/cnn.npz", "selection": f"{root}/selection.json"}
+        return {"gbm": f"{root}/gbm.npz", "cnn": f"{root}/cnn.npz", "selection": f"{root}/selection.json",
+                "precip": f"{root}/precip.json"}
 
 
 def parse(document):
@@ -71,7 +73,7 @@ def parse(document):
         unknown = set(options) - {"context", "trajectory", "wide", "variables"}
         if unknown:
             raise ValueError(f"{entry['id']}: unknown cnn_options {sorted(unknown)}")
-        targets.append(Target(entry["id"], entry.get("site_id"), models, options))
+        targets.append(Target(entry["id"], entry.get("site_id"), models, options, bool(entry.get("precip", False))))
     if len({t.id for t in targets}) != len(targets):
         raise ValueError("duplicate target")
     known = {"name", "anchor", "targets", "station_root", "k_neighbors", "patch_half", "version", "description"}

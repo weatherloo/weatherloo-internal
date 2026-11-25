@@ -17,7 +17,8 @@
       ],
       "cnn_options": {
         "trajectory": true
-      }
+      },
+      "precip": true
     },
     {
       "id": "eccc_51459",

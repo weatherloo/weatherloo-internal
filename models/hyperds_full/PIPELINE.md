@@ -149,3 +149,83 @@ All runs use the corrected extraction. Every run is chosen on 2024 validation; 2
   - Soulis wind: 2.70 vs 10.0–10.8 for the same three.
   - CYYZ temperature: 1.42, level with AIFS 1.43 and GraphCast 1.41.
 - **Earlier averaged variants.** The 50/50 and validation-weighted averages in the sections above are kept for the record. They are not used.
+
+## Precipitation (`precip.py`)
+
+```bash
+modal run models/hyperds_full/modal_region.py::rain --check   # gauge coverage and timing only
+modal run models/hyperds_full/modal_region.py::rain           # train, select on 2024, score 2025
+```
+
+Targets with `"precip": true` get four products for every run out to 48 h:
+
+- `pop1`: the chance of at least 0.2 mm (one gauge tip) in each hour.
+- `pop6`: the same chance for each 6-hour block (hours 1–6, …, 43–48).
+- `amt6`: the expected amount in each block.
+- `amt24`: the sum of four blocks.
+
+**Truth**
+
+- **Soulis.** The HOBO tipping-bucket gauge, in local standard time (UTC−5). Its 15-minute amounts are summed to UTC hour-ending totals, and an hour counts only when all four samples exist. The weighing gauge is unused because it is missing in 2024–2025. Labels start in 2021, because the 2020 file has a different layout.
+- **Neighbours.** ECCC/ASOS hourly precipitation from the station labels, used only as extra training rows.
+- **HRRR.** `precipitation_surface` at lead h is the mean rate over the hour ending at h, so each lead verifies against the hour ending at that time.
+- **Timing check.** The check used training years only. Wet/dry correlation with HRRR at the site peaks at lag 0 (0.40, against 0.38 at −1 h). The nearest ECCC gauges peak at −1 h or 0 h.
+- **Coverage.**
+
+  | Year | Coverage | Total |
+  | --- | --- | --- |
+  | 2021 | 99% | 1,009 mm |
+  | 2022 | 23% | 134 mm |
+  | 2023 | 99% | 961 mm |
+  | 2024 | 99% | 847 mm |
+  | 2025 | 85% | 601 mm |
+
+  2025 is missing most of August and half of December.
+
+**Snow caveat.** The tipping bucket undercatches snow, and it can record snow late, when it melts. Every score below is measured against the gauge. November–March numbers therefore measure agreement with what the gauge records, not true precipitation. HRRR's poor winter scores partly reflect snow the gauge never saw. April–October is the reliable comparison.
+
+**Models**
+
+- **Gradient boosting.** One model is trained for each product: binary for the chances and Tweedie for amounts.
+  - **Features:** the temperature and wind features plus precipitation features.
+    - HRRR precipitation at the neighbouring leads, and 3 h and 6 h centred sums.
+    - The three earlier runs, with their mean, maximum and wet fraction.
+    - The observed precipitation in the 1, 3 and 6 hours ending at initialization, and the 0–6 h error of the previous run.
+    - At the target only, the fraction of the 17×17 and 9×9 patch that is wet, and the patch mean and maximum.
+  - **Training rows:** the 2024 score chose between target-only and pooled training with 30 neighbouring gauges.
+- **CNN.** Rows are 6-hour blocks.
+  - **Inputs:** the patch at the block's six leads, the site's 0–48 h trajectory, and block-mean scalars.
+  - **Outputs:** six hourly wet logits, a block wet logit, and six hourly and one block log-mean amounts, trained with Tweedie deviance.
+- **Selection.** For each product, the model with the better 2024 score supplies the 2025 forecast. The score is Brier for the chances and RMSE for amounts. Models are not averaged.
+- **Leakage test.** `test_precip.py` checks that changing any label after T0 leaves every issue-time feature unchanged.
+
+**Results, Soulis 2025, matched pairs**
+
+| Product | Chosen (2024 score: gradient boosting / CNN) | Chosen model | Climatology | HRRR point | HRRR within 50 km |
+| --- | --- | ---: | ---: | ---: | ---: |
+| `pop1` Brier | Gradient boosting (0.0520 / 0.0548) | **0.0466** | 0.0653 | 0.1031 | 0.0785 |
+| `pop1` Brier, Apr–Oct | | **0.0472** | 0.0692 | 0.0792 | 0.0599 |
+| `pop6` Brier | Gradient boosting (0.1062 / 0.1082) | **0.0913** | 0.1481 | 0.2152 | 0.1814 |
+| `pop6` Brier, Apr–Oct | | **0.0928** | 0.1581 | 0.1462 | 0.1180 |
+| `amt6` RMSE mm | CNN (1.793 / 1.790) | **1.909** | 2.280 | 2.576 | 2.428 |
+| `amt6` RMSE mm, Apr–Oct | | **2.383** | 2.834 | 2.941 | 2.797 |
+| `amt24` RMSE mm | CNN (sum of `amt6`) | **4.03** | 5.82 | 5.38 | 5.23 |
+| `amt24` RMSE mm, Apr–Oct | | **4.94** | 7.14 | 5.64 | 5.46 |
+
+- **Brier skill against climatology, all months.**
+
+  | Product | Chosen model | HRRR point | HRRR within 50 km |
+  | --- | ---: | ---: | ---: |
+  | `pop1` | +0.29 | −0.58 | −0.20 |
+  | `pop6` | +0.38 | −0.45 | −0.23 |
+
+  Raw HRRR, used as a yes/no or as a neighbourhood fraction, is worse than climatology at the gauge.
+- **Mean absolute error (mm).**
+
+  | Product | Chosen model | HRRR point |
+  | --- | ---: | ---: |
+  | `amt6` | 0.55 | 0.72 |
+  | `amt24` | 1.66 | 2.33 |
+- **Reliability.** The chance forecasts are well calibrated at low chances. In the middle range they run high in 2025, a drier year: an hourly 0.65 verified 0.52, and a 6-hour 0.45–0.55 verified 0.32–0.36. 2025 had 601 mm with gaps, against 850–1,010 mm in training years.
+- **Close choices.** The choice for the amount model was close on 2024 (1.790 vs 1.793 mm). The other model is shown in `precip.json`.
+- **Site.** Not exported: the benchmarking site scores only temperature and wind.
