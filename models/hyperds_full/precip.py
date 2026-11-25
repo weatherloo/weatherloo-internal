@@ -15,10 +15,9 @@ earlier runs, observations at or before T0):
 * ``pop6``: P(>= 0.2 mm in block b), b = hours 1-6, 7-12, ..., 43-48
 * ``amt6``: expected amount in block b (mm); ``amt24`` = sum of four blocks
 
-Models: LightGBM (binary + Tweedie) on point features, and a CNN on 6-h blocks
-of native patches with hourly and block heads. For each product the model with
-the better 2024 score at the target supplies the whole 2025 forecast; models
-are never averaged.
+Model: a CNN on 6-h blocks of native patches with hourly and block heads, the
+same model type as the temperature and wind forecasts. LightGBM (binary +
+Tweedie) on point features is kept as an experiment (``with_gbm=True``).
 """
 
 import csv
@@ -545,24 +544,32 @@ def train_cnn(data, patch_root, seeds=3, max_epochs=40, patience=5, batch_size=2
 
 # ----------------------------------------------------------------------------- study
 
-def run(point_root, station_root, target, k=30, soulis_raw=None, patch_root=None, out=None, cnn=True, seeds=3):
-    """Fit both models, choose each product's model on 2024, score 2025 against HRRR and climatology."""
+def run(point_root, station_root, target, k=30, soulis_raw=None, patch_root=None, out=None, seeds=3, with_gbm=False):
+    """Train the precipitation CNN and score 2025 against HRRR and climatology.
+
+    with_gbm=True also fits the gradient-boosting experiment models and picks each product's model on 2024
+    (the earlier study); the pipeline uses the CNN alone.
+    """
+    if patch_root is None:
+        raise ValueError("the precipitation CNN needs the target's patches")
     data = assemble(point_root, station_root, target, k, soulis_raw, patch_root)
     X, names, y, hrrr, split, inits = data["X"], data["names"], data["y"], data["hrrr"], data["split"], data["inits"]
     Xb, names_b, yb, hb = blocks(X, names, y, hrrr)
-    preds = {"gbm": {}}
-    report = {"target": target, "stations": data["use"], "precip_coverage_train": data["coverage"], "gbm": {}}
-    preds["gbm"]["pop1"], report["gbm"]["pop1"] = fit_gbm(X, y, split, "pop", seeds)
-    preds["gbm"]["pop6"], report["gbm"]["pop6"] = fit_gbm(Xb, yb, split, "pop", seeds)
-    preds["gbm"]["amt6"], report["gbm"]["amt6"] = fit_gbm(Xb, yb, split, "amount", seeds)
-    for product in ("pop1", "pop6", "amt6"):
-        report["gbm"][product]["top_features"] = [(names if product == "pop1" else names_b)[i]
-                                                  for i in report["gbm"][product]["top_features"]]
-    if cnn and patch_root:
-        cnn_out, report["cnn"] = train_cnn(data, patch_root, seeds=seeds)
-        preds["cnn"] = {p: np.where(np.isin(split, ["val", "test"])[:, None],
-                                    np.where(split[:, None] == "val", cnn_out["val"][p], cnn_out["test"][p]), np.nan)
-                        for p in ("pop1", "pop6", "amt6")}
+    preds = {}
+    report = {"target": target, "precip_coverage_train": {target: data["coverage"][target]}}
+    if with_gbm:
+        preds["gbm"], report["gbm"] = {}, {}
+        report["stations"], report["precip_coverage_train"] = data["use"], data["coverage"]
+        preds["gbm"]["pop1"], report["gbm"]["pop1"] = fit_gbm(X, y, split, "pop", seeds)
+        preds["gbm"]["pop6"], report["gbm"]["pop6"] = fit_gbm(Xb, yb, split, "pop", seeds)
+        preds["gbm"]["amt6"], report["gbm"]["amt6"] = fit_gbm(Xb, yb, split, "amount", seeds)
+        for product in ("pop1", "pop6", "amt6"):
+            report["gbm"][product]["top_features"] = [(names if product == "pop1" else names_b)[i]
+                                                      for i in report["gbm"][product]["top_features"]]
+    cnn_out, report["cnn"] = train_cnn(data, patch_root, seeds=seeds)
+    preds["cnn"] = {p: np.where(np.isin(split, ["val", "test"])[:, None],
+                                np.where(split[:, None] == "val", cnn_out["val"][p], cnn_out["test"][p]), np.nan)
+                    for p in ("pop1", "pop6", "amt6")}
     # Target-only arrays.
     y_t, yb_t, h_t, hb_t = y[:, :, 0], yb[:, :, 0], hrrr[:, :, 0], hb[:, :, 0]
     valid_h = inits[:, None] + np.arange(1, 49)[None] * 3600

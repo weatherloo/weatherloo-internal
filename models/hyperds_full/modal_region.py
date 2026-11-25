@@ -1,11 +1,11 @@
-"""Region pipeline on Modal: HRRR points/patches -> gradient boosting + CNN -> 2024 model selection -> site export.
+"""Region pipeline on Modal: HRRR points/patches -> patch CNN per site -> site export.
 
     modal run models/hyperds_full/modal_region.py --region waterloo              # plan only (default)
     modal run models/hyperds_full/modal_region.py --region waterloo --execute    # run missing stages
-    modal run models/hyperds_full/modal_region.py --region waterloo --execute --force gbm,cnn
+    modal run models/hyperds_full/modal_region.py --region waterloo --execute --force cnn
 
 Every stage is idempotent: extraction months with a manifest are skipped, and a
-model stage (gbm, cnn) is skipped when its output exists unless named in --force;
+CNN stage is skipped when its output exists unless --force cnn;
 re-extracting data needs a new ``version`` in the region config. The plan
 lists what would run and its compute class before anything is spent.
 """
@@ -37,9 +37,9 @@ if modal.is_local():
     for year in range(2021, 2026):
         source = site / f"observations/eric_d_soulis/raw/uw_hobo_15min_{year}.csv"
         precip_image = precip_image.add_local_file(str(source), f"/soulis_raw/{source.name}")
-STAGES = ("points", "patches", "gbm", "cnn", "select", "export")
-COMPUTE = {"points": "cpu x months", "patches": "cpu x months (all fields + chunk view)", "gbm": "16 cpu", "cnn": "L4/A10 gpu",
-           "select": "2 cpu", "export": "2 cpu"}
+STAGES = ("points", "patches", "cnn", "final", "export")
+COMPUTE = {"points": "cpu x months", "patches": "cpu x months (all fields + chunk view)", "cnn": "L4/A10 gpu",
+           "final": "2 cpu", "export": "2 cpu"}
 
 
 def region_of(name):
@@ -74,15 +74,12 @@ def plan(name: str, force: str = ""):
     if missing:
         steps.append({"stage": "points", "months": len(missing), "compute": COMPUTE["points"]})
     for t in region.targets:
-        outputs = region.outputs(t.id)
-        if "cnn" in t.models:
-            missing = sorted(set(all_months) - done_months(region.patch_root(t.id)))
-            if missing:
-                steps.append({"stage": "patches", "target": t.id, "months": len(missing), "compute": COMPUTE["patches"]})
-        for stage in ("gbm", "cnn"):
-            if stage in t.models and (stage in forced or not Path(outputs[stage]).is_file()):
-                steps.append({"stage": stage, "target": t.id, "compute": COMPUTE[stage]})
-        steps.append({"stage": "select", "target": t.id, "compute": COMPUTE["select"]})
+        missing = sorted(set(all_months) - done_months(region.patch_root(t.id)))
+        if missing:
+            steps.append({"stage": "patches", "target": t.id, "months": len(missing), "compute": COMPUTE["patches"]})
+        if "cnn" in forced or not Path(region.outputs(t.id)["cnn"]).is_file():
+            steps.append({"stage": "cnn", "target": t.id, "compute": COMPUTE["cnn"]})
+        steps.append({"stage": "final", "target": t.id, "compute": COMPUTE["final"]})
     steps.append({"stage": "export", "compute": COMPUTE["export"]})
     return {"region": region.name, "anchor": region.anchor, "chunk_stations": len(chunk),
             "native_window": reader.window, "problems": problems, "steps": steps, "months": all_months,
@@ -99,22 +96,6 @@ def point_month(name: str, key: str):
     manifest = build_month(key, stations_of(region), region.anchor, Path(region.point_root) / key)
     data_volume.commit()
     return {"month": key, "samples": manifest["samples"], "planned": manifest["planned"]}
-
-
-@app.function(image=cpu_image, cpu=16, memory=65536, timeout=4 * 60 * 60, volumes={"/data": data_volume})
-def gbm(name: str, target: str):
-    from mos import run_study_v2
-
-    data_volume.reload()
-    region = region_of(name)
-    out = Path(region.outputs(target)["gbm"])
-    out.parent.mkdir(parents=True, exist_ok=True)
-    report = run_study_v2(region.point_root, region.station_root, target, k=region.k_neighbors,
-                          out=out.with_suffix(".json"))
-    data_volume.commit()
-    return json.loads(json.dumps({v: {"chosen": e["chosen_by_validation"], **{m: e["methods"][m]["test_rmse"]
-                                                        for m in ("raw_hrrr", "final_seed_ensemble")}}
-            for v, e in report["targets"].items()}, default=float))
 
 
 @app.function(image=gpu_image, gpu=["L4", "A10"], cpu=8, memory=65536, timeout=4 * 60 * 60,
@@ -138,18 +119,17 @@ def cnn(name: str, target: str):
 
 @app.function(image=cpu_image, cpu=2, memory=8192, timeout=30 * 60, volumes={"/data": data_volume})
 def finalize(name: str, method: str = ""):
-    """Select each target's model, write the site export and the matched comparison with every site method."""
+    """Score each target's CNN, write the site export and the matched comparison with every site method."""
     from benchmark import matched_comparison
-    from selection import select_target, site_export
+    from final import final_target, site_export
 
     data_volume.reload()
     region = region_of(name)
     finals, summary = {}, {}
     for t in region.targets:
-        report, finals[t.id] = select_target(region, t.id)
-        summary[t.id] = {"chosen": report["chosen"],
-                         **{v: report["variables"][v]["test_final"]["rmse"] for v in ("t2m", "wind")},
-                         **{f"{v}_raw": report["variables"][v]["test_final"]["raw_rmse"] for v in ("t2m", "wind")}}
+        report, finals[t.id] = final_target(region, t.id)
+        summary[t.id] = {**{v: report["variables"][v]["rmse"] for v in ("t2m", "wind")},
+                         **{f"{v}_raw": report["variables"][v]["raw_rmse"] for v in ("t2m", "wind")}}
     method = method or region.extra.get("method", f"hrrr_correction_{region.name}")
     out = Path(region.output_root) / "site_export"
     exported = site_export(region, finals, "/benchmark/observations", out, method)
@@ -183,9 +163,8 @@ def main(region: str = "waterloo", execute: bool = False, force: str = ""):
     if patch_jobs:
         results = list(context_month.starmap(patch_jobs))
         print(json.dumps({"patches": sum(r["samples"] for r in results), "planned": sum(r["planned"] for r in results)}))
-    # Independent model fits run concurrently; selection waits for all of them.
-    calls = [(s, (gbm if s["stage"] == "gbm" else cnn).spawn(region, s["target"]))
-             for s in steps if s["stage"] in ("gbm", "cnn")]
+    # Sites train concurrently; the final step waits for all of them.
+    calls = [(s, cnn.spawn(region, s["target"])) for s in steps if s["stage"] == "cnn"]
     for step, call in calls:
         print(json.dumps({step["stage"]: step["target"], "result": call.get()}))
     result = finalize.remote(region, pending["method"])
@@ -227,7 +206,7 @@ def cnn_ablation(name: str, target: str, tag: str, options: str):
     out = Path(region.target_root(target)) / "cnn_ablation" / f"{tag}.json"
     out.parent.mkdir(parents=True, exist_ok=True)
     report = run_cnn(region.point_root, patch_root, region.station_root, target,
-                     gbm_export=region.outputs(target)["gbm"], out=out, **opts)
+                     out=out, **opts)
     data_volume.commit()
     return json.loads(json.dumps({"tag": tag, "options": report["options"] | {"source": source},
                                   "val_rmse": report["val_rmse"],
@@ -332,7 +311,7 @@ def precip(name: str, target: str = "eric_d_soulis"):
                  soulis_raw="/soulis_raw" if target == "eric_d_soulis" else None,
                  patch_root=region.patch_root(target), out=out)
     data_volume.commit()
-    summary = {"selection": report["selection"]}
+    summary = {"model": "cnn", "val_score": {p: v["val_score"] for p, v in report["selection"].items()}}
     for product, by_season in report["scores"].items():
         summary[product] = {season: {k: (v["brier"] if "brier" in v else v["rmse"]) if isinstance(v, dict) else v
                                      for k, v in entry.items()} for season, entry in by_season.items()}

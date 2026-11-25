@@ -260,5 +260,6 @@ def run_cnn(point_root, patch_root, station_root, target="eric_d_soulis", gbm_ex
                             cnn=cnn.reshape(n_test, 48, 2), obs=obs.reshape(n_test, 48, 2),
                             val_init=data["inits"][val_i],
                             val_cnn=(data["hrrr"][val_i].reshape(-1, 2) + pred_val).reshape(n_val, 48, 2),
-                            val_obs=val_obs.reshape(n_val, 48, 2), variables=np.array(["t2m", "wind"]))
+                            val_obs=val_obs.reshape(n_val, 48, 2), hrrr=hrrr.reshape(n_test, 48, 2),
+                            variables=np.array(["t2m", "wind"]))
     return report

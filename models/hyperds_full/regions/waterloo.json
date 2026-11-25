@@ -2,7 +2,7 @@
   "name": "waterloo",
   "description": "Eric D. Soulis (University of Waterloo) with Toronto Pearson as a second scored site; both lie in the same native HRRR chunk.",
   "anchor": "eric_d_soulis",
-  "method": "hrrr_gbm_cnn",
+  "method": "hrrr_cnn",
   "station_root": "/data/processed/hyperds_nwp/stations_v2",
   "k_neighbors": 30,
   "patch_half": 8,
@@ -11,10 +11,6 @@
     {
       "id": "eric_d_soulis",
       "site_id": "eric_d_soulis",
-      "models": [
-        "gbm",
-        "cnn"
-      ],
       "cnn_options": {
         "trajectory": true
       },
@@ -23,9 +19,9 @@
     {
       "id": "eccc_51459",
       "site_id": "cyyz",
-      "models": [
-        "gbm"
-      ]
+      "cnn_options": {
+        "trajectory": true
+      }
     }
   ]
 }

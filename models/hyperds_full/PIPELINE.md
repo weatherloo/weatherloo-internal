@@ -1,13 +1,14 @@
 # Region pipeline: HRRR station correction
 
-This is the production path for site forecasts. It corrects the operational HRRRv4 48 h forecast at the configured stations. Two models are fitted: gradient boosting on native-grid point predictors, and a CNN on a native-grid patch. For each variable, the one with the lower 2024 validation error supplies the forecast. Models are never averaged. HyperDS (see [FAITHFUL.md](FAITHFUL.md) and [NWP.md](NWP.md)) remains the research track for continuous fields. At Soulis, HyperDS is less accurate than these station models.
+This is the production path for site forecasts. It corrects the operational HRRRv4 48 h forecast at the configured stations with one model type: a CNN on the native HRRR patch around each station, plus that station's 0–48 h HRRR trajectory. The same model type forecasts temperature, wind and precipitation. HyperDS (see [FAITHFUL.md](FAITHFUL.md) and [NWP.md](NWP.md)) remains the research track for continuous fields. At Soulis, HyperDS is less accurate than this station model.
 
 ## Run
 
 ```bash
 modal run models/hyperds_full/modal_region.py --region waterloo              # plan: validates config, lists pending stages
 modal run models/hyperds_full/modal_region.py --region waterloo --execute    # runs only what is missing
-modal run models/hyperds_full/modal_region.py --region waterloo --execute --force gbm,cnn
+modal run models/hyperds_full/modal_region.py --region waterloo --execute --force cnn
+modal run models/hyperds_full/modal_region.py::rain                          # precipitation (targets with "precip": true)
 ```
 
 The plan step runs the following checks before any compute is spent:
@@ -16,16 +17,16 @@ The plan step runs the following checks before any compute is spent:
 - Each target lies in the anchor's native HRRR chunk.
 - Which extraction months and model outputs already exist.
 
-Each stage is idempotent. A month with a manifest is never re-read. A model stage reruns only when it is named in `--force`. Changing extraction needs a new `version` in the config.
+Each stage is idempotent. A month with a manifest is never re-read. The CNN stage reruns only with `--force cnn`. Changing extraction needs a new `version` in the config.
 
 | Stage | Compute | Output (data Volume) |
 | --- | --- | --- |
 | `points` | CPU, one container per month | `/data/processed/points/hrrr_<anchor>_<version>/<YYYY-MM>/` |
-| `patches` | CPU, one container per month and CNN target | `/data/processed/patches/hrrr_<target>_context_<side>_b8_<version>/<YYYY-MM>/`: all 27 catalog fields on the patch, plus an 8×8 block-mean view of the whole native chunk |
-| `gbm` | 16 CPU | `/data/processed/regions/<name>/<target>/gbm.{json,npz}` |
-| `cnn` | L4/A10 GPU | `/data/processed/regions/<name>/<target>/cnn.{json,npz}` |
-| `select` | 2 CPU | `/data/processed/regions/<name>/<target>/{selection.json,final.npz}` |
+| `patches` | CPU, one container per month and target | `/data/processed/patches/hrrr_<target>_context_<side>_b8_<version>/<YYYY-MM>/`: all 27 catalog fields on the patch, plus an 8×8 block-mean view of the whole native chunk |
+| `cnn` | L4/A10 GPU, one per target, run concurrently | `/data/processed/regions/<name>/<target>/cnn.{json,npz}` |
+| `final` | 2 CPU | `/data/processed/regions/<name>/<target>/{final.json,final.npz}` (2025 scores against raw HRRR, by lead) |
 | `export` | 2 CPU | `/data/processed/regions/<name>/site_export/` (site npz, metadata, matched comparison against every site method) |
+| `rain` | L4/A10 GPU | `/data/processed/regions/<name>/<target>/precip.{json,npz}` |
 
 ## Region config
 
@@ -35,27 +36,29 @@ Each stage is idempotent. A month with a manifest is never re-read. A model stag
 {
   "name": "waterloo",
   "anchor": "eric_d_soulis",
-  "method": "hrrr_gbm_cnn",
+  "method": "hrrr_cnn",
   "station_root": "/data/processed/hyperds_nwp/stations_v2",
   "k_neighbors": 30,
   "patch_half": 8,
   "version": "v1",
   "targets": [
-    {"id": "eric_d_soulis", "site_id": "eric_d_soulis", "models": ["gbm", "cnn"], "cnn_options": {"trajectory": true}},
-    {"id": "eccc_51459", "site_id": "cyyz", "models": ["gbm"]}
+    {"id": "eric_d_soulis", "site_id": "eric_d_soulis", "cnn_options": {"trajectory": true}, "precip": true},
+    {"id": "eccc_51459", "site_id": "cyyz", "cnn_options": {"trajectory": true}}
   ]
 }
 ```
 
-- `anchor`: the station whose native HRRR chunk (265×300 points, about 800×900 km) is read once per initialization. Every target must lie inside that chunk.
-- `models`: `gbm` is required. Add `cnn` to also extract a `(2·patch_half+1)²` patch and train the CNN.
+- `anchor`: the station whose native HRRR chunk (265×300 points, about 800×900 km) is read once per initialization for the point features. Every target must lie inside that chunk.
 - `cnn_options`: options passed to `cnn_correction.run_cnn`:
   - `trajectory`: the site's 0–48 h sequence
   - `context`: patch lead offsets
   - `wide`: the whole-chunk view
   - `variables`: patch fields; defaults to the 15 in `points.PATCH_VARIABLES`
-- `site_id`: the benchmarking-site station id. Targets without one are trained and selected, but not exported to the site.
-- `k_neighbors`: the stations nearest the target whose observations supply issue-time features.
+
+  A `models` key other than `["cnn"]` is rejected.
+- `precip`: also forecast precipitation. This needs a gauge record for the target; Soulis is wired up.
+- `site_id`: the benchmarking-site station id. Targets without one are trained, but not exported to the site.
+- `k_neighbors`: the stations nearest the target whose observations supply issue-time input features.
 
 **New regions.** Any of the 314 stations in `stations_v2` can be a target today. That table covers roughly 40–48°N, 72–88°W. A region outside it first needs a station table built with `stations.py`, whose bounding box and ASOS networks are currently constants. Making those part of the region config is the next step for full automation.
 
@@ -63,26 +66,58 @@ Each stage is idempotent. A month with a manifest is never re-read. A model stag
 
 - **Rows.** Each row is one initialization (00/06/12/18 UTC) and one lead from 1 to 48 h.
 - **Target.** The model learns the observation minus the bilinearly interpolated HRRR point forecast, for 2 m temperature and 10 m wind speed.
-- **Features.** Only information available at issue time is used:
-  - the run itself (19 surface fields)
-  - the three earlier runs at the same valid time, and their spread
-  - observations and HRRR errors at or before initialization, at the target and its neighbours
-  - clock and station descriptors
+- **Inputs.** Only information available at issue time is used:
+  - a 17×17 native patch of 15 HRRR fields (about 50 km square), valid at the lead
+  - the same 15 fields at the site for every lead 0–48 h (the trajectory), through a 1-D convolution with a marker on the predicted lead
+  - about 60 scalars:
+    - the run's 19 surface fields at the site
+    - the three earlier runs at the same valid time, and their spread
+    - observations and HRRR errors at or before initialization, at the target and its neighbours
+    - clock descriptors
 
-  `test_mos.py` checks the alignment of every lagged feature.
-- **Split.** Training uses initializations from 2020-12-03 through 2023, with targets before 2024. 2024 is used for every choice: gradient-boosting configuration, early stopping, CNN checkpoint and the choice of model. 2025 is scored once.
-- **Gradient boosting.** LightGBM, configuration selected on 2024 from a small grid plus pooled and target-only variants, then refitted with five seeds and averaged.
-- **CNN.** Inputs:
-  - a 17×17 native patch of 15 fields (about 50 km square) valid at the lead
-  - the gradient-boosting scalar features
-  - with `trajectory`, the 15 fields at the site for every lead 0–48 h, run through a 1-D convolution with a marker on the predicted lead
-
-  Three seeds, early stopping on 2024.
+  `test_mos.py` checks the alignment of every lagged input.
+- **Training.** Three seeds of the same network are trained and their outputs averaged, with early stopping on 2024. The split is initializations from 2020-12-03 through 2023 (targets before 2024) for training, 2024 for early stopping and the input ablations, and 2025 scored once.
 - **Storage units.** Patches are stored as float16. Pressure is stored in hPa, and precipitation and snowfall in mm/h. In pascals and kg m⁻² s⁻¹ these fields overflow or underflow float16. The first patch extraction (`hrrr_<target>_17_v1`) has this bug; nothing in the pipeline reads it now.
-- **Selection.** For each variable, the model with the lower 2024 RMSE provides the whole 2025 forecast. If the chosen CNN has no prediction for an initialization, that initialization falls back to gradient boosting; the report counts these, and there were none in 2025. Both models also used 2024 for early stopping, so both validation scores are slightly optimistic.
 - **Scoring.** The site export uses the site's canonical `observations_6h_2025.json` truth at 6-hourly leads. `comparison.json` matches pairs against every method's 2025 npz.
 
-## Results (2025, unseen)
+## Current results (2025, unseen)
+
+Run on 2026-11-24 with the CNN at both sites; `final.json` holds the full by-lead scores. RMSE over hourly leads 1–48 h; temperature in °C, wind in km/h.
+
+| Site | Variable | CNN | Raw HRRR | +1 h | +24 h | +48 h |
+| --- | --- | ---: | ---: | ---: | ---: | ---: |
+| Soulis | Temperature | **1.765** | 2.181 | 1.29 | 1.69 | 2.15 |
+| Soulis | Wind | **2.729** | 10.862 | 2.47 | 2.63 | 3.00 |
+| CYYZ | Temperature | **1.303** | 1.922 | 0.79 | 1.25 | 1.70 |
+| CYYZ | Wind | **4.981** | 7.089 | 4.16 | 4.94 | 6.10 |
+
+- **CYYZ before.** The gradient-boosting model used there earlier scored 1.369 °C and 5.209 km/h.
+
+**Site-scored at 6-hourly leads, matched pairs (CNN vs method)**
+
+| Method | Soulis temperature | Soulis wind | CYYZ temperature | CYYZ wind |
+| --- | --- | --- | --- | --- |
+| hrrr_interpolated | 1.77 vs 2.28 | 2.70 vs 10.82 | 1.34 vs 1.98 | 5.18 vs 7.28 |
+| ecmwf_aifs | 1.77 vs 1.95 | 2.70 vs 10.05 | 1.34 vs 1.43 | 5.18 vs 7.05 |
+| graphcast | 1.77 vs 2.19 | 2.70 vs 10.00 | 1.34 vs 1.41 | 5.18 vs 7.30 |
+| lstm_ecmwf_aifs (in-sample, see below) | 1.77 vs 1.73 | n/a | 1.11 vs 1.21 | n/a |
+
+**Day 2 against raw AIFS (temperature, CNN vs AIFS)**
+
+| Site | +6 h | +24 h | +36 h | +42 h | +48 h |
+| --- | --- | --- | --- | --- | --- |
+| Soulis | 1.43 vs 1.78 | 1.68 vs 1.93 | 1.87 vs 2.00 | 1.98 vs 2.06 | 2.15 vs 2.11 |
+| CYYZ | 1.05 vs 1.38 | 1.24 vs 1.41 | 1.41 vs 1.45 | 1.51 vs 1.47 | 1.69 vs 1.48 |
+
+The CNN leads through about 36 h at both sites and trails AIFS at 42–48 h at CYYZ.
+
+**`lstm_ecmwf_aifs`.** This file covers only its own late-2025 window, and it includes data it was trained on.
+
+## History: earlier pipeline runs
+
+The sections below record the runs that led here, which used two model types (gradient boosting and the CNN) and a blend or a per-variable selection. That code remains in `mos.py` and `precip.fit_gbm`, but the pipeline no longer runs it.
+
+### Results (2025, unseen)
 
 First full run, 2026-11-24 (`/data/processed/regions/waterloo/`). Two fits were re-run in one pipeline run: gradient boosting at both sites and the CNN at Soulis. Both reproduced the earlier experiment numbers.
 
@@ -184,48 +219,47 @@ Targets with `"precip": true` get four products for every run out to 48 h:
 
 **Snow caveat.** The tipping bucket undercatches snow, and it can record snow late, when it melts. Every score below is measured against the gauge. November–March numbers therefore measure agreement with what the gauge records, not true precipitation. HRRR's poor winter scores partly reflect snow the gauge never saw. April–October is the reliable comparison.
 
-**Models**
+**Model**
 
-- **Gradient boosting.** One model is trained for each product: binary for the chances and Tweedie for amounts.
-  - **Features:** the temperature and wind features plus precipitation features.
-    - HRRR precipitation at the neighbouring leads, and 3 h and 6 h centred sums.
-    - The three earlier runs, with their mean, maximum and wet fraction.
-    - The observed precipitation in the 1, 3 and 6 hours ending at initialization, and the 0–6 h error of the previous run.
-    - At the target only, the fraction of the 17×17 and 9×9 patch that is wet, and the patch mean and maximum.
-  - **Training rows:** the 2024 score chose between target-only and pooled training with 30 neighbouring gauges.
 - **CNN.** Rows are 6-hour blocks.
-  - **Inputs:** the patch at the block's six leads, the site's 0–48 h trajectory, and block-mean scalars.
+  - **Inputs:** the patch at the block's six leads, the site's 0–48 h trajectory, and block-mean scalars. The scalars include:
+    - HRRR precipitation at the neighbouring leads, and 3 h and 6 h centred sums
+    - the three earlier runs, with their mean, maximum and wet fraction
+    - the observed precipitation in the 1, 3 and 6 hours ending at initialization, and the 0–6 h error of the previous run
+    - the fraction of the 17×17 and 9×9 patch that is wet
   - **Outputs:** six hourly wet logits, a block wet logit, and six hourly and one block log-mean amounts, trained with Tweedie deviance.
-- **Selection.** For each product, the model with the better 2024 score supplies the 2025 forecast. The score is Brier for the chances and RMSE for amounts. Models are not averaged.
-- **Leakage test.** `test_precip.py` checks that changing any label after T0 leaves every issue-time feature unchanged.
+  - **Training:** three seeds, early stopping on 2024.
+- **Leakage test.** `test_precip.py` checks that changing any label after T0 leaves every issue-time input unchanged.
 
 **Results, Soulis 2025, matched pairs**
 
-| Product | Chosen (2024 score: gradient boosting / CNN) | Chosen model | Climatology | HRRR point | HRRR within 50 km |
+| Product | Season | CNN | Climatology | HRRR point | HRRR within 50 km |
 | --- | --- | ---: | ---: | ---: | ---: |
-| `pop1` Brier | Gradient boosting (0.0520 / 0.0548) | **0.0466** | 0.0653 | 0.1031 | 0.0785 |
-| `pop1` Brier, Apr–Oct | | **0.0472** | 0.0692 | 0.0792 | 0.0599 |
-| `pop6` Brier | Gradient boosting (0.1062 / 0.1082) | **0.0913** | 0.1481 | 0.2152 | 0.1814 |
-| `pop6` Brier, Apr–Oct | | **0.0928** | 0.1581 | 0.1462 | 0.1180 |
-| `amt6` RMSE mm | CNN (1.793 / 1.790) | **1.909** | 2.280 | 2.576 | 2.428 |
-| `amt6` RMSE mm, Apr–Oct | | **2.383** | 2.834 | 2.941 | 2.797 |
-| `amt24` RMSE mm | CNN (sum of `amt6`) | **4.03** | 5.82 | 5.38 | 5.23 |
-| `amt24` RMSE mm, Apr–Oct | | **4.94** | 7.14 | 5.64 | 5.46 |
+| `pop1` Brier | All months | **0.0481** | 0.0653 | 0.1031 | 0.0785 |
+| `pop1` Brier | Apr–Oct | **0.0488** | 0.0692 | 0.0792 | 0.0599 |
+| `pop6` Brier | All months | **0.0930** | 0.1481 | 0.2152 | 0.1814 |
+| `pop6` Brier | Apr–Oct | **0.0903** | 0.1581 | 0.1462 | 0.1180 |
+| `amt6` RMSE mm | All months | **1.909** | 2.280 | 2.576 | 2.428 |
+| `amt6` RMSE mm | Apr–Oct | **2.383** | 2.834 | 2.941 | 2.797 |
+| `amt24` RMSE mm | All months | **4.03** | 5.82 | 5.38 | 5.23 |
+| `amt24` RMSE mm | Apr–Oct | **4.94** | 7.14 | 5.64 | 5.46 |
 
 - **Brier skill against climatology, all months.**
 
-  | Product | Chosen model | HRRR point | HRRR within 50 km |
+  | Product | CNN | HRRR point | HRRR within 50 km |
   | --- | ---: | ---: | ---: |
-  | `pop1` | +0.29 | −0.58 | −0.20 |
-  | `pop6` | +0.38 | −0.45 | −0.23 |
+  | `pop1` | +0.26 | −0.58 | −0.20 |
+  | `pop6` | +0.37 | −0.45 | −0.23 |
 
   Raw HRRR, used as a yes/no or as a neighbourhood fraction, is worse than climatology at the gauge.
 - **Mean absolute error (mm).**
 
-  | Product | Chosen model | HRRR point |
+  | Product | CNN | HRRR point |
   | --- | ---: | ---: |
   | `amt6` | 0.55 | 0.72 |
   | `amt24` | 1.66 | 2.33 |
-- **Reliability.** The chance forecasts are well calibrated at low chances. In the middle range they run high in 2025, a drier year: an hourly 0.65 verified 0.52, and a 6-hour 0.45–0.55 verified 0.32–0.36. 2025 had 601 mm with gaps, against 850–1,010 mm in training years.
-- **Close choices.** The choice for the amount model was close on 2024 (1.790 vs 1.793 mm). The other model is shown in `precip.json`.
+- **Reliability.**
+  - The hourly chance is close to calibrated across its range; for example, 0.55 verified 0.51 and 0.65 verified 0.64.
+  - The 6-hour chance runs high in the middle range in 2025: 0.45 verified 0.29, and 0.55 verified 0.37. 2025 was a drier year: 601 mm with gaps, against 850–1,010 mm in training years.
+- **Earlier study.** The study that also fitted gradient boosting (`precip.run(..., with_gbm=True)`) scored slightly better on the two chances: 0.0466 and 0.0913. It is not used, because the pipeline uses one model type.
 - **Site.** Not exported: the benchmarking site scores only temperature and wind.

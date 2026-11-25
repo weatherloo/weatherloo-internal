@@ -1,4 +1,4 @@
-"""Region config parsing, single-model selection on 2024 and the region site export."""
+"""Region config parsing, the CNN-only final step and the region site export."""
 
 from datetime import datetime, timedelta, timezone
 import json
@@ -8,27 +8,15 @@ import unittest
 
 import numpy as np
 
-import selection
+import final
 import regions
 
 
-def gbm_export(rng, n_test=20, n_val=30, cnn_better=False):
-    """GBM/CNN exports where the truth is known, so the chosen weight is predictable."""
+def cnn_export(rng, n_test=20):
     start = int(datetime(2025, 1, 1, tzinfo=timezone.utc).timestamp())
-    val_start = int(datetime(2024, 1, 1, tzinfo=timezone.utc).timestamp())
-    init, val_init = start + np.arange(n_test) * 21600, val_start + np.arange(n_val) * 21600
-    g, c = {"init": init, "val_init": val_init, "lead": np.arange(1, 49)}, {"init": init, "val_init": val_init}
-    cnn, obs, val_cnn, val_obs = (np.zeros((n, 48, 2)) for n in (n_test, n_test, n_val, n_val))
-    for j, v in enumerate(selection.VARIABLES):
-        for prefix, n, cnn_out, obs_out in (("", n_test, cnn, obs), ("val_", n_val, val_cnn, val_obs)):
-            truth = rng.normal(size=(n, 48))
-            a, b = rng.normal(scale=1.0, size=(n, 48)), rng.normal(scale=1.0, size=(n, 48))
-            # Independent equal-variance errors: the best weight is 0.5.
-            g[f"{prefix}{v}"], g[f"{prefix}{v}_obs"] = truth + a, truth
-            cnn_out[..., j], obs_out[..., j] = truth + (b * 0.2 if cnn_better else b), truth
-        g[f"{v}_raw"] = g[v] + 3
-    c.update({"cnn": cnn, "obs": obs, "val_cnn": val_cnn, "val_obs": val_obs})
-    return g, c
+    obs = rng.normal(size=(n_test, 48, 2))
+    return {"init": start + np.arange(n_test) * 21600, "obs": obs, "cnn": obs + rng.normal(scale=.5, size=obs.shape),
+            "hrrr": obs + rng.normal(scale=2., size=obs.shape)}
 
 
 class RegionConfigTest(unittest.TestCase):
@@ -41,21 +29,22 @@ class RegionConfigTest(unittest.TestCase):
         self.assertEqual(region.patch_root("eric_d_soulis"),
                          "/data/processed/patches/hrrr_eric_d_soulis_context_17_b8_v1")
         self.assertEqual(region.target("eric_d_soulis").cnn_options, {"trajectory": True})
+        self.assertEqual(region.target("eccc_51459").cnn_options, {"trajectory": True})
+        self.assertTrue(region.target("eric_d_soulis").precip)
         self.assertEqual(region.target("eccc_51459").site_id, "cyyz")
 
     def test_invalid_configs_are_rejected(self):
-        base = {"name": "x", "anchor": "a", "targets": [{"id": "a", "models": ["gbm"]}]}
+        base = {"name": "x", "anchor": "a", "targets": [{"id": "a"}]}
         regions.parse(base)
-        with self.assertRaises(ValueError):
-            regions.parse({**base, "targets": [{"id": "a", "models": ["cnn"]}]})  # gbm is required
+        regions.parse({**base, "targets": [{"id": "a", "models": ["cnn"]}]})  # explicit CNN is fine
+        with self.assertRaises(ValueError):  # one model type only
+            regions.parse({**base, "targets": [{"id": "a", "models": ["gbm"]}]})
         with self.assertRaises(ValueError):
             regions.parse({**base, "targets": [{"id": "a"}, {"id": "a"}]})
         with self.assertRaises(ValueError):
             regions.parse({**base, "anchor": "b"})
-        with self.assertRaises(ValueError):  # options for a model the target does not train
-            regions.parse({**base, "targets": [{"id": "a", "cnn_options": {"trajectory": True}}]})
         with self.assertRaises(ValueError):
-            regions.parse({**base, "targets": [{"id": "a", "models": ["gbm", "cnn"], "cnn_options": {"lr": 1}}]})
+            regions.parse({**base, "targets": [{"id": "a", "cnn_options": {"lr": 1}}]})
 
     def test_check_reports_missing_and_out_of_chunk_targets(self):
         region = regions.load("waterloo")
@@ -64,40 +53,24 @@ class RegionConfigTest(unittest.TestCase):
         self.assertTrue(all("eccc_51459" in p for p in problems))
 
 
-class SelectionTest(unittest.TestCase):
-    def test_better_validation_model_supplies_the_whole_forecast_unaveraged(self):
-        g, c = gbm_export(np.random.default_rng(1), n_test=50, n_val=200, cnn_better=True)
-        c["cnn"][3] = np.nan  # a failed patch read in 2025
+class FinalTest(unittest.TestCase):
+    def test_final_forecast_is_the_cnn_and_is_scored_against_raw_hrrr(self):
+        data = cnn_export(np.random.default_rng(0))
         with tempfile.TemporaryDirectory() as temp:
-            np.savez(Path(temp) / "cnn.npz", **c)
-            cnn = selection.load_cnn(Path(temp) / "cnn.npz")
-        report, final = selection.fit_selection(g, cnn)
-        self.assertEqual(report["chosen"], {"t2m": "cnn", "wind": "cnn"})
-        np.testing.assert_allclose(final["t2m"][5], c["cnn"][5, :, 0])  # exactly the CNN, no averaging
-        np.testing.assert_allclose(final["t2m"][3], g["t2m"][3])        # fallback for the missing init
-        self.assertEqual(report["variables"]["t2m"]["cnn_fallback_inits"], 1)
-        self.assertLess(report["variables"]["t2m"]["val_rmse"]["cnn"], report["variables"]["t2m"]["val_rmse"]["gbm"])
-
-    def test_gbm_kept_when_it_wins_validation(self):
-        g, c = gbm_export(np.random.default_rng(2), n_test=50, n_val=200)
-        for prefix in ("", "val_"):
-            g[f"{prefix}wind"] = g[f"{prefix}wind_obs"] + 0.01  # near-perfect gradient boosting wind
-        with tempfile.TemporaryDirectory() as temp:
-            np.savez(Path(temp) / "cnn.npz", **c)
-            cnn = selection.load_cnn(Path(temp) / "cnn.npz")
-        report, final = selection.fit_selection(g, cnn)
-        self.assertEqual(report["chosen"]["wind"], "gbm")
-        np.testing.assert_array_equal(final["wind"], g["wind"])
-
-    def test_gbm_only_target_and_missing_validation_export(self):
-        g, _ = gbm_export(np.random.default_rng(3))
-        report, final = selection.fit_selection(g)
-        self.assertEqual(report["chosen"], {"t2m": "gbm", "wind": "gbm"})
-        np.testing.assert_array_equal(final["wind"], g["wind"])
-        with tempfile.TemporaryDirectory() as temp:
-            np.savez(Path(temp) / "old.npz", **{k: v for k, v in g.items() if not k.startswith("val_")})
+            np.savez(Path(temp) / "cnn.npz", **data)
+            cnn = final.load_cnn(Path(temp) / "cnn.npz")
+            np.savez(Path(temp) / "old.npz", **{k: v for k, v in data.items() if k != "hrrr"})
             with self.assertRaises(ValueError):
-                selection.load_gbm(Path(temp) / "old.npz")
+                final.load_cnn(Path(temp) / "old.npz")
+        report, forecast = final.score(cnn)
+        np.testing.assert_array_equal(forecast["t2m"], data["cnn"][..., 0])
+        np.testing.assert_array_equal(forecast["wind"], data["cnn"][..., 1])
+        for v, unit in (("t2m", 1.0), ("wind", 3.6)):
+            entry = report["variables"][v]
+            self.assertLess(entry["rmse"], entry["raw_rmse"])
+            self.assertEqual(len(entry["rmse_by_lead"]), 48)
+        self.assertAlmostEqual(report["variables"]["wind"]["rmse"] / 3.6,
+                               float(np.sqrt(np.mean((data["cnn"][..., 1] - data["obs"][..., 1]) ** 2))), places=6)
 
 
 class SiteExportTest(unittest.TestCase):
@@ -115,7 +88,7 @@ class SiteExportTest(unittest.TestCase):
                          "t2m": temp_c, "wind_speed": wind_kmh} for h in range(0, 80)]
                 (truth / site).mkdir(parents=True)
                 (truth / site / "observations_6h_2025.json").write_text(json.dumps({"observations": rows}))
-            path = selection.site_export(region, finals, truth, Path(temp) / "out", "test_method")
+            path = final.site_export(region, finals, truth, Path(temp) / "out", "test_method")
             with np.load(path) as saved:
                 stations = list(saved["station_ids"])
                 leads = list(saved["lead_times_hours"])

@@ -2,9 +2,9 @@
 
 A region names an anchor station (whose native HRRR storage chunk is read once
 per initialization) and the target stations to correct. Every target must lie
-inside the anchor's chunk and in the labelled station table. Each target lists
-the correction models to train; the final forecast for each variable comes
-from the one with the lowest 2024 validation error. Configs live in ``regions/<name>.json``.
+inside the anchor's chunk and in the labelled station table. Every target is
+corrected by the same model type, the patch CNN (cnn_correction.run_cnn), with
+optional per-target input options. Configs live in ``regions/<name>.json``.
 """
 
 from dataclasses import dataclass, field
@@ -12,14 +12,12 @@ import json
 from pathlib import Path
 
 REGION_DIR = Path(__file__).resolve().parent / "regions"
-MODELS = ("gbm", "cnn")
 
 
 @dataclass(frozen=True)
 class Target:
     id: str                      # station id in the station table
     site_id: str | None = None   # benchmarking-site station id, when the site scores it
-    models: tuple = ("gbm",)
     cnn_options: dict = field(default_factory=dict)  # cnn_correction.run_cnn options (context, trajectory, ...)
     precip: bool = False  # also forecast precipitation (needs a gauge record for the target)
 
@@ -56,24 +54,19 @@ class Region:
 
     def outputs(self, target_id):
         root = self.target_root(target_id)
-        return {"gbm": f"{root}/gbm.npz", "cnn": f"{root}/cnn.npz", "selection": f"{root}/selection.json",
-                "precip": f"{root}/precip.json"}
+        return {"cnn": f"{root}/cnn.npz", "final": f"{root}/final.json", "precip": f"{root}/precip.json"}
 
 
 def parse(document):
     targets = []
     for entry in document["targets"]:
-        models = tuple(entry.get("models", ("gbm",)))
-        unknown = set(models) - set(MODELS)
-        if unknown or "gbm" not in models:
-            raise ValueError(f"{entry['id']}: models must include gbm and come from {MODELS}")
+        if "models" in entry and list(entry["models"]) != ["cnn"]:
+            raise ValueError(f"{entry['id']}: the pipeline uses one model type, the CNN; drop 'models'")
         options = dict(entry.get("cnn_options", {}))
-        if options and "cnn" not in models:
-            raise ValueError(f"{entry['id']}: cnn_options without the cnn model")
         unknown = set(options) - {"context", "trajectory", "wide", "variables"}
         if unknown:
             raise ValueError(f"{entry['id']}: unknown cnn_options {sorted(unknown)}")
-        targets.append(Target(entry["id"], entry.get("site_id"), models, options, bool(entry.get("precip", False))))
+        targets.append(Target(entry["id"], entry.get("site_id"), options, bool(entry.get("precip", False))))
     if len({t.id for t in targets}) != len(targets):
         raise ValueError("duplicate target")
     known = {"name", "anchor", "targets", "station_root", "k_neighbors", "patch_half", "version", "description"}
