@@ -3,8 +3,8 @@
 A region names an anchor station (whose native HRRR storage chunk is read once
 per initialization) and the target stations to correct. Every target must lie
 inside the anchor's chunk and in the labelled station table. Each target lists
-the correction models to train; the final forecast is their validation-weighted
-blend. Configs live in ``regions/<name>.json``.
+the correction models to train; the final forecast for each variable comes
+from the one with the lowest 2024 validation error. Configs live in ``regions/<name>.json``.
 """
 
 from dataclasses import dataclass, field
@@ -55,7 +55,7 @@ class Region:
 
     def outputs(self, target_id):
         root = self.target_root(target_id)
-        return {"gbm": f"{root}/gbm.npz", "cnn": f"{root}/cnn.npz", "blend": f"{root}/blend.json"}
+        return {"gbm": f"{root}/gbm.npz", "cnn": f"{root}/cnn.npz", "selection": f"{root}/selection.json"}
 
 
 def parse(document):

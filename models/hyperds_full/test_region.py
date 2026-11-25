@@ -1,4 +1,4 @@
-"""Region config parsing, validation-weighted blending and the region site export."""
+"""Region config parsing, single-model selection on 2024 and the region site export."""
 
 from datetime import datetime, timedelta, timezone
 import json
@@ -8,7 +8,7 @@ import unittest
 
 import numpy as np
 
-import blend
+import selection
 import regions
 
 
@@ -19,7 +19,7 @@ def gbm_export(rng, n_test=20, n_val=30, cnn_better=False):
     init, val_init = start + np.arange(n_test) * 21600, val_start + np.arange(n_val) * 21600
     g, c = {"init": init, "val_init": val_init, "lead": np.arange(1, 49)}, {"init": init, "val_init": val_init}
     cnn, obs, val_cnn, val_obs = (np.zeros((n, 48, 2)) for n in (n_test, n_test, n_val, n_val))
-    for j, v in enumerate(blend.VARIABLES):
+    for j, v in enumerate(selection.VARIABLES):
         for prefix, n, cnn_out, obs_out in (("", n_test, cnn, obs), ("val_", n_val, val_cnn, val_obs)):
             truth = rng.normal(size=(n, 48))
             a, b = rng.normal(scale=1.0, size=(n, 48)), rng.normal(scale=1.0, size=(n, 48))
@@ -64,39 +64,40 @@ class RegionConfigTest(unittest.TestCase):
         self.assertTrue(all("eccc_51459" in p for p in problems))
 
 
-class BlendTest(unittest.TestCase):
-    def test_weight_is_chosen_on_validation_and_beats_components(self):
-        g, c = gbm_export(np.random.default_rng(0), n_test=200, n_val=200)
-        with tempfile.TemporaryDirectory() as temp:
-            np.savez(Path(temp) / "cnn.npz", **c)
-            cnn = blend.load_cnn(Path(temp) / "cnn.npz")
-        report, final = blend.fit_blend(g, cnn)
-        for v in blend.VARIABLES:
-            self.assertAlmostEqual(report["weights_on_gbm"][v], 0.5, delta=0.1)
-            t = report["variables"][v]["test_matched"]
-            self.assertLess(t["blend"], min(t["gbm"], t["cnn"]))
-        self.assertEqual(final["t2m"].shape, (200, 48))
-
-    def test_better_cnn_gets_more_weight_and_missing_cnn_falls_back(self):
+class SelectionTest(unittest.TestCase):
+    def test_better_validation_model_supplies_the_whole_forecast_unaveraged(self):
         g, c = gbm_export(np.random.default_rng(1), n_test=50, n_val=200, cnn_better=True)
         c["cnn"][3] = np.nan  # a failed patch read in 2025
         with tempfile.TemporaryDirectory() as temp:
             np.savez(Path(temp) / "cnn.npz", **c)
-            cnn = blend.load_cnn(Path(temp) / "cnn.npz")
-        report, final = blend.fit_blend(g, cnn)
-        self.assertLessEqual(report["weights_on_gbm"]["t2m"], 0.1)
-        np.testing.assert_allclose(final["t2m"][3], g["t2m"][3])
+            cnn = selection.load_cnn(Path(temp) / "cnn.npz")
+        report, final = selection.fit_selection(g, cnn)
+        self.assertEqual(report["chosen"], {"t2m": "cnn", "wind": "cnn"})
+        np.testing.assert_allclose(final["t2m"][5], c["cnn"][5, :, 0])  # exactly the CNN, no averaging
+        np.testing.assert_allclose(final["t2m"][3], g["t2m"][3])        # fallback for the missing init
         self.assertEqual(report["variables"]["t2m"]["cnn_fallback_inits"], 1)
+        self.assertLess(report["variables"]["t2m"]["val_rmse"]["cnn"], report["variables"]["t2m"]["val_rmse"]["gbm"])
+
+    def test_gbm_kept_when_it_wins_validation(self):
+        g, c = gbm_export(np.random.default_rng(2), n_test=50, n_val=200)
+        for prefix in ("", "val_"):
+            g[f"{prefix}wind"] = g[f"{prefix}wind_obs"] + 0.01  # near-perfect gradient boosting wind
+        with tempfile.TemporaryDirectory() as temp:
+            np.savez(Path(temp) / "cnn.npz", **c)
+            cnn = selection.load_cnn(Path(temp) / "cnn.npz")
+        report, final = selection.fit_selection(g, cnn)
+        self.assertEqual(report["chosen"]["wind"], "gbm")
+        np.testing.assert_array_equal(final["wind"], g["wind"])
 
     def test_gbm_only_target_and_missing_validation_export(self):
-        g, _ = gbm_export(np.random.default_rng(2))
-        report, final = blend.fit_blend(g)
-        self.assertEqual(report["weights_on_gbm"], {"t2m": 1.0, "wind": 1.0})
+        g, _ = gbm_export(np.random.default_rng(3))
+        report, final = selection.fit_selection(g)
+        self.assertEqual(report["chosen"], {"t2m": "gbm", "wind": "gbm"})
         np.testing.assert_array_equal(final["wind"], g["wind"])
         with tempfile.TemporaryDirectory() as temp:
             np.savez(Path(temp) / "old.npz", **{k: v for k, v in g.items() if not k.startswith("val_")})
             with self.assertRaises(ValueError):
-                blend.load_gbm(Path(temp) / "old.npz")
+                selection.load_gbm(Path(temp) / "old.npz")
 
 
 class SiteExportTest(unittest.TestCase):
@@ -114,7 +115,7 @@ class SiteExportTest(unittest.TestCase):
                          "t2m": temp_c, "wind_speed": wind_kmh} for h in range(0, 80)]
                 (truth / site).mkdir(parents=True)
                 (truth / site / "observations_6h_2025.json").write_text(json.dumps({"observations": rows}))
-            path = blend.site_export(region, finals, truth, Path(temp) / "out", "test_method")
+            path = selection.site_export(region, finals, truth, Path(temp) / "out", "test_method")
             with np.load(path) as saved:
                 stations = list(saved["station_ids"])
                 leads = list(saved["lead_times_hours"])

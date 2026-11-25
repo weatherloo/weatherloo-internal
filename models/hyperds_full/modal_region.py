@@ -1,4 +1,4 @@
-"""Region pipeline on Modal: HRRR points/patches -> gradient boosting + CNN -> validation blend -> site export.
+"""Region pipeline on Modal: HRRR points/patches -> gradient boosting + CNN -> 2024 model selection -> site export.
 
     modal run models/hyperds_full/modal_region.py --region waterloo              # plan only (default)
     modal run models/hyperds_full/modal_region.py --region waterloo --execute    # run missing stages
@@ -31,9 +31,9 @@ if modal.is_local():
     site = HERE.parents[1] / "benchmarking-site/data"
     for source in sorted(site.glob("*/*_2025.npz")) + sorted(site.glob("observations/*/observations_6h_2025.json")):
         cpu_image = cpu_image.add_local_file(str(source), "/benchmark/" + str(source.relative_to(site)))
-STAGES = ("points", "patches", "gbm", "cnn", "blend", "export")
+STAGES = ("points", "patches", "gbm", "cnn", "select", "export")
 COMPUTE = {"points": "cpu x months", "patches": "cpu x months (all fields + chunk view)", "gbm": "16 cpu", "cnn": "L4/A10 gpu",
-           "blend": "2 cpu", "export": "2 cpu"}
+           "select": "2 cpu", "export": "2 cpu"}
 
 
 def region_of(name):
@@ -76,7 +76,7 @@ def plan(name: str, force: str = ""):
         for stage in ("gbm", "cnn"):
             if stage in t.models and (stage in forced or not Path(outputs[stage]).is_file()):
                 steps.append({"stage": stage, "target": t.id, "compute": COMPUTE[stage]})
-        steps.append({"stage": "blend", "target": t.id, "compute": COMPUTE["blend"]})
+        steps.append({"stage": "select", "target": t.id, "compute": COMPUTE["select"]})
     steps.append({"stage": "export", "compute": COMPUTE["export"]})
     return {"region": region.name, "anchor": region.anchor, "chunk_stations": len(chunk),
             "native_window": reader.window, "problems": problems, "steps": steps, "months": all_months,
@@ -132,16 +132,16 @@ def cnn(name: str, target: str):
 
 @app.function(image=cpu_image, cpu=2, memory=8192, timeout=30 * 60, volumes={"/data": data_volume})
 def finalize(name: str, method: str = ""):
-    """Blend every target, write the site export and the matched comparison with every site method."""
+    """Select each target's model, write the site export and the matched comparison with every site method."""
     from benchmark import matched_comparison
-    from blend import blend_target, site_export
+    from selection import select_target, site_export
 
     data_volume.reload()
     region = region_of(name)
     finals, summary = {}, {}
     for t in region.targets:
-        report, finals[t.id] = blend_target(region, t.id)
-        summary[t.id] = {"weights_on_gbm": report["weights_on_gbm"],
+        report, finals[t.id] = select_target(region, t.id)
+        summary[t.id] = {"chosen": report["chosen"],
                          **{v: report["variables"][v]["test_final"]["rmse"] for v in ("t2m", "wind")},
                          **{f"{v}_raw": report["variables"][v]["test_final"]["raw_rmse"] for v in ("t2m", "wind")}}
     method = method or region.extra.get("method", f"hrrr_correction_{region.name}")
@@ -177,7 +177,7 @@ def main(region: str = "waterloo", execute: bool = False, force: str = ""):
     if patch_jobs:
         results = list(context_month.starmap(patch_jobs))
         print(json.dumps({"patches": sum(r["samples"] for r in results), "planned": sum(r["planned"] for r in results)}))
-    # Independent model fits run concurrently; blending waits for all of them.
+    # Independent model fits run concurrently; selection waits for all of them.
     calls = [(s, (gbm if s["stage"] == "gbm" else cnn).spawn(region, s["target"]))
              for s in steps if s["stage"] in ("gbm", "cnn")]
     for step, call in calls:

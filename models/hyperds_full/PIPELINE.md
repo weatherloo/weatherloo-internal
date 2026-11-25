@@ -1,6 +1,6 @@
 # Region pipeline: HRRR station correction
 
-This is the production path for site forecasts. It corrects the operational HRRRv4 48 h forecast at the configured stations. Two models are fitted: gradient boosting on native-grid point predictors, and a CNN on a native-grid patch. Their blend is weighted on validation data. HyperDS (see [FAITHFUL.md](FAITHFUL.md) and [NWP.md](NWP.md)) remains the research track for continuous fields. At Soulis, HyperDS is less accurate than these station models.
+This is the production path for site forecasts. It corrects the operational HRRRv4 48 h forecast at the configured stations. Two models are fitted: gradient boosting on native-grid point predictors, and a CNN on a native-grid patch. For each variable, the one with the lower 2024 validation error supplies the forecast. Models are never averaged. HyperDS (see [FAITHFUL.md](FAITHFUL.md) and [NWP.md](NWP.md)) remains the research track for continuous fields. At Soulis, HyperDS is less accurate than these station models.
 
 ## Run
 
@@ -24,7 +24,7 @@ Each stage is idempotent. A month with a manifest is never re-read. A model stag
 | `patches` | CPU, one container per month and CNN target | `/data/processed/patches/hrrr_<target>_context_<side>_b8_<version>/<YYYY-MM>/`: all 27 catalog fields on the patch, plus an 8×8 block-mean view of the whole native chunk |
 | `gbm` | 16 CPU | `/data/processed/regions/<name>/<target>/gbm.{json,npz}` |
 | `cnn` | L4/A10 GPU | `/data/processed/regions/<name>/<target>/cnn.{json,npz}` |
-| `blend` | 2 CPU | `/data/processed/regions/<name>/<target>/{blend.json,final.npz}` |
+| `select` | 2 CPU | `/data/processed/regions/<name>/<target>/{selection.json,final.npz}` |
 | `export` | 2 CPU | `/data/processed/regions/<name>/site_export/` (site npz, metadata, matched comparison against every site method) |
 
 ## Region config
@@ -54,7 +54,7 @@ Each stage is idempotent. A month with a manifest is never re-read. A model stag
   - `context`: patch lead offsets
   - `wide`: the whole-chunk view
   - `variables`: patch fields; defaults to the 15 in `points.PATCH_VARIABLES`
-- `site_id`: the benchmarking-site station id. Targets without one are trained and blended, but not exported to the site.
+- `site_id`: the benchmarking-site station id. Targets without one are trained and selected, but not exported to the site.
 - `k_neighbors`: the stations nearest the target whose observations supply issue-time features.
 
 **New regions.** Any of the 314 stations in `stations_v2` can be a target today. That table covers roughly 40–48°N, 72–88°W. A region outside it first needs a station table built with `stations.py`, whose bounding box and ASOS networks are currently constants. Making those part of the region config is the next step for full automation.
@@ -70,7 +70,7 @@ Each stage is idempotent. A month with a manifest is never re-read. A model stag
   - clock and station descriptors
 
   `test_mos.py` checks the alignment of every lagged feature.
-- **Split.** Training uses initializations from 2020-12-03 through 2023, with targets before 2024. 2024 is used for every choice: gradient-boosting configuration, early stopping, CNN checkpoint and blend weight. 2025 is scored once.
+- **Split.** Training uses initializations from 2020-12-03 through 2023, with targets before 2024. 2024 is used for every choice: gradient-boosting configuration, early stopping, CNN checkpoint and the choice of model. 2025 is scored once.
 - **Gradient boosting.** LightGBM, configuration selected on 2024 from a small grid plus pooled and target-only variants, then refitted with five seeds and averaged.
 - **CNN.** Inputs:
   - a 17×17 native patch of 15 fields (about 50 km square) valid at the lead
@@ -79,7 +79,7 @@ Each stage is idempotent. A month with a manifest is never re-read. A model stag
 
   Three seeds, early stopping on 2024.
 - **Storage units.** Patches are stored as float16. Pressure is stored in hPa, and precipitation and snowfall in mm/h. In pascals and kg m⁻² s⁻¹ these fields overflow or underflow float16. The first patch extraction (`hrrr_<target>_17_v1`) has this bug; nothing in the pipeline reads it now.
-- **Blend.** One weight per variable, chosen on 2024 RMSE from a 0.05 grid. A 2025 initialization without a CNN prediction falls back to gradient boosting. Both models' 2024 predictions were also used for early stopping, so the validation curve is slightly optimistic for both.
+- **Selection.** For each variable, the model with the lower 2024 RMSE provides the whole 2025 forecast. If the chosen CNN has no prediction for an initialization, that initialization falls back to gradient boosting; the report counts these, and there were none in 2025. Both models also used 2024 for early stopping, so both validation scores are slightly optimistic.
 - **Scoring.** The site export uses the site's canonical `observations_6h_2025.json` truth at 6-hourly leads. `comparison.json` matches pairs against every method's 2025 npz.
 
 ## Results (2025, unseen)
@@ -133,15 +133,19 @@ All runs use the corrected extraction. Every run is chosen on 2024 validation; 2
 - **Unit fix.** Fixing the units changed nothing measurable. The scalar features already carry pressure and precipitation.
 - **Choice of a2.** a6 scored best on 2024, but by 0.004 °C and 0.011 km/h, which is within seed noise. The default is a2, the simplest of the tied variants, which also needs no chunk view. The 2025 results also favour a2, so this choice is not blind to the test year.
 
-**Pipeline with the trajectory CNN** (`cnn.npz` is the a2 run, identical configuration):
+**Pipeline output** (single model per variable, chosen on 2024; `cnn.npz` is the a2 run, identical configuration):
 
-| Model | Temperature | Wind |
-| --- | ---: | ---: |
-| Raw HRRR | 2.181 | 10.862 |
-| Gradient boosting | 1.815 | 2.746 |
-| CNN (trajectory) | 1.765 | 2.729 |
-| Fixed 50/50 | 1.757 | **2.686** |
-| Validation-weighted blend (weights on gradient boosting: 0.40 temperature, 0.15 wind) | **1.753** | 2.706 |
+| Target | Variable | Model chosen | 2024 validation RMSE (gradient boosting / CNN) | 2025 RMSE | Raw HRRR |
+| --- | --- | --- | --- | ---: | ---: |
+| Soulis | Temperature (°C) | CNN | 1.481 / 1.455 | **1.765** | 2.181 |
+| Soulis | Wind (km/h) | CNN | 2.533 / 2.387 | **2.729** | 10.862 |
+| CYYZ | Temperature (°C) | Gradient boosting (only model) | n/a | **1.369** | 1.922 |
+| CYYZ | Wind (km/h) | Gradient boosting (only model) | n/a | **5.209** | 7.089 |
 
-- **By lead.** The blend's temperature RMSE is 1.24 / 1.67 / 2.13 °C at +1 / +24 / +48 h, against raw HRRR's 1.72 / 2.21 / 2.61.
-- **Site-scored.** Soulis temperature is 1.75 vs AIFS 1.95, GraphCast 2.19 and HRRR interpolation 2.28. Soulis wind is 2.67 vs 9.996–10.82 for the same three.
+- **Gradient boosting at Soulis on 2025.** It scores 1.815 °C and 2.746 km/h, so the 2024 choice of the CNN held up in 2025.
+- **By lead.** Soulis temperature is 1.29 / 1.69 / 2.15 °C at +1 / +24 / +48 h, against raw HRRR's 1.72 / 2.21 / 2.61.
+- **Site-scored at 6-hourly leads, matched pairs.**
+  - Soulis temperature: 1.77 vs AIFS 1.95, GraphCast 2.19 and HRRR interpolation 2.28.
+  - Soulis wind: 2.70 vs 10.0–10.8 for the same three.
+  - CYYZ temperature: 1.42, level with AIFS 1.43 and GraphCast 1.41.
+- **Earlier averaged variants.** The 50/50 and validation-weighted averages in the sections above are kept for the record. They are not used.

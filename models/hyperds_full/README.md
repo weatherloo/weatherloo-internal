@@ -4,7 +4,7 @@ This implementation imports the authors' actual ResNet encoders, observation/fie
 
 **Current objective:** compare direct and autoregressive **weather forecasts at Eric D. Soulis in Waterloo** against the existing benchmarking-site methods. The active multi-year workflow uses **2018–2023 for training, 2024 for Waterloo validation/checkpoint selection, and 2025 for final Waterloo testing**, at all four daily cycles. See [MULTIYEAR.md](MULTIYEAR.md) for the frozen experiment, remote jobs, and benchmark contract. The January results below are a completed pipeline pilot and do not establish forecasting skill.
 
-**Site forecasts (current best at Waterloo):** [PIPELINE.md](PIPELINE.md) is the region-configurable HRRR station-correction pipeline. It blends gradient boosting with a CNN, weighted on validation, and runs with `modal_region.py`. `modal_points.py` keeps the experiments that led to it.
+**Site forecasts (current best at Waterloo):** [PIPELINE.md](PIPELINE.md) is the region-configurable HRRR station-correction pipeline. For each variable it uses whichever of gradient boosting or a CNN wins on 2024 validation, and runs with `modal_region.py`. `modal_points.py` keeps the experiments that led to it.
 
 **Paper-faithful HRRR replication:** [FAITHFUL.md](FAITHFUL.md) (paper protocol and baselines plus the time dimension). **HRRR/AIFS-input variant:** [NWP.md](NWP.md) replaces the ERA5 initialization input with the issued forecast trajectory; it supersedes the ERA5-init direct/AR runs, which were stopped on 2026-11-19 at 28/50 and 21/50 epochs (checkpoints kept).
 
