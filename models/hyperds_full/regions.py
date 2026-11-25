@@ -32,6 +32,9 @@ class Region:
     patch_half: int = 8
     version: str = "v1"
     description: str = ""
+    # How to build the station table when station_root has none: bbox (lon_min, lat_min, lon_max, lat_max),
+    # asos_networks (IEM state codes), eccc (bool). Empty means the table must already exist.
+    station_build: dict = field(default_factory=dict)
     extra: dict = field(default_factory=dict)
 
     @property
@@ -69,10 +72,18 @@ def parse(document):
         targets.append(Target(entry["id"], entry.get("site_id"), options, bool(entry.get("precip", False))))
     if len({t.id for t in targets}) != len(targets):
         raise ValueError("duplicate target")
-    known = {"name", "anchor", "targets", "station_root", "k_neighbors", "patch_half", "version", "description"}
+    known = {"name", "anchor", "targets", "station_root", "k_neighbors", "patch_half", "version", "description",
+             "stations"}
+    build = dict(document.get("stations", {}))
+    if build:
+        if set(build) - {"bbox", "asos_networks", "eccc"} or len(build.get("bbox", ())) != 4:
+            raise ValueError("stations needs bbox [lon_min, lat_min, lon_max, lat_max] and optional asos_networks, eccc")
+        lon0, lat0, lon1, lat1 = build["bbox"]
+        if not (lon0 < lon1 and lat0 < lat1):
+            raise ValueError("stations.bbox must be [lon_min, lat_min, lon_max, lat_max]")
     region = Region(document["name"], document["anchor"], tuple(targets),
-                    **{k: document[k] for k in known - {"name", "anchor", "targets"} if k in document},
-                    extra={k: v for k, v in document.items() if k not in known})
+                    **{k: document[k] for k in known - {"name", "anchor", "targets", "stations"} if k in document},
+                    station_build=build, extra={k: v for k, v in document.items() if k not in known})
     if region.anchor not in {t.id for t in targets} and not document.get("anchor_is_not_target"):
         raise ValueError("anchor should be a target (set anchor_is_not_target to override)")
     return region

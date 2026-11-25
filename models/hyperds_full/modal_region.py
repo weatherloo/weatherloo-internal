@@ -37,8 +37,8 @@ if modal.is_local():
     for year in range(2021, 2026):
         source = site / f"observations/eric_d_soulis/raw/uw_hobo_15min_{year}.csv"
         precip_image = precip_image.add_local_file(str(source), f"/soulis_raw/{source.name}")
-STAGES = ("points", "patches", "cnn", "final", "export")
-COMPUTE = {"points": "cpu x months", "patches": "cpu x months (all fields + chunk view)", "cnn": "L4/A10 gpu",
+STAGES = ("stations", "points", "patches", "cnn", "final", "export")
+COMPUTE = {"stations": "2 cpu, IEM/ECCC downloads", "points": "cpu x months", "patches": "cpu x months (all fields + chunk view)", "cnn": "L4/A10 gpu",
            "final": "2 cpu", "export": "2 cpu"}
 
 
@@ -63,6 +63,13 @@ def plan(name: str, force: str = ""):
 
     data_volume.reload()
     region = region_of(name)
+    if not (Path(region.station_root) / "stations.json").is_file():
+        if not region.station_build:
+            return {"region": region.name, "problems": [f"no station table at {region.station_root} and no stations spec"],
+                    "steps": [], "months": [], "method": ""}
+        return {"region": region.name, "anchor": region.anchor, "problems": [], "months": months(),
+                "method": region.extra.get("method", ""), "note": "remaining stages are planned once the table exists",
+                "steps": [{"stage": "stations", "spec": region.station_build, "compute": COMPUTE["stations"]}]}
     stations = stations_of(region)
     reader = PointReader(stations, region.anchor)
     chunk = [s["id"] for s in reader.stations]
@@ -84,6 +91,26 @@ def plan(name: str, force: str = ""):
     return {"region": region.name, "anchor": region.anchor, "chunk_stations": len(chunk),
             "native_window": reader.window, "problems": problems, "steps": steps, "months": all_months,
             "method": region.extra.get("method", "")}
+
+
+@app.function(image=cpu_image, cpu=2, memory=8192, timeout=4 * 60 * 60, volumes={"/data": data_volume})
+def build_stations(name: str):
+    """Station table for a region with a stations spec (IEM ASOS, optionally ECCC); targets are always kept."""
+    import numpy as np
+    from stations import build_region
+
+    data_volume.reload()
+    region = region_of(name)
+    spec = region.station_build
+    manifest = build_region(region.station_root, spec["bbox"], spec.get("asos_networks", ()), spec.get("eccc", False),
+                            keep=[t.id for t in region.targets])
+    data_volume.commit()
+    with np.load(Path(region.station_root) / "labels.npz") as saved:
+        labels = saved["labels"]
+    ids = [s["id"] for s in manifest["stations"]]
+    coverage = {t.id: {v: float(np.isfinite(labels[:, ids.index(t.id), j]).mean())
+                       for j, v in enumerate(("wind", "t2m", "pressure", "precip"))} for t in region.targets}
+    return {"stations": len(ids), "dropped": len(manifest["dropped"]), "target_coverage": coverage}
 
 
 @app.function(image=cpu_image, cpu=8, memory=16384, timeout=3 * 60 * 60, max_containers=20, retries=1,
@@ -130,6 +157,9 @@ def finalize(name: str, method: str = ""):
         report, finals[t.id] = final_target(region, t.id)
         summary[t.id] = {**{v: report["variables"][v]["rmse"] for v in ("t2m", "wind")},
                          **{f"{v}_raw": report["variables"][v]["raw_rmse"] for v in ("t2m", "wind")}}
+    if not any(t.site_id for t in region.targets):
+        data_volume.commit()
+        return json.loads(json.dumps({"targets": summary, "site_export": None}, default=float))
     method = method or region.extra.get("method", f"hrrr_correction_{region.name}")
     out = Path(region.output_root) / "site_export"
     exported = site_export(region, finals, "/benchmark/observations", out, method)
@@ -148,6 +178,9 @@ def finalize(name: str, method: str = ""):
 def main(region: str = "waterloo", execute: bool = False, force: str = ""):
     """Print the plan; with --execute, run the pending stages in order."""
     pending = plan.remote(region, force)
+    if execute and any(s["stage"] == "stations" for s in pending["steps"]):
+        print(json.dumps({"stations": build_stations.remote(region)}, indent=2))
+        pending = plan.remote(region, force)
     months = pending.pop("months")
     print(json.dumps(pending, indent=2))
     if pending["problems"]:

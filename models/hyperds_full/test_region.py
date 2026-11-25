@@ -5,11 +5,13 @@ import json
 from pathlib import Path
 import tempfile
 import unittest
+from unittest import mock
 
 import numpy as np
 
 import final
 import regions
+import stations
 
 
 def cnn_export(rng, n_test=20):
@@ -102,6 +104,43 @@ class SiteExportTest(unittest.TestCase):
             meta = json.loads((Path(temp) / "out" / "metadata.json").read_text())
             self.assertIn("HRRRv4", meta["initialization_regime"])
             self.assertEqual(meta["secondary_station"], "cyyz")
+
+
+class StationBuildTest(unittest.TestCase):
+    def test_san_francisco_config_needs_no_existing_table(self):
+        region = regions.load("san_francisco")
+        self.assertEqual(region.anchor, "asos_SFO")
+        self.assertEqual(region.station_build["asos_networks"], ["CA", "NV"])
+        self.assertIsNone(region.target("asos_SFO").site_id)
+        with self.assertRaises(ValueError):
+            regions.parse({"name": "x", "anchor": "a", "targets": [{"id": "a"}], "stations": {"bbox": [1, 2, 0, 3]}})
+
+    def test_region_table_keeps_targets_filters_coverage_and_deduplicates(self):
+        inventory = [{"id": "asos_SFO", "source": "asos", "asos": "SFO", "lat": 37.62, "lon": -122.37},
+                     {"id": "asos_SQL", "source": "asos", "asos": "SQL", "lat": 37.51, "lon": -122.25},
+                     {"id": "asos_TWIN", "source": "asos", "asos": "TWIN", "lat": 37.511, "lon": -122.251},
+                     {"id": "asos_GAP", "source": "asos", "asos": "GAP", "lat": 38.0, "lon": -122.0}]
+        coverage = {"SFO": 0.3, "SQL": 0.9, "TWIN": 0.8, "GAP": 0.1}
+
+        def fake_fetch(station, n_hours):
+            labels = np.full((n_hours, 4), np.nan, np.float32)
+            labels[:int(coverage[station["asos"]] * n_hours)] = (3.0, 15.0, 1000.0, 0.0)
+            return labels, 1
+
+        with tempfile.TemporaryDirectory() as temp, \
+                mock.patch.object(stations, "inventory", return_value=[dict(s) for s in inventory]), \
+                mock.patch.object(stations, "fetch_asos", side_effect=fake_fetch):
+            manifest = stations.build_region(temp, (-124, 35, -118, 41), ("CA",), keep=["asos_SFO"])
+            with np.load(Path(temp) / "labels.npz") as saved:
+                labels = saved["labels"]
+        ids = [s["id"] for s in manifest["stations"]]
+        self.assertEqual(ids, ["asos_SFO", "asos_SQL"])  # target kept despite low coverage; GAP too sparse
+        self.assertEqual(manifest["duplicates_removed"], {"asos_TWIN": "asos_SQL"})
+        self.assertEqual(labels.shape[1], 2)
+        with tempfile.TemporaryDirectory() as temp, \
+                mock.patch.object(stations, "inventory", return_value=[dict(s) for s in inventory[1:]]):
+            with self.assertRaises(ValueError):
+                stations.build_region(temp, (-124, 35, -118, 41), ("CA",), keep=["asos_SFO"])
 
 
 if __name__ == "__main__":

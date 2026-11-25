@@ -62,14 +62,19 @@ def eccc_degrees(value):
     return sign * (value // 10 ** 7 + (value // 10 ** 5 % 100) / 60 + value % 10 ** 5 / 1000 / 3600)
 
 
-def inside(lat, lon):
-    return BBOX[1] <= lat < BBOX[3] and BBOX[0] <= lon < BBOX[2]
+def inside(lat, lon, bbox=BBOX):
+    return bbox[1] <= lat < bbox[3] and bbox[0] <= lon < bbox[2]
 
 
-def inventory():
-    stations = [dict(SOULIS)]
-    query = urllib.parse.urlencode({"bbox": ",".join(map(str, BBOX)), "limit": 10000, "f": "json"})
-    for feature in get(f"{ECCC_STATIONS}?{query}")["features"]:
+def inventory(bbox=BBOX, asos_networks=ASOS_NETWORKS, eccc=True, soulis=True):
+    """Stations inside bbox (lon_min, lat_min, lon_max, lat_max) with hourly records spanning 2020-12..2025-12.
+
+    Defaults reproduce the Waterloo table (Soulis first, ECCC and the listed ASOS states).
+    """
+    inside_box = lambda lat, lon: inside(lat, lon, bbox)
+    stations = [dict(SOULIS)] if soulis else []
+    query = urllib.parse.urlencode({"bbox": ",".join(map(str, bbox)), "limit": 10000, "f": "json"})
+    for feature in (get(f"{ECCC_STATIONS}?{query}")["features"] if eccc else []):
         p = feature["properties"]
         if p.get("HAS_HOURLY_DATA") not in ("Y", True):
             continue
@@ -77,15 +82,15 @@ def inventory():
         if first > "2020-12-01" or last < "2025-12-31":
             continue
         lat, lon = eccc_degrees(p["LATITUDE"]), eccc_degrees(p["LONGITUDE"])
-        if inside(lat, lon):
+        if inside_box(lat, lon):
             stations.append({"id": f"eccc_{p['STN_ID']}", "source": "eccc", "eccc": int(p["STN_ID"]),
                              "name": p.get("STATION_NAME"), "lat": lat, "lon": lon,
                              "elevation": float(p["ELEVATION"]) if p.get("ELEVATION") else None})
-    for network in ASOS_NETWORKS:
+    for network in asos_networks:
         for feature in get(f"https://mesonet.agron.iastate.edu/geojson/network/{network}_ASOS.geojson")["features"]:
             p = feature["properties"]
             lon, lat = feature["geometry"]["coordinates"][:2]
-            if not inside(lat, lon):
+            if not inside_box(lat, lon):
                 continue
             if (p.get("archive_begin") or "9999") > "2020-12-01":
                 continue
@@ -176,27 +181,8 @@ def build(destination, soulis_overlay):
         ok = (index < len(overlay["times"])) & (overlay["times"][np.minimum(index, len(overlay["times"]) - 1)] == times)
         labels[ok, 0, :2] = overlay["values"][index[ok]]
 
-    def fetch(item):
-        i, station = item
-        try:
-            values, rows = (fetch_eccc if station["source"] == "eccc" else fetch_asos)(station, n_hours)
-            return i, values, rows, None
-        except Exception as error:
-            return i, None, 0, f"{type(error).__name__}: {error}"
-
-    with ThreadPoolExecutor(max_workers=4) as pool:
-        for done, (i, values, rows, error) in enumerate(pool.map(fetch, list(enumerate(stations))[1:]), start=1):
-            station = stations[i]
-            if error:
-                station["error"] = error
-            else:
-                labels[:, i] = values
-                station["rows"] = rows
-            if done % 20 == 0:
-                print(json.dumps({"stations_fetched": done, "total": len(stations) - 1}), flush=True)
-    for variable, (low, high) in enumerate(BOUNDS):
-        slab = labels[:, :, variable]
-        slab[(slab < low) | (slab > high)] = np.nan
+    fetch_all(stations, labels, start=1)
+    apply_bounds(labels)
     # Keep stations with at least half of all hours carrying temperature and wind.
     coverage = np.isfinite(labels[:, :, :2]).all(axis=2).mean(axis=0)
     for station, fraction in zip(stations, coverage):
@@ -210,6 +196,84 @@ def build(destination, soulis_overlay):
                 "notes": __doc__}
     (destination / "stations.json").write_text(json.dumps(manifest, indent=2) + "\n")
     print(json.dumps({"station_labels_saved": len(kept), "dropped": len(manifest["dropped"])}), flush=True)
+    return manifest
+
+
+def fetch_all(stations, labels, start=0):
+    """Fill labels[:, i] for stations[start:] from ECCC or IEM ASOS; failures are recorded on the station."""
+    n_hours = labels.shape[0]
+
+    def fetch(item):
+        i, station = item
+        try:
+            values, rows = (fetch_eccc if station["source"] == "eccc" else fetch_asos)(station, n_hours)
+            return i, values, rows, None
+        except Exception as error:
+            return i, None, 0, f"{type(error).__name__}: {error}"
+
+    with ThreadPoolExecutor(max_workers=4) as pool:
+        for done, (i, values, rows, error) in enumerate(pool.map(fetch, list(enumerate(stations))[start:]), start=1):
+            station = stations[i]
+            if error:
+                station["error"] = error
+            else:
+                labels[:, i] = values
+                station["rows"] = rows
+            if done % 20 == 0:
+                print(json.dumps({"stations_fetched": done, "total": len(stations) - start}), flush=True)
+
+
+def apply_bounds(labels):
+    for variable, (low, high) in enumerate(BOUNDS):
+        slab = labels[:, :, variable]
+        slab[(slab < low) | (slab > high)] = np.nan
+
+
+def build_region(destination, bbox, asos_networks=(), eccc=False, keep=(), min_coverage=0.5, dedup_km=2.0):
+    """Station table for any region: hourly labels for ASOS (and optionally ECCC) stations inside bbox.
+
+    Stations need min_coverage of hours with both temperature and wind; ids in `keep` (the targets) are
+    kept regardless. Stations within dedup_km of a better-covered one are dropped (targets win ties).
+    Writes stations.json and labels.npz in the same layout as build().
+    """
+    destination = Path(destination)
+    destination.mkdir(parents=True, exist_ok=True)
+    output = destination / "labels.npz"
+    if output.is_file():
+        return json.loads((destination / "stations.json").read_text())
+    stations = inventory(tuple(bbox), tuple(asos_networks), eccc=eccc, soulis=False)
+    missing = sorted(set(keep) - {s["id"] for s in stations})
+    if missing:
+        raise ValueError(f"targets not in the inventory: {missing}")
+    n_hours = hour_index(END)
+    times = np.array([int((START + timedelta(hours=h)).timestamp()) for h in range(n_hours)], dtype=np.int64)
+    labels = np.full((n_hours, len(stations), 4), np.nan, dtype=np.float32)
+    fetch_all(stations, labels)
+    apply_bounds(labels)
+    coverage = np.isfinite(labels[:, :, :2]).all(axis=2).mean(axis=0)
+    for station, fraction in zip(stations, coverage):
+        station["coverage_t2m_wind"] = float(fraction)
+    usable = [i for i, s in enumerate(stations)
+              if s["id"] in keep or (coverage[i] >= min_coverage and "error" not in s)]
+    order = sorted(usable, key=lambda i: (stations[i]["id"] not in keep, -coverage[i]))
+    kept, duplicates = [], {}
+    for i in order:
+        near = next((k for k in kept if distance_km(stations[i], stations[k]) < dedup_km), None)
+        if near is None:
+            kept.append(i)
+        else:
+            duplicates[stations[i]["id"]] = stations[near]["id"]
+    kept.sort()
+    np.savez_compressed(output, times=times, labels=labels[:, kept])
+    manifest = {"stations": [stations[i] for i in kept],
+                "dropped": [s for i, s in enumerate(stations) if i not in usable],
+                "duplicates_removed": duplicates, "bbox": list(bbox), "asos_networks": list(asos_networks),
+                "eccc": eccc, "variables": ["wind_speed_m/s", "t2m_degC", "station_pressure_hPa", "precip_1h_mm"],
+                "start": START.isoformat(), "end": END.isoformat(),
+                "sha256": hashlib.sha256(output.read_bytes()).hexdigest(), "notes": __doc__}
+    (destination / "stations.json").write_text(json.dumps(manifest, indent=2) + "\n")
+    print(json.dumps({"station_labels_saved": len(kept), "dropped": len(manifest["dropped"]),
+                      "duplicates": len(duplicates)}), flush=True)
     return manifest
 
 

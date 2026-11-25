@@ -1,0 +1,32 @@
+{
+  "name": "san_francisco",
+  "description": "Generalization test: San Francisco International (ASOS SFO). Station table built from IEM ASOS in northern California and western Nevada.",
+  "anchor": "asos_SFO",
+  "method": "hrrr_cnn",
+  "station_root": "/data/processed/regions/san_francisco/stations_v1",
+  "stations": {
+    "bbox": [
+      -124.6,
+      35.5,
+      -118.5,
+      41.0
+    ],
+    "asos_networks": [
+      "CA",
+      "NV"
+    ],
+    "eccc": false
+  },
+  "k_neighbors": 30,
+  "patch_half": 8,
+  "version": "v1",
+  "targets": [
+    {
+      "id": "asos_SFO",
+      "cnn_options": {
+        "trajectory": true
+      },
+      "precip": true
+    }
+  ]
+}
