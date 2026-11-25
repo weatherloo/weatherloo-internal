@@ -60,7 +60,16 @@ Each stage is idempotent. A month with a manifest is never re-read. The CNN stag
 - `site_id`: the benchmarking-site station id. Targets without one are trained, but not exported to the site.
 - `k_neighbors`: the stations nearest the target whose observations supply issue-time input features.
 
-**New regions.** Any of the 314 stations in `stations_v2` can be a target today. That table covers roughly 40–48°N, 72–88°W. A region outside it first needs a station table built with `stations.py`, whose bounding box and ASOS networks are currently constants. Making those part of the region config is the next step for full automation.
+**New regions.** Add a `stations` spec to the config to build a region's table from IEM ASOS, with ECCC optional:
+
+```json
+"stations": {"bbox": [-124.6, 35.5, -118.5, 41.0], "asos_networks": ["CA", "NV"], "eccc": false}
+```
+
+- **What it needs:** a bbox of lon_min, lat_min, lon_max, lat_max. `asos_networks` are IEM state codes.
+- **What `stations.build_region` does:** it keeps stations with at least 50% hourly temperature and wind coverage, and removes stations within 2 km of each other. Targets are always kept.
+- **When it runs:** the `stations` stage builds the table on the first `--execute`, then plans the remaining stages.
+- **Limitation:** the patch must lie inside the target's native HRRR chunk. `points.ContextReader` raises otherwise, and the plan catches it before compute.
 
 ## Method
 
@@ -112,6 +121,43 @@ Run on 2026-11-24 with the CNN at both sites; `final.json` holds the full by-lea
 The CNN leads through about 36 h at both sites and trails AIFS at 42–48 h at CYYZ.
 
 **`lstm_ecmwf_aifs`.** This file covers only its own late-2025 window, and it includes data it was trained on.
+
+## Generalization test: San Francisco (2026-11-25)
+
+The same code was run with one new config, `regions/san_francisco.json`, at San Francisco International (`asos_SFO`). Nothing in the model was tuned for this site.
+
+- **Station table.** It was built by the `stations` stage from IEM ASOS in northern California and western Nevada: 69 stations, 63 of them in SFO's native chunk. Waterloo had 176.
+- **SFO record.** Coverage is 99.9% in every year. Dry hours are reported as 0, so precipitation is scored as at Soulis.
+- **Compute.** Station build, then points, patches, the CNN, scoring and precipitation. All stages ran unattended once the run resumed after a Modal spend-limit stop. Completed stages were skipped on resume.
+
+**Temperature and wind, 2025, hourly leads 1–48 h** (RMSE)
+
+| Variable | CNN | Raw HRRR | CNN +1 / +24 / +48 h | Raw HRRR +1 / +24 / +48 h |
+| --- | ---: | ---: | --- | --- |
+| Temperature (°C) | **1.148** | 1.797 | 0.85 / 1.19 / 1.36 | 1.44 / 1.86 / 2.06 |
+| Wind (km/h) | **6.017** | 9.229 | 5.25 / 6.00 / 6.57 | 9.74 / 8.93 / 9.31 |
+
+The errors are 36% and 35% lower than raw HRRR. At Soulis the reductions were 19% (temperature) and 75% (wind, mostly the anemometer-height bias).
+
+**Precipitation, 2025**
+
+| Product | CNN | Climatology | HRRR point | HRRR within 50 km |
+| --- | ---: | ---: | ---: | ---: |
+| `pop1` Brier | **0.0219** | 0.0322 | 0.0379 | 0.0269 |
+| `pop6` Brier | **0.0329** | 0.0670 | 0.0594 | 0.0444 |
+| `amt6` RMSE mm | 1.708 | 2.016 | 1.657 | **1.584** |
+| `amt24` RMSE mm | **3.38** | 5.16 | 3.69 | 3.50 |
+
+- **Brier skill against climatology.**
+
+  | Product | CNN | HRRR point | HRRR within 50 km |
+  | --- | ---: | ---: | ---: |
+  | `pop1` | +0.32 | −0.18 | +0.16 |
+  | `pop6` | +0.51 | +0.11 | +0.34 |
+- **6-hour amounts.** The CNN does not beat HRRR on 6-hour amounts at SFO: RMSE 1.71 mm against 1.58–1.66, with mean absolute error level at 0.31–0.33. SFO's rain is almost all November–March, frontal and well forecast by HRRR. 24-hour amounts are better (3.38 mm against 3.50–3.69).
+- **Calibration.** The chances run high in the middle range: hourly 0.45 verified 0.33 and 0.65 verified 0.52, and 6-hour 0.46 verified 0.34. 2025 at SFO was drier than average (396 mm).
+
+**Conclusion.** The pipeline generalizes without code changes beyond the region config: temperature, wind and the chances of precipitation improve on raw HRRR by margins similar to Waterloo. The weak spot is short-window rain amounts in a climate where HRRR already handles them.
 
 ## History: earlier pipeline runs
 
