@@ -61,9 +61,8 @@ DEFAULT_OBS_ROOT = (
 )
 DEFAULT_OUT = _default_data_root() / "processed" / "hrrr_bias_correction" / "hrrr"
 
-# Operator location beside Columbia Lake: 43°28′25.6″N, 80°33′27.5″W.
-# https://www.civil.uwaterloo.ca/weatherstation/station-information/
-STATION = {"id": "eric_d_soulis", "lat": 43.4737778, "lon": -80.5576389}
+# Coordinates as documented in benchmarking-site/AGENTS.md (use exactly).
+STATION = {"id": "eric_d_soulis", "lat": 43.4668, "lon": -80.5164}
 # UW archive clock is local standard time (EST, no DST).
 UW_ARCHIVE_TZ = timezone(timedelta(hours=-5))
 

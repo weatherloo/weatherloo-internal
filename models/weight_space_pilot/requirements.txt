@@ -1,0 +1,5 @@
+numpy==2.4.6
+torch==2.13.0
+transformers==5.13.1
+# granite-tsfm (tsfm_public) is used from a source checkout on PYTHONPATH at commit
+# 31fa2f01573341f17e9997280f61481de18ce28c; see README.md.
