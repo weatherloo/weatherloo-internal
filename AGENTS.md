@@ -1,3 +1,96 @@
+# WATcloud storage standard (weatherloo-internal)
+
+This repository uses one portable root: `WEATHERLOO_DATA_ROOT`.
+
+- On WATcloud: set it to your allocation (example: `/mnt/wato-drive/$USER/weatherloo-data`)
+- Local development: if unset, scripts may fall back to repo-local `data/`, `.cache/`, and `artifacts/`
+
+## Canonical layout under `WEATHERLOO_DATA_ROOT`
+
+```text
+${WEATHERLOO_DATA_ROOT}/
+  raw/                  # immutable/raw datasets
+    hrrr/
+    era5/
+    observations/
+  processed/            # derived reusable datasets
+    hrrr_bias_correction/
+  cache/                # reusable fetch/intermediate caches
+  experiments/          # run-specific working sets (e.g., unet)
+  checkpoints/          # train checkpoints and resumable model state
+  logs/                 # long-lived operational logs
+  published/            # publishable artifacts (dashboard NPZ/JSON, exported models)
+  tmp/                  # scratch, safe to delete
+```
+
+## Inventory of existing path usage (current repo)
+
+### Python/config
+- `src/hrrr_bias_correction/config.py`
+- `src/hrrr_bias_correction/config.default.json`
+- `src/hrrr_bias_correction/make_data.py`
+- `pipelines/benchmarks/methods/cnn_lstm_bias_correction/compute_benchmark.py`
+- `models/unet-hrrr/data/hrrr_dataset.py`
+- `models/unet-hrrr/train.py`
+- `pipelines/download/weather_download_common.py`
+
+### Shell/Slurm
+- `ops/slurm/submit_raw_training_data.sh`
+- `ops/slurm/babysit_raw_downloads.sh`
+- `ops/slurm/cron_update_weatherloo_data.sh`
+- `ops/slurm/download_raw_training_data_slurm.sh`
+- `models/unet/submit_pipeline.sh`
+- `models/unet/fetch.slurm`
+- `models/unet/train.slurm`
+- `models/unet-hrrr/train_hrrr.slurm`
+- `pipelines/benchmarks/methods/unet/run_benchmark.slurm`
+- `pipelines/benchmarks/methods/unet/finalize_benchmark.slurm`
+
+### Repository-local locations still used for local workflows
+- `.cache/`
+- `data/`
+- `artifacts/`
+- `logs/`
+
+## Ownership and permissions
+
+- **User-owned paths** (`experiments/`, `tmp/`, most of `cache/`): owner-only write (`u+rwx`, no world write).
+- **Shared datasets** (`raw/`, selected `processed/`, selected `published/`): readable by project group; write access limited to maintainers or designated data jobs.
+- Avoid world-writable directories; prefer group-based sharing (`chmod 2775` + shared group) where collaboration is required.
+
+## Retention and cleanup
+
+- `raw/`: retain; do not mutate in-place.
+- `processed/`: retain versions used by active experiments; remove superseded versions after validation.
+- `cache/` and `tmp/`: periodic cleanup allowed.
+- `logs/`: keep operationally relevant history; rotate/prune old logs.
+- `published/`: keep files referenced by dashboard/docs/releases.
+
+## Migration / linking tool
+
+Use `ops/storage/migrate_weatherloo_storage.py`.
+
+- Default is dry-run and prints explicit source→destination actions.
+- `--apply` executes copy/link actions.
+- Resumable/idempotent: existing identical files are skipped.
+- Validation: size + SHA256 checks are enforced before any replace/remove operation.
+- `--remove-source` removes sources only after validated destination contents exist.
+
+Examples:
+
+```bash
+# plan only
+python3 ops/storage/migrate_weatherloo_storage.py \
+  --data-root "$WEATHERLOO_DATA_ROOT" \
+  --source-root "/mnt/wato-drive/$USER/weatherloo-data"
+
+# apply, including repo-local .cache/data/artifacts inputs
+python3 ops/storage/migrate_weatherloo_storage.py \
+  --data-root "$WEATHERLOO_DATA_ROOT" \
+  --source-root "/mnt/wato-drive/$USER/weatherloo-data" \
+  --include-repo-local \
+  --apply
+```
 # Weatherloo Repository Guide
 
 Weatherloo is a weather-forecast benchmarking and post-processing project. This
@@ -12,27 +105,40 @@ take precedence for files within their directories.
 
 - `benchmarking-site/AGENTS.md` — benchmarking methods, dashboard data contracts,
   station identifiers, metrics, interpolation, and benchmark-specific workflows.
-- `lstm_training/AGENTS.md` — LSTM bias-correction sweeps and training workflow.
+- `models/lstm/AGENTS.md` — LSTM bias-correction sweeps and training workflow.
+- `models/hrrr_cnn/AGENTS.md` — HRRR station-correction CNN: region-configurable
+  pipeline for temperature, wind and precipitation, run on Modal.
+- `models/hyperds_full/AGENTS.md` — HyperDS replication and its temporal and
+  HRRR/AIFS-input variants (research), run on Modal.
 
 When working in one of those directories, read its `AGENTS.md` before making
 changes.
 
 ## Repository map
 
-- `benchmarking-site/` — React/Vite benchmarking dashboard and benchmark method
-  data/pipelines.
-- `src/hrrr_bias_correction/` — HRRR bias-correction source code.
-- `models/` — model-specific implementations and training/evaluation workflows,
-  including U-Net models.
-- `lstm_training/` — LSTM bias-correction training and hyperparameter sweeps.
-- `scripts/` — repository-level data download, preprocessing, benchmark-building,
-  and Slurm helper scripts.
-- `artifacts/` — generated model/pipeline artifacts; do not commit.
-- `logs/` — runtime and Slurm logs.
-- `lit-review/` — research/literature-review material.
-- `meeting_notes/` — project meeting notes.
-- `viz/` — generated or supporting visualizations.
-- `tpm/` — project-management/supporting material.
+See `docs/REPOSITORY_STRUCTURE.md` for ownership rules and the old-to-new path
+migration map.
+
+- `benchmarking-site/` — React/Vite dashboard (`src/`, `server/`) and the
+  published benchmark data it serves (`data/<method>/`, `data/aggregates/`,
+  `data/observations/`). Contains no pipeline code.
+- `pipelines/download/` — raw HRRR/ERA5/observation download and preprocessing
+  CLIs.
+- `pipelines/benchmarks/` — benchmark builders (`build_*.py`) and per-method
+  `methods/<method>/compute_benchmark.py` entry points that write into
+  `benchmarking-site/data/<method>/`.
+- `src/hrrr_bias_correction/` — shared HRRR bias-correction Python package.
+- `models/` — model-specific implementations, training, and evaluation
+  (`unet/`, `unet-hrrr/`, `lstm/`, `hrrr_cnn/`, `hyperds_full/`; earlier
+  prototypes in `temporal_hyperds/`, `temporal_station/`, `weight_space_pilot/`).
+- `ops/slurm/` — Slurm, cron, and babysitting scripts; `ops/storage/` — storage
+  migration tooling.
+- `tests/` — repository-level tests (model-local tests live with the model).
+- `docs/` — literature review, meeting notes, TPM material, visualizations, and
+  structure docs.
+- Untracked/ignored local locations: `data/`, `.cache/`, `artifacts/`, `logs/`,
+  and model run outputs (`models/*/checkpoints/`, `models/lstm/output/`, etc.).
+  Do not commit these.
 
 ## Development environments
 
@@ -40,11 +146,16 @@ The repository contains multiple Python and JavaScript workloads with separate
 dependency files. There is not currently one repository-wide environment.
 
 - The benchmarking dashboard uses Node.js/npm; see `benchmarking-site/AGENTS.md`.
-- LSTM training uses `lstm_training/requirements.txt`; see
-  `lstm_training/AGENTS.md`.
+- LSTM training uses `models/lstm/requirements.txt`; see
+  `models/lstm/AGENTS.md`.
 - Model-specific dependencies live with the model, for example
   `models/unet/requirements.txt` and `models/unet-hrrr/requirements.txt`.
-- Raw HRRR/ERA5 downloader dependencies are in `scripts/requirements.txt`.
+- The HRRR station-correction CNN uses `models/hrrr_cnn/requirements.txt` and
+  HyperDS uses `models/hyperds_full/requirements.txt` (plus `requirements-modal.txt`
+  for the launcher); both run on Modal (see
+  their `AGENTS.md`). They share `pipelines/download/station_labels.py` (station
+  tables) and `pipelines/benchmarks/site_scoring.py` (site-format scoring).
+- Raw HRRR/ERA5 downloader dependencies are in `pipelines/download/requirements.txt`.
 - `src/hrrr_bias_correction/` has its own `requirements.txt`.
 
 For WATcloud jobs, keep bulk weather data on HDD-backed storage such as
@@ -63,11 +174,11 @@ cd benchmarking-site
 npm run build
 ```
 
-For LSTM training and sweeps, follow `lstm_training/AGENTS.md`. A lightweight
+For LSTM training and sweeps, follow `models/lstm/AGENTS.md`. A lightweight
 sequence-cutoff test can be run from the repository root:
 
 ```bash
-python lstm_training/test_sequence_cutoff.py
+python tests/test_sequence_cutoff.py
 ```
 
 Do not assume repository-wide `test`, `lint`, or setup commands exist. Use the

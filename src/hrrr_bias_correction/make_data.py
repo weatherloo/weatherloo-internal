@@ -18,10 +18,10 @@ only when T0 itself has no observation in that window. Missing leads / later
 obs → NaN (partial samples allowed).
 
 Default paths:
-  HRRR:  /mnt/wato-drive/c52li/weatherloo-data/hrrr/{YYYY}/{YYYYMMDD}/hrrr_*.nc
+  HRRR:  ${WEATHERLOO_DATA_ROOT}/raw/hrrr/{YYYY}/{YYYYMMDD}/hrrr_*.nc
   Obs:   <repo>/benchmarking-site/data/observations/eric_d_soulis/raw/
          uw_hobo_15min_{YYYY}.csv
-  Out:   /mnt/wato-drive/gguirgui/weatherloo-data/hrrr_bias_correction/hrrr
+  Out:   ${WEATHERLOO_DATA_ROOT}/processed/hrrr_bias_correction/hrrr
 
 Splits: train=2021–2023, val=2024, test=2025.
 Single Zarr store with one group per split.
@@ -32,6 +32,7 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import os
 import sys
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -45,12 +46,22 @@ from scipy.interpolate import griddata
 # ---------------------------------------------------------------------------
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-DEFAULT_HRRR_ROOT = Path("/mnt/wato-drive/c52li/weatherloo-data/hrrr")
+
+
+def _default_data_root() -> Path:
+    env = os.environ.get("WEATHERLOO_DATA_ROOT")
+    if env:
+        return Path(env).expanduser().resolve()
+    return REPO_ROOT / "data"
+
+
+DEFAULT_HRRR_ROOT = _default_data_root() / "raw" / "hrrr"
 DEFAULT_OBS_ROOT = (
     REPO_ROOT / "benchmarking-site" / "data" / "observations" / "eric_d_soulis" / "raw"
 )
-DEFAULT_OUT = Path("/mnt/wato-drive/gguirgui/weatherloo-data/hrrr_bias_correction/hrrr")
+DEFAULT_OUT = _default_data_root() / "processed" / "hrrr_bias_correction" / "hrrr"
 
+# Coordinates as documented in benchmarking-site/AGENTS.md (use exactly).
 STATION = {"id": "eric_d_soulis", "lat": 43.4668, "lon": -80.5164}
 # UW archive clock is local standard time (EST, no DST).
 UW_ARCHIVE_TZ = timezone(timedelta(hours=-5))
@@ -151,26 +162,34 @@ def load_soulis_hobo_csv(path: Path) -> list[tuple[datetime, dict[str, float | N
     samples: list[tuple[datetime, dict[str, float | None]]] = []
     with path.open(newline="") as f:
         reader = csv.reader(f)
-        next(reader, None)  # header
+        header = next(reader, [])
+        dated = bool(header) and header[0].strip().lower()=="date"
+        temp_column = 2 if dated else 5
+        wind_column = next((i for i,name in enumerate(header) if "4.4 m wind speed" in name.lower()),None) if dated else 10
+        gust_column = next((i for i,name in enumerate(header) if "4.4 m wind gust" in name.lower()),None) if dated else 11
         for row in reader:
             if len(row) < 12:
                 continue
             try:
-                y, m, d, h, mi = (int(row[i].strip()) for i in range(5))
-                temp = float(row[5].strip())
-                wind = float(row[10].strip())
+                if dated:
+                    local = datetime.strptime(row[0].strip()+" "+row[1].strip(),"%Y-%m-%d %H:%M:%S")
+                else:
+                    y,m,d,h,mi = (int(row[i].strip()) for i in range(5))
+                    local = datetime(y,m,d,h,mi)
             except (ValueError, IndexError):
                 continue
-            dt = datetime(y, m, d, h, mi, tzinfo=UW_ARCHIVE_TZ).astimezone(timezone.utc)
-            samples.append(
-                (
-                    dt,
-                    {
-                        "t2m": _clean_metric(round(temp, 2)),
-                        "wind_speed": _clean_metric(round(wind, 2), non_negative=True),
-                    },
-                )
-            )
+            dt = local.replace(tzinfo=UW_ARCHIVE_TZ).astimezone(timezone.utc)
+            def metric(column,non_negative=False):
+                try:
+                    return _clean_metric(round(float(row[column]),2),non_negative=non_negative)
+                except (ValueError,IndexError,TypeError):
+                    return None
+            temperature,wind,gust = metric(temp_column),metric(wind_column,True),metric(gust_column,True)
+            if temperature is not None and not -80<=temperature<=60:
+                temperature = None
+            if wind is not None and (wind>360 or (gust is not None and wind>gust+.02)):
+                wind = None
+            samples.append((dt,{"t2m":temperature,"wind_speed":wind}))
     return samples
 
 

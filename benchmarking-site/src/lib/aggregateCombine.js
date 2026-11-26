@@ -2,7 +2,7 @@ import { METRICS } from "../constants.js";
 
 /**
  * Pure helpers for reading static aggregate.json documents
- * (built by scripts/build_static_aggregates.py from consolidated NPZ).
+ * (built by pipelines/benchmarks/build_site_aggregates.py from consolidated NPZ).
  *
  * "partials" hold per-(month, cycle) nansum + non-NaN count, so any
  * month-aligned date range x cycle subset recombines exactly as

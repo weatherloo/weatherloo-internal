@@ -14,3 +14,21 @@ benchmarking-site/data/
 # Per-user framework env files; commit the .example.json templates instead
 configs/env.*.json
 !configs/env.*.example.json
+
+# Generated outputs, run state, and local data (see docs/REPOSITORY_STRUCTURE.md)
+/logs/
+/.locks/
+/data/
+**/slurm_logs/
+models/*/checkpoints/
+models/*/eval_results/
+models/*/training_log*.csv
+models/lstm/output/**
+!models/lstm/output/**/
+!models/lstm/output/**/sweep_results.json
+models/lstm/retrain_output/
+models/lstm/logs/
+models/lstm/.venv/
+models/lstm/*.zip
+pipelines/benchmarks/methods/*/logs/
+pipelines/benchmarks/methods/*/.venv/

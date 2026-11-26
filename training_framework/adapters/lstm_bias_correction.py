@@ -1,7 +1,7 @@
 """Adapter for the existing LSTM bias-correction model.
 
 All model-specific logic -- the BiasLSTM architecture, the training loop,
-early stopping -- is exactly what lstm_training/train.py already did. This
+early stopping -- is exactly what models/lstm/train.py already did. This
 file only wraps it behind the five methods the framework calls; it does not
 change how the model trains.
 """
@@ -12,7 +12,7 @@ import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader, TensorDataset
 
-from lstm_training.train import (
+from models.lstm.train import (
     BiasLSTM,
     build_features,
     compute_metrics,

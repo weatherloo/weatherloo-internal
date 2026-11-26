@@ -9,7 +9,7 @@ Two adapters ship today:
 
 | Adapter | Model | Needs |
 |---|---|---|
-| `lstm_bias_correction` | `BiasLSTM` from `lstm_training/train.py` | torch |
+| `lstm_bias_correction` | `BiasLSTM` from `models/lstm/train.py` | torch |
 | `ridge_bias_correction` | Ridge regression on lagged bias (baseline, CI and template) | numpy |
 
 ---
@@ -19,7 +19,7 @@ Two adapters ship today:
 Run all commands from the **repo root**.
 
 ```bash
-pip install -r lstm_training/requirements.txt         # torch + numpy (ridge only needs numpy)
+pip install -r models/lstm/requirements.txt         # torch + numpy (ridge only needs numpy)
 cp configs/env.local.example.json configs/env.local.json
 ```
 
@@ -70,18 +70,18 @@ The configs and commands are the same as locally. Only the env file changes.
 cp configs/env.watcloud.example.json configs/env.watcloud.json
 
 # submit (runs the same CLI with --env watcloud)
-sbatch scripts/slurm_framework.sh train  configs/lstm_cyyz_t2m_gfs_interpolated_6h.json --run-id first
-sbatch scripts/slurm_framework.sh evaluate configs/lstm_cyyz_t2m_gfs_interpolated_6h.json --run-id first
+sbatch ops/slurm/slurm_framework.sh train  configs/lstm_cyyz_t2m_gfs_interpolated_6h.json --run-id first
+sbatch ops/slurm/slurm_framework.sh evaluate configs/lstm_cyyz_t2m_gfs_interpolated_6h.json --run-id first
 
 # more time or memory: pass sbatch flags, don't edit the script
-sbatch --time=04:00:00 --mem=16G scripts/slurm_framework.sh train <cfg> --run-id big
+sbatch --time=04:00:00 --mem=16G ops/slurm/slurm_framework.sh train <cfg> --run-id big
 
 # interactive node / no Slurm: just run the CLI directly
 python -m training_framework.cli train --config <cfg> --run-id first --env watcloud
 ```
 
 - Logs go to `logs/<job-name>-<jobid>.out` and `.err`.
-- The script creates or reuses a venv at `lstm_training/.venv`. Set `WL_VENV=/path/to/venv` to use another one, and `WL_ENV=<name>` to use a different env file.
+- The script creates or reuses a venv at `models/lstm/.venv`. Set `WL_VENV=/path/to/venv` to use another one, and `WL_ENV=<name>` to use a different env file.
 
 ---
 
@@ -179,7 +179,7 @@ Optional class attributes: `checkpoint_name` (default `checkpoint.pt`), and `mod
 |---|---|---|
 | **Benchmark data isn't in git** | A fresh clone has no NPZs, so `train` fails `--dry-run` until you get the data | Copy from WATcloud or regenerate with `compute_benchmark.py`. Shared WATcloud storage is a separate ticket |
 | **`--resume` restarts training** | Re-runs `fit` from scratch in the same run dir; it doesn't continue from the last epoch | Safe, since only failed or unfinished runs can be resumed. True resume needs saved optimizer state per adapter |
-| **No sweeps or batch runs** | `lstm_training/sweep.py`, `retrain_best.py` and `infer_recent.py` still run outside the framework, without run dirs or provenance; training 12 lead times means 12 commands | Loop over `--set data.lead_time=...` for now |
+| **No sweeps or batch runs** | `models/lstm/sweep.py`, `retrain_best.py` and `infer_recent.py` still run outside the framework, without run dirs or provenance; training 12 lead times means 12 commands | Loop over `--set data.lead_time=...` for now |
 | **Point (station) metrics only** | Export writes per-station RMSE, MAE and bias; ACC is always `null`; there's no gridded output | Add when a gridded model needs it |
 | **Single train/val/test split** | 70/15/15 temporal split, hardcoded in both adapters | Adapter-level choice; make it a config value if needed |
 | **WATcloud path untested end to end** | Same code path as local (only the env file differs), but `slurm_framework.sh` hasn't been run on WATcloud yet | Run one job and report back |
