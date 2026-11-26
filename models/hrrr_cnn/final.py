@@ -5,6 +5,7 @@ model and nothing is averaged across model types. The report gives 2025 RMSE
 overall and by lead against raw HRRR on the same pairs.
 """
 
+import repo_paths  # noqa: F401  (shared pipelines modules on sys.path)
 import json
 from pathlib import Path
 
@@ -66,7 +67,7 @@ SITE_METADATA = {
 
 def site_export(region, finals, truth_root, out, method):
     """Write the benchmarking-site npz for every target with a site_id, then return its path."""
-    from benchmark import site_export as export
+    from site_scoring import site_export as export
 
     scored = {t.site_id: finals[t.id] for t in region.targets if t.site_id and t.id in finals}
     out = Path(out)

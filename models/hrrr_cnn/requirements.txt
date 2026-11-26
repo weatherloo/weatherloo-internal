@@ -1,0 +1,8 @@
+numpy==1.26.4
+scipy==1.14.1
+torch==2.5.1
+lightgbm==4.5.0
+scikit-learn==1.5.2
+pyproj==3.7.0
+dynamical-catalog>=0.8.0,<1
+modal>=1.6,<2

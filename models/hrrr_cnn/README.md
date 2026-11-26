@@ -1,14 +1,29 @@
-# Region pipeline: HRRR station correction
+# HRRR station correction (CNN), region-configurable
 
-This is the production path for site forecasts. It corrects the operational HRRRv4 48 h forecast at the configured stations with one model type: a CNN on the native HRRR patch around each station, plus that station's 0–48 h HRRR trajectory. The same model type forecasts temperature, wind and precipitation. HyperDS (see [FAITHFUL.md](FAITHFUL.md) and [NWP.md](NWP.md)) remains the research track for continuous fields. At Soulis, HyperDS is less accurate than this station model.
+This is the production path for site forecasts. It corrects the operational HRRRv4 48 h forecast at the configured stations with one model type: a CNN on the native HRRR patch around each station, plus that station's 0–48 h HRRR trajectory. The same model type forecasts temperature, wind and precipitation. HyperDS ([../hyperds_full/](../hyperds_full/README.md)) is a separate model and remains the research track for continuous fields. At Soulis, HyperDS is less accurate than this station model.
+
+## Layout
+
+| File | Role |
+| --- | --- |
+| `modal_region.py` | Pipeline on Modal: plan, `stations`, `points`, `patches`, `cnn`, `final`, `export`; `::rain` for precipitation; `::ablate` for CNN input ablations |
+| `regions.py`, `regions/*.json` | Region configs and validation |
+| `points.py` | Native HRRR point and patch extraction |
+| `mos.py` | Issue-time-safe scalar inputs; also the gradient-boosting experiments |
+| `cnn_correction.py` | The CNN and its trainer |
+| `precip.py` | Precipitation truth, inputs, CNN and scoring |
+| `final.py` | Final scores and the site export |
+| `modal_points.py` | Experiment record (gradient-boosting rounds, first CNN) |
+
+Shared with HyperDS: `pipelines/download/station_labels.py` builds the station tables, and `pipelines/benchmarks/site_scoring.py` scores in the site format. `repo_paths.py` puts both on `sys.path`. The Modal images copy them in.
 
 ## Run
 
 ```bash
-modal run models/hyperds_full/modal_region.py --region waterloo              # plan: validates config, lists pending stages
-modal run models/hyperds_full/modal_region.py --region waterloo --execute    # runs only what is missing
-modal run models/hyperds_full/modal_region.py --region waterloo --execute --force cnn
-modal run models/hyperds_full/modal_region.py::rain                          # precipitation (targets with "precip": true)
+modal run models/hrrr_cnn/modal_region.py --region waterloo              # plan: validates config, lists pending stages
+modal run models/hrrr_cnn/modal_region.py --region waterloo --execute    # runs only what is missing
+modal run models/hrrr_cnn/modal_region.py --region waterloo --execute --force cnn
+modal run models/hrrr_cnn/modal_region.py::rain                          # precipitation (targets with "precip": true)
 ```
 
 The plan step runs the following checks before any compute is spent:
@@ -67,7 +82,7 @@ Each stage is idempotent. A month with a manifest is never re-read. The CNN stag
 ```
 
 - **What it needs:** a bbox of lon_min, lat_min, lon_max, lat_max. `asos_networks` are IEM state codes.
-- **What `stations.build_region` does:** it keeps stations with at least 50% hourly temperature and wind coverage, and removes stations within 2 km of each other. Targets are always kept.
+- **What `station_labels.build_region` does** (`pipelines/download/station_labels.py`): it keeps stations with at least 50% hourly temperature and wind coverage, and removes stations within 2 km of each other. Targets are always kept.
 - **When it runs:** the `stations` stage builds the table on the first `--execute`, then plans the remaining stages.
 - **Limitation:** the patch must lie inside the target's native HRRR chunk. `points.ContextReader` raises otherwise, and the plan catches it before compute.
 
@@ -161,7 +176,7 @@ The errors are 36% and 35% lower than raw HRRR. At Soulis the reductions were 19
 
 ## History: earlier pipeline runs
 
-The sections below record the runs that led here, which used two model types (gradient boosting and the CNN) and a blend or a per-variable selection. That code remains in `mos.py` and `precip.fit_gbm`, but the pipeline no longer runs it.
+The sections below record the runs that led here, which used two model types (gradient boosting and the CNN) and a blend or a per-variable selection. That code remains in `mos.py`, `modal_points.py` and `precip.fit_gbm`, but the pipeline no longer runs it.
 
 ### Results (2025, unseen)
 
@@ -234,8 +249,8 @@ All runs use the corrected extraction. Every run is chosen on 2024 validation; 2
 ## Precipitation (`precip.py`)
 
 ```bash
-modal run models/hyperds_full/modal_region.py::rain --check   # gauge coverage and timing only
-modal run models/hyperds_full/modal_region.py::rain           # train, select on 2024, score 2025
+modal run models/hrrr_cnn/modal_region.py::rain --check   # gauge coverage and timing only
+modal run models/hrrr_cnn/modal_region.py::rain           # train, select on 2024, score 2025
 ```
 
 Targets with `"precip": true` get four products for every run out to 48 h:

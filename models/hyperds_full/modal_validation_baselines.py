@@ -8,7 +8,7 @@ import modal
 
 if not modal.is_local():
     sys.path.insert(0,"/app")
-from modal_app import train_image,data_volume,checkpoint_volume
+from modal_app import train_image,data_volume,checkpoint_volume,with_shared
 from modal_diagnostics import RUN
 from multiyear_plan import DATASET
 
@@ -17,7 +17,7 @@ ROOT = Path("/checkpoints/hyperds_full")/RUN/"diagnostics"
 hrrr_image = modal.Image.debian_slim(python_version="3.12").pip_install(
     "dynamical-catalog>=0.8.0,<1", "pyproj==3.7.0")
 if modal.is_local():
-    hrrr_image = hrrr_image.add_local_dir(str(Path(__file__).resolve().parent),"/app")
+    hrrr_image = with_shared(hrrr_image.add_local_dir(str(Path(__file__).resolve().parent), "/app"))
 
 
 @app.function(image=train_image,cpu=8,memory=16384,timeout=60*60,

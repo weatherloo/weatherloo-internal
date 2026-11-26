@@ -1,5 +1,6 @@
 """Chronology, shard loading and Waterloo evaluation contract checks."""
 
+import repo_paths  # noqa: F401  (shared pipelines modules on sys.path)
 from datetime import datetime, timedelta
 import json
 from pathlib import Path
@@ -16,7 +17,7 @@ from data import list_goes, select_goes, goes_time, fill_satellite_gaps
 from multiyear import combine_moments, moments
 from multiyear_plan import STATIONS, UTC, GOES19_START, month_records, plan
 from train import WeatherDataset, evaluate
-from benchmark import STATIONS as SITE_STATIONS, site_export, matched_comparison
+from site_scoring import STATIONS as SITE_STATIONS, site_export, matched_comparison
 
 
 class ConstantField(torch.nn.Module):

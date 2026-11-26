@@ -22,12 +22,24 @@ train_image = train_image.run_commands(
     "git clone https://github.com/ESDALab/HyperDS_tgrs.git /opt/hyperds",
     f"git -C /opt/hyperds checkout {UPSTREAM_REVISION}",
 )
+SHARED_FILES = (("pipelines/download/station_labels.py", "/app/station_labels.py"),
+                ("pipelines/benchmarks/site_scoring.py", "/app/site_scoring.py"))
+
+
+def with_shared(image):
+    """Copy the shared repository modules (station labels, site scoring) into an image's /app."""
+    root = Path(__file__).resolve().parents[2]
+    for source, target in SHARED_FILES:
+        image = image.add_local_file(str(root / source), target)
+    return image
+
+
 if modal.is_local():
     here = Path(__file__).resolve().parent
     root = here.parents[1]
     train_image = train_image.pip_install_from_requirements(str(here / "requirements.txt"))
-    train_image = train_image.add_local_dir(str(here), "/app")
-    ingest_image = ingest_image.add_local_dir(str(here), "/app")
+    train_image = with_shared(train_image.add_local_dir(str(here), "/app"))
+    ingest_image = with_shared(ingest_image.add_local_dir(str(here), "/app"))
     for source, target in (
         (root / "pipelines/download/fetch_station_observations.py", "/workspace/pipelines/download/fetch_station_observations.py"),
         (root / "src/hrrr_bias_correction/make_data.py", "/workspace/src/hrrr_bias_correction/make_data.py"),

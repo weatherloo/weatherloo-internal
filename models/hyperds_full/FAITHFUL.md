@@ -3,7 +3,7 @@
 This replicates [arXiv:2401.11960](https://arxiv.org/abs/2401.11960) using the
 pinned author modules. The one intended extension is time: the model forecasts
 0–48 h from an HRRR initialization. Code: `faithful_train.py` (model),
-`faithful_baselines.py` (UNet/EDSR), `stations.py` (labels and split) and
+`faithful_baselines.py` (UNet/EDSR), `pipelines/download/station_labels.py` (labels and split) and
 `modal_faithful.py` (remote jobs). Tests: `test_faithful.py`.
 
 ## Paper contract
@@ -70,4 +70,4 @@ pinned author modules. The one intended extension is time: the model forecasts
 - **Hardware and cost:** L4/A10 GPUs, peak 4.8 GiB. A probe measured about 13
   min per epoch for HyperDS.
 - **Outputs:** each run writes `evaluation.json` and `predictions.npz` (all
-  stations, 2025, hourly 0–48 h). CYYZ is aliased to `cyyz` for `benchmark.py`.
+  stations, 2025, hourly 0–48 h). CYYZ is aliased to `cyyz` for `pipelines/benchmarks/site_scoring.py`.

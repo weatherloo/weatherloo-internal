@@ -100,3 +100,12 @@ BATCH_SIZE=10 ops/slurm/submit_raw_training_data.sh /mnt/wato-drive/$USER/weathe
 
 Worker sets `PYTHONUNBUFFERED=1` and runs `python -u` so Slurm `.out`/`.err` files get live progress.
 `submit_raw_training_data.sh` batches submissions (`BATCH_SIZE`, default 10) to avoid hammering NFS with ~100 concurrent writers.
+
+## Hourly station labels (`station_labels.py`)
+
+`station_labels.py` builds the hourly station tables used by `models/hrrr_cnn/` and `models/hyperds_full/`. It is a library; Modal stages call it. Each table holds wind (m/s), temperature (°C), station pressure (hPa) and 1-hour precipitation (mm) for 2020-12 to 2026-01, on the UTC hour, with nothing imputed.
+
+- **Sources.** IEM ASOS and, optionally, ECCC climate-hourly. METARs from :45 to :59 are assigned to the next hour.
+- **`build`.** Builds the Waterloo table (Great Lakes box, Soulis overlay).
+- **`build_region`.** Builds a table for any bbox and ASOS state networks, with a coverage filter and 2 km de-duplication. Targets are always kept.
+- **Output.** `stations.json` plus `labels.npz`, written under `WEATHERLOO_DATA_ROOT`-style `processed/` paths on the Modal data Volume.

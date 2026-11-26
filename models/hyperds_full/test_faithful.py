@@ -1,5 +1,6 @@
 """Paper-faithful HRRR HyperDS: pooling, decoder base, subgrid sampling, station split, train/eval smoke."""
 
+import repo_paths  # noqa: F401  (shared pipelines modules on sys.path)
 from datetime import datetime, timezone
 import json
 from pathlib import Path
@@ -14,7 +15,7 @@ import faithful_baselines as fb
 import faithful_train as ft
 import nwp_data
 from nwp_model import NWPHyperDS
-from stations import deduplicate, eccc_degrees, split_stations, station_pressure
+from station_labels import deduplicate, eccc_degrees, split_stations, station_pressure
 from test_nwp import synthetic_stores
 
 

@@ -1,0 +1,4 @@
+# Local launcher and the HRRR/AIFS catalog images (Python 3.12; modal_nwp.py and modal_validation_baselines.py pin
+# their own copies). Not installed in the Python 3.11 training image, which uses requirements.txt.
+modal>=1.6,<2
+dynamical-catalog>=0.8.0,<1

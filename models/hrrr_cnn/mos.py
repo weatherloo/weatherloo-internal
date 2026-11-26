@@ -9,6 +9,7 @@ Split by initialization: train 2020-12-03 .. targets before 2024, validation
 2024 (targets before 2025), test 2025.
 """
 
+import repo_paths  # noqa: F401  (shared pipelines modules on sys.path)
 from datetime import datetime, timezone
 import json
 from pathlib import Path
@@ -42,7 +43,7 @@ def load_points(root):
 
 def nearest_stations(station_meta, ids, target, k):
     """Target plus its k nearest stations (by great-circle distance) among ids."""
-    from stations import distance_km
+    from station_labels import distance_km
 
     lookup = {s["id"]: s for s in station_meta}
     ranked = sorted((distance_km(lookup[target], lookup[i]), i) for i in ids if i in lookup)

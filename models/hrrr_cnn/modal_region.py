@@ -1,8 +1,8 @@
 """Region pipeline on Modal: HRRR points/patches -> patch CNN per site -> site export.
 
-    modal run models/hyperds_full/modal_region.py --region waterloo              # plan only (default)
-    modal run models/hyperds_full/modal_region.py --region waterloo --execute    # run missing stages
-    modal run models/hyperds_full/modal_region.py --region waterloo --execute --force cnn
+    modal run models/hrrr_cnn/modal_region.py --region waterloo              # plan only (default)
+    modal run models/hrrr_cnn/modal_region.py --region waterloo --execute    # run missing stages
+    modal run models/hrrr_cnn/modal_region.py --region waterloo --execute --force cnn
 
 Every stage is idempotent: extraction months with a manifest are skipped, and a
 CNN stage is skipped when its output exists unless --force cnn;
@@ -18,18 +18,27 @@ import modal
 
 if not modal.is_local():
     sys.path.insert(0, "/app")
-from modal_app import data_volume
 
 app = modal.App("weatherloo-region-pipeline")
 HERE = Path(__file__).resolve().parent
+data_volume = modal.Volume.from_name("weatherloo-temporal-data")
+
+SHARED_FILES = (("pipelines/download/station_labels.py", "/app/station_labels.py"),
+                ("pipelines/benchmarks/site_scoring.py", "/app/site_scoring.py"))
+
+
+def with_shared(image):
+    """Add this directory and the shared repository modules to an image at /app."""
+    image = image.add_local_dir(str(HERE), "/app")
+    for source, target in SHARED_FILES:
+        image = image.add_local_file(str(HERE.parents[1] / source), target)
+    return image
 cpu_image = modal.Image.debian_slim(python_version="3.12").pip_install(
     "dynamical-catalog>=0.8.0,<1", "pyproj==3.7.0", "scipy", "numpy", "lightgbm==4.5.0", "scikit-learn==1.5.2")
 gpu_image = modal.Image.debian_slim(python_version="3.12").pip_install("numpy", "torch==2.5.1", "scikit-learn==1.5.2")
 precip_image = gpu_image.pip_install("lightgbm==4.5.0")
 if modal.is_local():
-    cpu_image = cpu_image.add_local_dir(str(HERE), "/app")
-    gpu_image = gpu_image.add_local_dir(str(HERE), "/app")
-    precip_image = precip_image.add_local_dir(str(HERE), "/app")
+    cpu_image, gpu_image, precip_image = (with_shared(i) for i in (cpu_image, gpu_image, precip_image))
     site = HERE.parents[1] / "benchmarking-site/data"
     for source in sorted(site.glob("*/*_2025.npz")) + sorted(site.glob("observations/*/observations_6h_2025.json")):
         cpu_image = cpu_image.add_local_file(str(source), "/benchmark/" + str(source.relative_to(site)))
@@ -97,7 +106,7 @@ def plan(name: str, force: str = ""):
 def build_stations(name: str):
     """Station table for a region with a stations spec (IEM ASOS, optionally ECCC); targets are always kept."""
     import numpy as np
-    from stations import build_region
+    from station_labels import build_region
 
     data_volume.reload()
     region = region_of(name)
@@ -147,7 +156,7 @@ def cnn(name: str, target: str):
 @app.function(image=cpu_image, cpu=2, memory=8192, timeout=30 * 60, volumes={"/data": data_volume})
 def finalize(name: str, method: str = ""):
     """Score each target's CNN, write the site export and the matched comparison with every site method."""
-    from benchmark import matched_comparison
+    from site_scoring import matched_comparison
     from final import final_target, site_export
 
     data_volume.reload()
