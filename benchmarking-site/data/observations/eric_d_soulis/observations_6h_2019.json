@@ -9288,73 +9288,73 @@
     },
     {
       "valid_time": "2019-09-15T00:00:00Z",
-      "t2m": 289.53,
+      "t2m": null,
       "wind_speed": 19.11,
       "flags": {
-        "t2m": null,
+        "t2m": "missing",
         "wind_speed": null
       }
     },
     {
       "valid_time": "2019-09-15T06:00:00Z",
-      "t2m": 343.0,
+      "t2m": null,
       "wind_speed": 11.32,
       "flags": {
-        "t2m": null,
+        "t2m": "missing",
         "wind_speed": null
       }
     },
     {
       "valid_time": "2019-09-15T12:00:00Z",
-      "t2m": 355.0,
+      "t2m": null,
       "wind_speed": 11.97,
       "flags": {
-        "t2m": null,
+        "t2m": "missing",
         "wind_speed": null
       }
     },
     {
       "valid_time": "2019-09-15T18:00:00Z",
-      "t2m": 118.93,
+      "t2m": null,
       "wind_speed": 16.22,
       "flags": {
-        "t2m": null,
+        "t2m": "missing",
         "wind_speed": null
       }
     },
     {
       "valid_time": "2019-09-16T00:00:00Z",
-      "t2m": 104.6,
+      "t2m": null,
       "wind_speed": 16.74,
       "flags": {
-        "t2m": null,
+        "t2m": "missing",
         "wind_speed": null
       }
     },
     {
       "valid_time": "2019-09-16T06:00:00Z",
-      "t2m": 117.53,
+      "t2m": null,
       "wind_speed": 14.7,
       "flags": {
-        "t2m": null,
+        "t2m": "missing",
         "wind_speed": null
       }
     },
     {
       "valid_time": "2019-09-16T12:00:00Z",
-      "t2m": 86.93,
+      "t2m": null,
       "wind_speed": 14.95,
       "flags": {
-        "t2m": null,
+        "t2m": "missing",
         "wind_speed": null
       }
     },
     {
       "valid_time": "2019-09-16T18:00:00Z",
-      "t2m": 60.93,
+      "t2m": null,
       "wind_speed": 18.69,
       "flags": {
-        "t2m": null,
+        "t2m": "missing",
         "wind_speed": null
       }
     },
@@ -11962,37 +11962,37 @@
     {
       "valid_time": "2019-11-28T06:00:00Z",
       "t2m": 2.93,
-      "wind_speed": 269.07,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
       "valid_time": "2019-11-28T12:00:00Z",
       "t2m": 0.68,
-      "wind_speed": 334.0,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
       "valid_time": "2019-11-28T18:00:00Z",
       "t2m": -0.31,
-      "wind_speed": 336.87,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
       "valid_time": "2019-11-29T00:00:00Z",
       "t2m": -2.47,
-      "wind_speed": 317.53,
+      "wind_speed": null,
       "flags": {
         "t2m": null,
-        "wind_speed": null
+        "wind_speed": "missing"
       }
     },
     {
@@ -13179,6 +13179,7 @@
     "time_interpretation": "Archive clock is local standard time (UTC-5, no DST); converted to UTC for valid_time.",
     "temperature": "HOBO Temperature column (\u00b0C).",
     "wind_speed": "Wind Speed - Average 4.4 m (km/h); not 10 m \u2014 height differs from benchmark label.",
-    "data_limitation": "Public bulk CSV for 2015+ is HOBO subset only; full main-logger yearly files stop at 2014."
+    "data_limitation": "Public bulk CSV for 2015+ is HOBO subset only; full main-logger yearly files stop at 2014.",
+    "quality_control": "Temperature outside [-80,60] C and wind outside [0,360] km/h are missing. Average wind above a valid same-height gust by more than 0.02 km/h is missing. Metrics are masked independently; missing 4.4 m wind is not replaced with another sensor height."
   }
 }

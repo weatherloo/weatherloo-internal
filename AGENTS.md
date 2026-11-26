@@ -106,6 +106,8 @@ take precedence for files within their directories.
 - `benchmarking-site/AGENTS.md` — benchmarking methods, dashboard data contracts,
   station identifiers, metrics, interpolation, and benchmark-specific workflows.
 - `models/lstm/AGENTS.md` — LSTM bias-correction sweeps and training workflow.
+- `models/hyperds_full/AGENTS.md` — HyperDS replication, the HRRR region
+  correction pipeline (CNN) and Soulis precipitation, all run on Modal.
 
 When working in one of those directories, read its `AGENTS.md` before making
 changes.
@@ -125,7 +127,8 @@ migration map.
   `benchmarking-site/data/<method>/`.
 - `src/hrrr_bias_correction/` — shared HRRR bias-correction Python package.
 - `models/` — model-specific implementations, training, and evaluation
-  (`unet/`, `unet-hrrr/`, `lstm/`).
+  (`unet/`, `unet-hrrr/`, `lstm/`, `hyperds_full/`; earlier prototypes in
+  `temporal_hyperds/`, `temporal_station/`, `weight_space_pilot/`).
 - `ops/slurm/` — Slurm, cron, and babysitting scripts; `ops/storage/` — storage
   migration tooling.
 - `tests/` — repository-level tests (model-local tests live with the model).
@@ -145,6 +148,8 @@ dependency files. There is not currently one repository-wide environment.
   `models/lstm/AGENTS.md`.
 - Model-specific dependencies live with the model, for example
   `models/unet/requirements.txt` and `models/unet-hrrr/requirements.txt`.
+- HyperDS and the region pipeline use `models/hyperds_full/requirements.txt`;
+  their jobs run on Modal (see `models/hyperds_full/AGENTS.md`).
 - Raw HRRR/ERA5 downloader dependencies are in `pipelines/download/requirements.txt`.
 - `src/hrrr_bias_correction/` has its own `requirements.txt`.
 
