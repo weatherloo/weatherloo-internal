@@ -1,0 +1,76 @@
+{
+  "schema_version": 1,
+  "model_id": "hrrr_cnn",
+  "model": {
+    "family": "hrrr",
+    "version": "cnn_v1",
+    "tags": [
+      "station_corrected",
+      "cnn",
+      "placeholder"
+    ]
+  },
+  "station_id": "eric_d_soulis",
+  "init_time": "2026-11-27T06:00:00Z",
+  "issued_at": "2026-11-27T10:00:00Z",
+  "variable": "amt6",
+  "unit": "mm",
+  "points": [
+    {
+      "lead_hours": 6,
+      "valid_time": "2026-11-27T12:00:00Z",
+      "value": 0,
+      "lower": 0,
+      "upper": 0.2
+    },
+    {
+      "lead_hours": 12,
+      "valid_time": "2026-11-27T18:00:00Z",
+      "value": 0,
+      "lower": 0,
+      "upper": 0.2
+    },
+    {
+      "lead_hours": 18,
+      "valid_time": "2026-11-28T00:00:00Z",
+      "value": 0,
+      "lower": 0,
+      "upper": 0.2
+    },
+    {
+      "lead_hours": 24,
+      "valid_time": "2026-11-28T06:00:00Z",
+      "value": 0,
+      "lower": 0,
+      "upper": 0.2
+    },
+    {
+      "lead_hours": 30,
+      "valid_time": "2026-11-28T12:00:00Z",
+      "value": 0,
+      "lower": 0,
+      "upper": 0.2
+    },
+    {
+      "lead_hours": 36,
+      "valid_time": "2026-11-28T18:00:00Z",
+      "value": 0.9,
+      "lower": 0,
+      "upper": 2.1
+    },
+    {
+      "lead_hours": 42,
+      "valid_time": "2026-11-29T00:00:00Z",
+      "value": 1.5,
+      "lower": 0,
+      "upper": 3.3
+    },
+    {
+      "lead_hours": 48,
+      "valid_time": "2026-11-29T06:00:00Z",
+      "value": 1.7,
+      "lower": 0,
+      "upper": 3.7
+    }
+  ]
+}

@@ -1,0 +1,260 @@
+{
+  "schema_version": 1,
+  "model_id": "hrrr_cnn",
+  "model": {
+    "family": "hrrr",
+    "version": "cnn_v1",
+    "tags": [
+      "station_corrected",
+      "cnn",
+      "placeholder"
+    ]
+  },
+  "station_id": "eric_d_soulis",
+  "init_time": "2026-11-27T06:00:00Z",
+  "issued_at": "2026-11-27T10:00:00Z",
+  "variable": "pop1",
+  "unit": "fraction",
+  "points": [
+    {
+      "lead_hours": 1,
+      "valid_time": "2026-11-27T07:00:00Z",
+      "value": 0.045
+    },
+    {
+      "lead_hours": 2,
+      "valid_time": "2026-11-27T08:00:00Z",
+      "value": 0.046
+    },
+    {
+      "lead_hours": 3,
+      "valid_time": "2026-11-27T09:00:00Z",
+      "value": 0.045
+    },
+    {
+      "lead_hours": 4,
+      "valid_time": "2026-11-27T10:00:00Z",
+      "value": 0.046
+    },
+    {
+      "lead_hours": 5,
+      "valid_time": "2026-11-27T11:00:00Z",
+      "value": 0.04
+    },
+    {
+      "lead_hours": 6,
+      "valid_time": "2026-11-27T12:00:00Z",
+      "value": 0.021
+    },
+    {
+      "lead_hours": 7,
+      "valid_time": "2026-11-27T13:00:00Z",
+      "value": 0.01
+    },
+    {
+      "lead_hours": 8,
+      "valid_time": "2026-11-27T14:00:00Z",
+      "value": 0.02
+    },
+    {
+      "lead_hours": 9,
+      "valid_time": "2026-11-27T15:00:00Z",
+      "value": 0.013
+    },
+    {
+      "lead_hours": 10,
+      "valid_time": "2026-11-27T16:00:00Z",
+      "value": 0.01
+    },
+    {
+      "lead_hours": 11,
+      "valid_time": "2026-11-27T17:00:00Z",
+      "value": 0.035
+    },
+    {
+      "lead_hours": 12,
+      "valid_time": "2026-11-27T18:00:00Z",
+      "value": 0.019
+    },
+    {
+      "lead_hours": 13,
+      "valid_time": "2026-11-27T19:00:00Z",
+      "value": 0.04
+    },
+    {
+      "lead_hours": 14,
+      "valid_time": "2026-11-27T20:00:00Z",
+      "value": 0.03
+    },
+    {
+      "lead_hours": 15,
+      "valid_time": "2026-11-27T21:00:00Z",
+      "value": 0.038
+    },
+    {
+      "lead_hours": 16,
+      "valid_time": "2026-11-27T22:00:00Z",
+      "value": 0.02
+    },
+    {
+      "lead_hours": 17,
+      "valid_time": "2026-11-27T23:00:00Z",
+      "value": 0.045
+    },
+    {
+      "lead_hours": 18,
+      "valid_time": "2026-11-28T00:00:00Z",
+      "value": 0.019
+    },
+    {
+      "lead_hours": 19,
+      "valid_time": "2026-11-28T01:00:00Z",
+      "value": 0.025
+    },
+    {
+      "lead_hours": 20,
+      "valid_time": "2026-11-28T02:00:00Z",
+      "value": 0.046
+    },
+    {
+      "lead_hours": 21,
+      "valid_time": "2026-11-28T03:00:00Z",
+      "value": 0.015
+    },
+    {
+      "lead_hours": 22,
+      "valid_time": "2026-11-28T04:00:00Z",
+      "value": 0.03
+    },
+    {
+      "lead_hours": 23,
+      "valid_time": "2026-11-28T05:00:00Z",
+      "value": 0.01
+    },
+    {
+      "lead_hours": 24,
+      "valid_time": "2026-11-28T06:00:00Z",
+      "value": 0.047
+    },
+    {
+      "lead_hours": 25,
+      "valid_time": "2026-11-28T07:00:00Z",
+      "value": 0.035
+    },
+    {
+      "lead_hours": 26,
+      "valid_time": "2026-11-28T08:00:00Z",
+      "value": 0.047
+    },
+    {
+      "lead_hours": 27,
+      "valid_time": "2026-11-28T09:00:00Z",
+      "value": 0.011
+    },
+    {
+      "lead_hours": 28,
+      "valid_time": "2026-11-28T10:00:00Z",
+      "value": 0.046
+    },
+    {
+      "lead_hours": 29,
+      "valid_time": "2026-11-28T11:00:00Z",
+      "value": 0.113
+    },
+    {
+      "lead_hours": 30,
+      "valid_time": "2026-11-28T12:00:00Z",
+      "value": 0.225
+    },
+    {
+      "lead_hours": 31,
+      "valid_time": "2026-11-28T13:00:00Z",
+      "value": 0.277
+    },
+    {
+      "lead_hours": 32,
+      "valid_time": "2026-11-28T14:00:00Z",
+      "value": 0.339
+    },
+    {
+      "lead_hours": 33,
+      "valid_time": "2026-11-28T15:00:00Z",
+      "value": 0.371
+    },
+    {
+      "lead_hours": 34,
+      "valid_time": "2026-11-28T16:00:00Z",
+      "value": 0.411
+    },
+    {
+      "lead_hours": 35,
+      "valid_time": "2026-11-28T17:00:00Z",
+      "value": 0.445
+    },
+    {
+      "lead_hours": 36,
+      "valid_time": "2026-11-28T18:00:00Z",
+      "value": 0.489
+    },
+    {
+      "lead_hours": 37,
+      "valid_time": "2026-11-28T19:00:00Z",
+      "value": 0.494
+    },
+    {
+      "lead_hours": 38,
+      "valid_time": "2026-11-28T20:00:00Z",
+      "value": 0.544
+    },
+    {
+      "lead_hours": 39,
+      "valid_time": "2026-11-28T21:00:00Z",
+      "value": 0.559
+    },
+    {
+      "lead_hours": 40,
+      "valid_time": "2026-11-28T22:00:00Z",
+      "value": 0.575
+    },
+    {
+      "lead_hours": 41,
+      "valid_time": "2026-11-28T23:00:00Z",
+      "value": 0.579
+    },
+    {
+      "lead_hours": 42,
+      "valid_time": "2026-11-29T00:00:00Z",
+      "value": 0.571
+    },
+    {
+      "lead_hours": 43,
+      "valid_time": "2026-11-29T01:00:00Z",
+      "value": 0.584
+    },
+    {
+      "lead_hours": 44,
+      "valid_time": "2026-11-29T02:00:00Z",
+      "value": 0.624
+    },
+    {
+      "lead_hours": 45,
+      "valid_time": "2026-11-29T03:00:00Z",
+      "value": 0.599
+    },
+    {
+      "lead_hours": 46,
+      "valid_time": "2026-11-29T04:00:00Z",
+      "value": 0.627
+    },
+    {
+      "lead_hours": 47,
+      "valid_time": "2026-11-29T05:00:00Z",
+      "value": 0.64
+    },
+    {
+      "lead_hours": 48,
+      "valid_time": "2026-11-29T06:00:00Z",
+      "value": 0.609
+    }
+  ]
+}

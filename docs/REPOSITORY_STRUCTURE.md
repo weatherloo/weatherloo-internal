@@ -11,6 +11,7 @@ runs only.
 | Path | Owns | Rules |
 |---|---|---|
 | `benchmarking-site/` | React/Vite dashboard, optional API server, and the **published** benchmark data it serves (`data/<method>/`, `data/aggregates/`, `data/observations/`) | No pipeline code. Vercel root directory and `npm run build` are unchanged. |
+| `forecast-app/` | Expo / React Native forecast app (also a static web build) | Consumes forecast records in the forecast contract; no training or benchmarking code. Own Vercel project, root directory `forecast-app`. |
 | `pipelines/download/` | Raw HRRR/ERA5/observation download and preprocessing CLIs, shared downloader helpers (including `station_labels.py`, the hourly station tables used by `hrrr_cnn` and `hyperds_full`) | Writes to `WEATHERLOO_DATA_ROOT`, never into the repo. |
 | `pipelines/benchmarks/` | `build_*.py` benchmark builders; `methods/<method>/` compute entry points, requirements, and method-specific Slurm/cron helpers; `site_scoring.py` (site-format export and matched comparison for model runs) | Outputs go to `benchmarking-site/data/<method>/`. |
 | `src/` | Shared Python packages (`hrrr_bias_correction`) | Importable code and its default config only. |
