@@ -1,5 +1,6 @@
 """Check the small experiment's chronology and benchmark-year isolation."""
 
+import repo_paths  # noqa: F401  (shared pipelines modules on sys.path)
 from datetime import datetime,timezone
 import json
 from pathlib import Path
@@ -9,7 +10,7 @@ import unittest
 import numpy as np
 import zarr
 
-from benchmark import site_export
+from site_scoring import site_export
 from feasibility import valid_rows,ViewDataset
 
 

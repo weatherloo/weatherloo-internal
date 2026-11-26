@@ -13,9 +13,10 @@ import hashlib
 import json
 from pathlib import Path
 
+import time
+
 import numpy as np
 
-from nwp_data import retry, station_weights, interpolate_stations
 
 UTC = timezone.utc
 CATALOG = "noaa-hrrr-forecast-48-hour"
@@ -29,6 +30,51 @@ VARIABLES = (
     "downward_long_wave_radiation_flux_surface", "snow_thickness_surface", "snow_area_fraction_surface",
     "precipitable_water_atmosphere", "geopotential_height_cloud_ceiling", "composite_reflectivity",
 )
+
+
+def retry(action):
+    for attempt in range(4):
+        try:
+            return action()
+        except Exception:
+            if attempt == 3:
+                raise
+            time.sleep(2 ** (attempt + 1))
+
+
+def bracket(axis, value):
+    """Index pair and weight for linear interpolation on an ascending or descending axis."""
+    axis = np.asarray(axis, dtype=np.float64)
+    descending = axis[0] > axis[-1]
+    ordered = axis[::-1] if descending else axis
+    i = int(np.searchsorted(ordered, value)) - 1
+    if not 0 <= i < len(ordered) - 1:
+        raise ValueError("station outside forecast grid")
+    w = (value - ordered[i]) / (ordered[i + 1] - ordered[i])
+    if descending:
+        n = len(axis) - 1
+        return n - i, n - i - 1, float(w)
+    return i, i + 1, float(w)
+
+
+def station_weights(xs, ys, points):
+    """Bilinear (y, x) indices/weights per station for 2-D arrays indexed [y, x] (native projected grid)."""
+    result = []
+    for px, py in points:
+        x0, x1, wx = bracket(xs, px)
+        y0, y1, wy = bracket(ys, py)
+        result.append(((y0, y1, x0, x1), np.array([[(1 - wy) * (1 - wx), (1 - wy) * wx], [wy * (1 - wx), wy * wx]])))
+    return result
+
+
+def interpolate_stations(values, weights):
+    """values [..., y, x] -> [..., station]."""
+    output = []
+    for (y0, y1, x0, x1), w in weights:
+        corner = np.stack((np.stack((values[..., y0, x0], values[..., y0, x1]), -1),
+                           np.stack((values[..., y1, x0], values[..., y1, x1]), -1)), -2)
+        output.append((corner * w).sum(axis=(-2, -1)))
+    return np.stack(output, -1)
 
 
 def months():

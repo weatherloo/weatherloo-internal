@@ -1,5 +1,6 @@
 """A frozen, smaller forecasting experiment using completed monthly shards."""
 
+import repo_paths  # noqa: F401  (shared pipelines modules on sys.path)
 from datetime import datetime, timedelta, timezone
 import hashlib
 import importlib.util
@@ -13,7 +14,7 @@ from torch.nn import functional as F
 from torch.utils.data import DataLoader
 import zarr
 
-from benchmark import STATIONS as SITE_STATIONS, VARIABLES, LEADS, site_export, matched_comparison
+from site_scoring import STATIONS as SITE_STATIONS, VARIABLES, LEADS, site_export, matched_comparison
 from model import HyperDS, UPSTREAM_REVISION
 from multiyear import combine_moments
 from train import WeatherDataset, train_epoch, evaluate, physical_station, commit_checkpoints

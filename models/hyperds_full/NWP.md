@@ -92,12 +92,12 @@ python -c 'import modal; print(modal.Function.from_name("weatherloo-hyperds-nwp"
 `run(source)` ingests the source's months (resumable), audits the result, runs
 `test_nwp.py`, then trains both modes on L4/A10 in five-epoch stages up to 30
 epochs. The final stage scores the best checkpoint on 2025 and writes
-`predictions.npz`, which follows the `benchmark.py` schema and adds an
+`predictions.npz`, which follows the `site_scoring.py` schema and adds an
 `nwp_forecast` array.
 
 ## Results (`r5`, 30 epochs, best checkpoint by 2024 validation; 2025 test)
 
-Scores use the site's 2025 truth (`benchmark.py`), matched to each comparison
+Scores use the site's 2025 truth (`pipelines/benchmarks/site_scoring.py`), matched to each comparison
 method, at leads 6–48 h. RMSE, temperature in °C and wind in km/h. Exports are
 not yet published to `benchmarking-site/data/`.
 

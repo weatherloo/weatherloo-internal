@@ -1,5 +1,6 @@
 """Region config parsing, the CNN-only final step and the region site export."""
 
+import repo_paths  # noqa: F401  (shared pipelines modules on sys.path)
 from datetime import datetime, timedelta, timezone
 import json
 from pathlib import Path
@@ -11,7 +12,7 @@ import numpy as np
 
 import final
 import regions
-import stations
+import station_labels as stations
 
 
 def cnn_export(rng, n_test=20):

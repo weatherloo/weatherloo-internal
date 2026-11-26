@@ -3,7 +3,7 @@
 Experiment record for the Soulis rounds 1-2 and the first CNN run. The packaged, region-configurable
 version is modal_region.py (see PIPELINE.md); both share the same point and patch caches.
 
-    modal deploy models/hyperds_full/modal_points.py
+    modal deploy models/hrrr_cnn/modal_points.py
 """
 
 import json
@@ -14,16 +14,30 @@ import modal
 
 if not modal.is_local():
     sys.path.insert(0, "/app")
-from modal_app import data_volume, checkpoint_volume
 
 app = modal.App("weatherloo-points")
+HERE = Path(__file__).resolve().parent
+data_volume = modal.Volume.from_name("weatherloo-temporal-data")
+checkpoint_volume = modal.Volume.from_name("weatherloo-temporal-checkpoints")
+
+SHARED_FILES = (("pipelines/download/station_labels.py", "/app/station_labels.py"),
+                ("pipelines/benchmarks/site_scoring.py", "/app/site_scoring.py"))
+
+
+def with_shared(image):
+    """Add this directory and the shared repository modules to an image at /app."""
+    image = image.add_local_dir(str(HERE), "/app")
+    for source, target in SHARED_FILES:
+        image = image.add_local_file(str(HERE.parents[1] / source), target)
+    return image
+
 STATION_ROOT = "/data/processed/hyperds_nwp/stations_v2"
 TARGET = "eric_d_soulis"
 POINT_ROOT = f"/data/processed/points/hrrr_{TARGET}_v1"
 image = modal.Image.debian_slim(python_version="3.12").pip_install(
     "dynamical-catalog>=0.8.0,<1", "pyproj==3.7.0", "scipy", "numpy", "lightgbm==4.5.0", "scikit-learn==1.5.2")
 if modal.is_local():
-    image = image.add_local_dir(str(Path(__file__).resolve().parent), "/app")
+    image = with_shared(image)
 
 
 def load_stations():
@@ -107,7 +121,7 @@ def study_v2(target: str = TARGET, k: int = 30):
 def site_benchmark(method: str = "gbm_hrrr_points"):
     """Score the round-2 exports with the benchmarking site's truth and matched comparisons."""
     import numpy as np
-    from benchmark import site_export, matched_comparison
+    from site_scoring import site_export, matched_comparison
     from mos import site_predictions
 
     data_volume.reload()
@@ -149,7 +163,7 @@ def extract_patches():
 
 cnn_image = modal.Image.debian_slim(python_version="3.12").pip_install("numpy", "torch==2.5.1", "scikit-learn==1.5.2")
 if modal.is_local():
-    cnn_image = cnn_image.add_local_dir(str(Path(__file__).resolve().parent), "/app")
+    cnn_image = with_shared(cnn_image)
 
 
 @app.function(image=cnn_image, gpu=["L4", "A10"], cpu=8, memory=65536, timeout=4 * 60 * 60,

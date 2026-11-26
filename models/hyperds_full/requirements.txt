@@ -11,8 +11,3 @@ pyproj==3.7.0
 easydict==1.13
 PyYAML==6.0.2
 einops==0.8.0
-# Region pipeline, HRRR extraction and Modal orchestration
-dynamical-catalog>=0.8.0,<1
-lightgbm==4.5.0
-scikit-learn==1.5.2
-modal>=1.6,<2

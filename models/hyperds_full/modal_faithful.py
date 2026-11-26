@@ -12,7 +12,7 @@ import modal
 
 if not modal.is_local():
     sys.path.insert(0, "/app")
-from modal_app import train_image, data_volume, checkpoint_volume
+from modal_app import train_image, data_volume, checkpoint_volume, with_shared
 from multiyear_plan import DATASET
 
 app = modal.App("weatherloo-hyperds-faithful")
@@ -27,16 +27,16 @@ EPOCHS = 50
 STAGE = 5
 cpu_image = modal.Image.debian_slim(python_version="3.12").pip_install("numpy")
 if modal.is_local():
-    cpu_image = cpu_image.add_local_dir(str(Path(__file__).resolve().parent), "/app")
+    cpu_image = with_shared(cpu_image.add_local_dir(str(Path(__file__).resolve().parent), "/app"))
 
 
 @app.function(image=cpu_image, cpu=4, memory=8192, timeout=3 * 60 * 60, volumes={"/data": data_volume})
 def stations():
-    from stations import build
+    from station_labels import build
 
     data_volume.reload()
     manifest = build(STATION_SOURCE, SOULIS_OVERLAY)
-    from stations import derive_deduplicated
+    from station_labels import derive_deduplicated
     manifest, split = derive_deduplicated(STATION_SOURCE, STATION_ROOT)
     data_volume.commit()
     summary = {name: len(ids) for name, ids in split.items()}

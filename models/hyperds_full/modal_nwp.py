@@ -12,7 +12,7 @@ import modal
 
 if not modal.is_local():
     sys.path.insert(0, "/app")
-from modal_app import train_image, data_volume, checkpoint_volume
+from modal_app import train_image, data_volume, checkpoint_volume, with_shared
 from multiyear_plan import DATASET
 
 app = modal.App("weatherloo-hyperds-nwp")
@@ -25,7 +25,7 @@ STAGE = 5
 nwp_image = modal.Image.debian_slim(python_version="3.12").pip_install(
     "dynamical-catalog>=0.8.0,<1", "pyproj==3.7.0", "scipy", "numpy")
 if modal.is_local():
-    nwp_image = nwp_image.add_local_dir(str(Path(__file__).resolve().parent), "/app")
+    nwp_image = with_shared(nwp_image.add_local_dir(str(Path(__file__).resolve().parent), "/app"))
 
 
 def nwp_root(source):
