@@ -4,7 +4,6 @@
   "main": "expo-router/entry",
   "dependencies": {
     "@expo-google-fonts/inter": "^0.4.2",
-    "@expo-google-fonts/newsreader": "^0.4.1",
     "@expo/metro-runtime": "~58.0.17",
     "expo": "~58.1.0",
     "expo-constants": "~58.0.16",

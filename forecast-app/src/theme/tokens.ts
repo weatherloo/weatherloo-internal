@@ -1,27 +1,43 @@
-/** Design tokens for the "morning report" look: warm charcoal, cream type, terracotta accent. */
-export const colors = {
-  bg: "#1c1b19",
-  surface: "#272522",
-  surfaceAccent: "#3a2b24",
-  text: "#f3eee6",
-  body: "#c9c2b6",
-  muted: "#8d877c",
-  rule: "#3a3733",
-  strongRule: "#ece6da",
-  accent: "#dd8660",
-  rain: "#9bb7d4",
-  cold: "#a9bccd",
-  track: "#2c2a27",
+import { createContext, useContext } from "react";
+
+/** Design tokens: iOS-Weather-style frosted cards over a night/day sky. */
+export interface Theme {
+  night: boolean;
+  sky: [string, string, string];
+  card: string;
+  hairline: string;
+  text: string;
+  muted: string;
+  rain: string;
+}
+
+export const nightTheme: Theme = {
+  night: true,
+  sky: ["#0c0f2b", "#1b2252", "#2f3a73"],
+  card: "rgba(70, 78, 140, 0.42)",
+  hairline: "rgba(255,255,255,0.16)",
+  text: "#ffffff",
+  muted: "rgba(225,228,255,0.58)",
+  rain: "#6ec6ff",
 };
+export const dayTheme: Theme = {
+  night: false,
+  sky: ["#2f6fb8", "#4f93d6", "#8cc3ee"],
+  card: "rgba(40, 90, 160, 0.34)",
+  hairline: "rgba(255,255,255,0.22)",
+  text: "#ffffff",
+  muted: "rgba(235,245,255,0.7)",
+  rain: "#bfe6ff",
+};
+
+export const ThemeContext = createContext<Theme>(nightTheme);
+export const useTheme = () => useContext(ThemeContext);
 
 export const fonts = {
-  serifLight: "Newsreader_300Light",
-  serif: "Newsreader_400Regular",
-  serifItalic: "Newsreader_400Regular_Italic",
-  sans: "Inter_400Regular",
-  sansMedium: "Inter_500Medium",
-  sansSemi: "Inter_600SemiBold",
+  thin: "Inter_200ExtraLight",
+  light: "Inter_300Light",
+  regular: "Inter_400Regular",
+  medium: "Inter_500Medium",
+  semi: "Inter_600SemiBold",
 };
-
-export const space = { page: 24, section: 56, gap: 16 };
-export const MAX_WIDTH = 560;
+export const MAX_WIDTH = 520;
