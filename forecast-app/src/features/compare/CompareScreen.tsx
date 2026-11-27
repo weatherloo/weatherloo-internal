@@ -2,7 +2,7 @@ import { Fragment, useEffect, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { Link } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import Svg, { Line, Path, Text as SvgText } from "react-native-svg";
+import Svg, { Circle, Line, Path, Text as SvgText } from "react-native-svg";
 import type { ForecastRecord } from "@/data/contract";
 import {
   BENCHMARK_LEAD_HOURS,
@@ -220,15 +220,17 @@ function ModelCard({
   );
 }
 
-function f024Value(report: Report, variable: Variable) {
+function f024Value(report: Report, variable: Variable, lead = BENCHMARK_LEAD_HOURS) {
   const point = report.allHours.find(
-    (hour) => hour.time.getTime() === report.initTime.getTime() + BENCHMARK_LEAD_HOURS * 3600e3,
+    (hour) => hour.time.getTime() === report.initTime.getTime() + lead * 3600e3,
   );
   if (!point) return "—";
   return variable === "t2m" ? `${Math.round(point.temp)}°C` : `${Math.round(point.windKmh)} km/h`;
 }
 
 function ForecastComparisonChart({ models, variable }: { models: ModelView[]; variable: Variable }) {
+  const [selectedLeadIndex, setSelectedLeadIndex] = useState(23);
+  const [chartWidth, setChartWidth] = useState(0);
   const values = models.flatMap(({ report }) =>
     report.allHours.map((hour) => variable === "t2m" ? hour.temp : hour.windKmh),
   );
@@ -239,35 +241,81 @@ function ForecastComparisonChart({ models, variable }: { models: ModelView[]; va
   const x = (index: number) => chart.left + (index / 47) * (chart.right - chart.left);
   const y = (value: number) => chart.bottom - ((value - min) / spread) * (chart.bottom - chart.top);
   const unit = variable === "t2m" ? "°C" : "km/h";
+  const selectedLead = selectedLeadIndex + 1;
+  const selectLead = (locationX: number) => {
+    const scale = Math.min(chartWidth / 360, 1);
+    if (!scale) return;
+    const renderedWidth = 360 * scale;
+    const offsetX = (chartWidth - renderedWidth) / 2;
+    const chartX = (locationX - offsetX) / scale;
+    const fraction = (chartX - chart.left) / (chart.right - chart.left);
+    setSelectedLeadIndex(Math.max(0, Math.min(47, Math.round(fraction * 47))));
+  };
 
   return (
     <Card>
       <View style={s.chartHeading}>
         <Text style={s.chartTitle}>{variable === "t2m" ? "Temperature" : "Wind speed"}</Text>
-        <Text style={s.leadNote}>48-hour outlook · demo</Text>
+        <Text style={s.leadNote}>48-hour outlook · tap to inspect</Text>
       </View>
-      <Svg width="100%" height={148} viewBox="0 0 360 148" accessibilityLabel={`${variable} comparison chart`}>
-        {[0, 0.5, 1].map((fraction) => {
-          const value = min + spread * fraction;
-          const yy = y(value);
-          return (
-            <Fragment key={fraction}>
-              <Line x1={chart.left} y1={yy} x2={chart.right} y2={yy} stroke="rgba(255,255,255,0.15)" strokeWidth={1} />
-              <SvgText x={2} y={yy + 4} fill="rgba(225,228,255,0.6)" fontSize={10}>{`${Math.round(value)}${unit}`}</SvgText>
-            </Fragment>
-          );
-        })}
-        {[{ index: 0, label: "1h" }, { index: 23, label: "24h" }, { index: 47, label: "48h" }].map(({ index, label }) => (
-          <SvgText key={label} x={x(index)} y={138} fill="rgba(225,228,255,0.55)" fontSize={10} textAnchor="middle">
-            {label}
-          </SvgText>
-        ))}
-        {models.map(({ model, report }, modelIndex) => {
-          const series = report.allHours.map((hour) => variable === "t2m" ? hour.temp : hour.windKmh);
-          const path = series.map((value, index) => `${index === 0 ? "M" : "L"}${x(index)},${y(value)}`).join(" ");
-          return <Path key={model.id} d={path} fill="none" stroke={MODEL_COLORS[modelIndex % MODEL_COLORS.length]} strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" />;
-        })}
-      </Svg>
+      <Pressable
+        onLayout={(event) => setChartWidth(event.nativeEvent.layout.width)}
+        onPress={(event) => selectLead(event.nativeEvent.locationX)}
+        accessibilityRole="button"
+        accessibilityLabel={`Forecast comparison chart, selected lead ${selectedLead} hours`}
+        accessibilityHint="Tap a point on the chart to inspect demo values for every model at that lead."
+      >
+        <Svg width="100%" height={148} viewBox="0 0 360 148">
+          {[0, 0.5, 1].map((fraction) => {
+            const value = min + spread * fraction;
+            const yy = y(value);
+            return (
+              <Fragment key={fraction}>
+                <Line x1={chart.left} y1={yy} x2={chart.right} y2={yy} stroke="rgba(255,255,255,0.15)" strokeWidth={1} />
+                <SvgText x={2} y={yy + 4} fill="rgba(225,228,255,0.6)" fontSize={10}>{`${Math.round(value)}${unit}`}</SvgText>
+              </Fragment>
+            );
+          })}
+          {[{ index: 0, label: "1h" }, { index: 23, label: "24h" }, { index: 47, label: "48h" }].map(({ index, label }) => (
+            <SvgText key={label} x={x(index)} y={138} fill="rgba(225,228,255,0.55)" fontSize={10} textAnchor="middle">
+              {label}
+            </SvgText>
+          ))}
+          {models.map(({ model, report }, modelIndex) => {
+            const series = report.allHours.map((hour) => variable === "t2m" ? hour.temp : hour.windKmh);
+            const path = series.map((value, index) => `${index === 0 ? "M" : "L"}${x(index)},${y(value)}`).join(" ");
+            return <Path key={model.id} d={path} fill="none" stroke={MODEL_COLORS[modelIndex % MODEL_COLORS.length]} strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" />;
+          })}
+          <Line x1={x(selectedLeadIndex)} y1={chart.top} x2={x(selectedLeadIndex)} y2={chart.bottom} stroke="rgba(255,255,255,0.65)" strokeWidth={1} strokeDasharray="3 3" />
+          {models.map(({ model, report }, modelIndex) => {
+            const point = report.allHours[selectedLeadIndex];
+            const value = variable === "t2m" ? point.temp : point.windKmh;
+            return (
+              <Circle
+                key={`${model.id}-selected`}
+                cx={x(selectedLeadIndex)}
+                cy={y(value)}
+                r={4}
+                fill={MODEL_COLORS[modelIndex % MODEL_COLORS.length]}
+                stroke="#fff"
+                strokeWidth={1}
+              />
+            );
+          })}
+        </Svg>
+      </Pressable>
+      <View style={s.tooltip}>
+        <Text style={s.tooltipHeading}>Synthetic demo values · f{String(selectedLead).padStart(3, "0")}</Text>
+        <View style={s.tooltipValues}>
+          {models.map(({ model, report }, index) => (
+            <View key={model.id} style={s.tooltipItem}>
+              <View style={[s.legendDot, { backgroundColor: MODEL_COLORS[index % MODEL_COLORS.length] }]} />
+              <Text style={s.tooltipLabel}>{model.label}</Text>
+              <Text style={s.tooltipValue}>{f024Value(report, variable, selectedLead)} </Text>
+            </View>
+          ))}
+        </View>
+      </View>
       <View style={s.legend}>
         {models.map(({ model }, index) => (
           <View key={model.id} style={s.legendItem}>
@@ -325,6 +373,12 @@ const s = StyleSheet.create({
   variableOptionText: { color: "#fff", fontFamily: fonts.medium, fontSize: 13 },
   chartHeading: { flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", marginBottom: 8 },
   chartTitle: { color: "#fff", fontFamily: fonts.medium, fontSize: 16 },
+  tooltip: { borderRadius: 12, backgroundColor: "rgba(255,255,255,0.08)", padding: 10, marginTop: 2 },
+  tooltipHeading: { color: "rgba(225,228,255,0.7)", fontFamily: fonts.medium, fontSize: 11, marginBottom: 8 },
+  tooltipValues: { flexDirection: "row", flexWrap: "wrap", columnGap: 12, rowGap: 8 },
+  tooltipItem: { flexDirection: "row", alignItems: "center", gap: 5, minWidth: "45%" },
+  tooltipLabel: { color: "rgba(245,247,255,0.72)", fontFamily: fonts.regular, fontSize: 10, flexShrink: 1 },
+  tooltipValue: { color: "#fff", fontFamily: fonts.medium, fontSize: 11 },
   legend: { flexDirection: "row", flexWrap: "wrap", columnGap: 12, rowGap: 8, paddingTop: 2 },
   legendItem: { flexDirection: "row", alignItems: "center", gap: 5 },
   legendDot: { width: 7, height: 7, borderRadius: 4 },
