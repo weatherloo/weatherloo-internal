@@ -1,4 +1,5 @@
 import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { Link } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useForecast } from "@/data/ForecastProvider";
 import { conditionLabel, deg, summaryText } from "@/data/narrative";
@@ -7,12 +8,13 @@ import { DayRow } from "@/components/DayRow";
 import { HourlyStrip } from "@/components/HourlyStrip";
 import { Icon } from "@/components/Icon";
 import { SkyBackground } from "@/components/SkyBackground";
+import { ModelPicker } from "./ModelPicker";
 import { Tiles } from "./Tiles";
 import { dayTheme, fonts, MAX_WIDTH, nightTheme, ThemeContext } from "@/theme/tokens";
 
 /** The forecast page: hero, summary + hourly, day forecast, detail tiles. */
 export function ReportScreen() {
-  const { report, status, error } = useForecast();
+  const { report, status, error, activeModelId, setActiveModelId } = useForecast();
   const insets = useSafeAreaInsets();
   if (status === "error") return <Centered text={`Couldn't load the forecast. ${error ?? ""}`} />;
   if (!report) return <Centered text="Loading…" />;
@@ -25,8 +27,15 @@ export function ReportScreen() {
     <ThemeContext.Provider value={theme}>
       <View style={s.root}>
         <SkyBackground />
-        <ScrollView contentContainerStyle={[s.content, { paddingTop: insets.top + 56, paddingBottom: insets.bottom + 48 }]}>
+        <ScrollView contentContainerStyle={[s.content, { paddingTop: insets.top + 20, paddingBottom: insets.bottom + 48 }]}>
           <View style={s.page}>
+            <View style={s.topBar}>
+              <Text style={[s.eyebrow, { color: theme.muted }]}>WATERLOO, ONTARIO</Text>
+              <Link href="/compare" asChild>
+                <Text style={s.compareLink}>Compare models  ›</Text>
+              </Link>
+            </View>
+            <ModelPicker activeModelId={activeModelId} onSelect={setActiveModelId} />
             <View style={s.hero}>
               <View style={s.place}>
                 <Icon name="nav" size={16} color={theme.text} />
@@ -68,6 +77,9 @@ const s = StyleSheet.create({
   root: { flex: 1 },
   content: { alignItems: "center" },
   page: { width: "100%", maxWidth: MAX_WIDTH, paddingHorizontal: 16, gap: 12 },
+  topBar: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 4 },
+  eyebrow: { fontFamily: fonts.semi, fontSize: 11, letterSpacing: 1.1 },
+  compareLink: { color: "#fff", fontFamily: fonts.medium, fontSize: 13, paddingVertical: 6 },
   hero: { alignItems: "center", paddingBottom: 56 },
   place: { flexDirection: "row", alignItems: "center", gap: 6 },
   placeText: { fontFamily: fonts.semi, fontSize: 17, color: "#fff", letterSpacing: 0.4 },

@@ -1,8 +1,5 @@
-// Generates PLACEHOLDER forecast records in the forecast-record contract v1 shape
-// (weatherloo-forecast/contract/forecast_record.v1.schema.json), mimicking the HRRR
-// station-correction CNN (models/hrrr_cnn): hourly leads 1-48 h at eric_d_soulis for
-// t2m (degC), wind_speed (m/s), pop1 (hourly chance of >=0.2 mm), plus 6-hour blocks
-// pop6 / amt6 (mm) at leads 6,12,...,48. Deterministic; rerun: npm run fixtures.
+// Generates synthetic demo forecast records in the forecast-record contract v1 shape.
+// Deterministic; rerun: npm run fixtures.
 import { writeFileSync, mkdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -22,7 +19,7 @@ const rnd = () => ((s = (s * 16807) % 2147483647) / 2147483647) - 0.5; // determ
 const base = {
   schema_version: 1,
   model_id: "hrrr_cnn",
-  model: { family: "hrrr", version: "cnn_v1", tags: ["station_corrected", "cnn", "placeholder"] },
+  model: { family: "hrrr", version: "cnn_v1", tags: ["station_corrected", "cnn", "placeholder", "synthetic_demo"] },
   station_id: "eric_d_soulis",
   init_time: iso(INIT),
   issued_at: iso(ISSUED),
@@ -62,8 +59,44 @@ const files = {
   t2m: [t2m, "degC"], wind_speed: [wind, "m/s"], pop1: [pop1, "fraction"],
   pop6: [pop6, "fraction"], amt6: [amt6, "mm"],
 };
+const baseRecords = [];
 for (const [variable, [points, unit]] of Object.entries(files)) {
   const rec = { ...base, variable, unit, points };
+  baseRecords.push(rec);
   writeFileSync(join(out, `eric_d_soulis.${variable}.hrrr_cnn.json`), JSON.stringify(rec, null, 2) + "\n");
 }
-console.log("wrote", Object.keys(files).length, "fixtures to", out);
+
+const demoModels = [
+  { id: "ecmwf_aifs", family: "global_nwp", tempOffset: 0.3, tempWave: 0.35, windScale: 0.92, popScale: 0.9, precipScale: 0.9 },
+  { id: "graphcast", family: "ai_global", tempOffset: -0.5, tempWave: 0.7, windScale: 1.12, popScale: 1.1, precipScale: 1.2 },
+  { id: "hrrr_interpolated", family: "regional_nwp", tempOffset: -0.1, tempWave: 0.25, windScale: 1.06, popScale: 1.15, precipScale: 1.1 },
+  { id: "persistence", family: "baseline", tempOffset: -0.8, tempWave: 0.9, windScale: 0.78, popScale: 0.65, precipScale: 0.75 },
+];
+
+for (const model of demoModels) {
+  for (const rec of baseRecords) {
+    const points = rec.points.map((p) => {
+      const temperatureWave = model.tempWave * Math.sin(p.lead_hours / 8);
+      const transform = (value) => {
+        if (rec.variable === "t2m") return r1(value + model.tempOffset + temperatureWave);
+        if (rec.variable === "wind_speed") return r1(Math.max(0.2, value * model.windScale));
+        if (rec.variable.startsWith("pop")) return r3(clamp(value * model.popScale, 0, 0.99));
+        return r1(Math.max(0, value * model.precipScale));
+      };
+      return {
+        ...p,
+        value: transform(p.value),
+        ...(p.lower === undefined ? {} : { lower: transform(p.lower) }),
+        ...(p.upper === undefined ? {} : { upper: transform(p.upper) }),
+      };
+    });
+    const modelRecord = {
+      ...rec,
+      model_id: model.id,
+      model: { family: model.family, version: "demo_fixture_v1", tags: ["placeholder", "synthetic_demo"] },
+      points,
+    };
+    writeFileSync(join(out, `eric_d_soulis.${rec.variable}.${model.id}.json`), JSON.stringify(modelRecord, null, 2) + "\n");
+  }
+}
+console.log("wrote", Object.keys(files).length * (demoModels.length + 1), "fixtures to", out);

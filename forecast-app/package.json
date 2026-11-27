@@ -31,6 +31,8 @@
     "build:web": "expo export -p web",
     "serve:web": "expo serve",
     "fixtures": "node scripts/generate-fixtures.mjs",
+    "benchmark-summary": "node scripts/generate-benchmark-summary.mjs",
+    "test:data": "node scripts/validate-data.mjs",
     "typecheck": "tsc --noEmit"
   },
   "private": true

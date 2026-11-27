@@ -1,0 +1,55 @@
+{
+  "schema_version": 1,
+  "year": 2025,
+  "station_id": "eric_d_soulis",
+  "lead_time_hours": 24,
+  "metric": "RMSE",
+  "aggregation": "sqrt(mean(per-initialization signed forecast-observation error squared))",
+  "source": "benchmarking-site/data/aggregates",
+  "methods": {
+    "ecmwf_aifs": {
+      "n_inits": 1460,
+      "t2m": {
+        "rmse": 1.93,
+        "n_samples": 1240
+      },
+      "wind_speed": {
+        "rmse": 10,
+        "n_samples": 1151
+      }
+    },
+    "graphcast": {
+      "n_inits": 1457,
+      "t2m": {
+        "rmse": 2.21,
+        "n_samples": 1244
+      },
+      "wind_speed": {
+        "rmse": 9.91,
+        "n_samples": 1155
+      }
+    },
+    "hrrr_interpolated": {
+      "n_inits": 1460,
+      "t2m": {
+        "rmse": 2.21,
+        "n_samples": 1247
+      },
+      "wind_speed": {
+        "rmse": 10.85,
+        "n_samples": 1158
+      }
+    },
+    "persistence": {
+      "n_inits": 1460,
+      "t2m": {
+        "rmse": 5.09,
+        "n_samples": 1167
+      },
+      "wind_speed": {
+        "rmse": 4.92,
+        "n_samples": 1076
+      }
+    }
+  }
+}
