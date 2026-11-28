@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { Image, Pressable, StyleSheet, Text, View } from "react-native";
+import { useEffect, useMemo, useRef, useState, type ComponentRef } from "react";
+import { Image, PanResponder, Platform, Pressable, StyleSheet, Text, View, type ViewStyle } from "react-native";
 import Svg, { Circle, G, Line, LinearGradient, Path, Rect, Stop as SvgStop, Text as SvgText } from "react-native-svg";
 import { Card } from "@/components/Card";
 import { pngDataUri } from "@/components/png";
@@ -88,14 +88,12 @@ export function SpatialMap({ wide, timeZone, now, stationName }: { wide: boolean
           accessibilityLabel={playing ? "Pause" : "Play through the forecast"} style={[s.play, glassPill]}>
           <Text style={[s.playText, { color: t.text }]}>{playing ? "❚❚" : "▶"}</Text>
         </Pressable>
-        <View style={s.scrub} accessibilityLabel="Forecast hour">
-          {map.leads.map((l, i) => (
-            <Pressable key={l} onPress={() => { setPlaying(false); setFrame(i); }} hitSlop={{ top: 10, bottom: 10 }}
-              accessibilityRole="button" accessibilityLabel={`+${l} hours`} style={s.tickHit}>
-              <View style={[s.tick, i <= frame && s.tickPast, i === frame && s.tickOn]} />
-            </Pressable>
-          ))}
-        </View>
+        <TimeScrubber
+          count={map.leads.length}
+          frame={frame}
+          label={`+${lead} hours, ${when}`}
+          onChange={(i) => { setPlaying(false); setFrame(i); }}
+        />
       </View>
       <Text style={[s.note, { color: t.muted }]}>
         Real NOAA HRRR output (run {String(run.hour).padStart(2, "0")} UTC, {run.day} {run.monthShort}), 3 km grid. Raw HRRR:
@@ -205,6 +203,78 @@ function Overlay({ map, field, frame, size }: { map: HrrrMap; field: MapField; f
   );
 }
 
+/**
+ * Draggable time bar: press anywhere to jump, drag to scrub, arrow keys or screen-reader
+ * increment/decrement to step. Positions snap to the nearest frame.
+ */
+function TimeScrubber({ count, frame, label, onChange }: {
+  count: number; frame: number; label: string; onChange: (frame: number) => void;
+}) {
+  const track = useRef<ComponentRef<typeof View>>(null);
+  const box = useRef({ left: 0, width: 1 });
+  const change = useRef(onChange);
+  change.current = onChange;
+  const [dragging, setDragging] = useState(false);
+
+  const at = (pageX: number) => {
+    const f = Math.max(0, Math.min(1, (pageX - box.current.left) / box.current.width));
+    change.current(Math.round(f * (count - 1)));
+  };
+  const responder = useMemo(() => PanResponder.create({
+    onStartShouldSetPanResponder: () => true,
+    onMoveShouldSetPanResponder: () => true,
+    onPanResponderTerminationRequest: () => false,
+    onPanResponderGrant: (e) => {
+      const pageX = e.nativeEvent.pageX; // read now: the event is gone by the time measure answers
+      setDragging(true);
+      track.current?.measure((_x, _y, width, _h, left) => {
+        box.current = { left, width: width || 1 };
+        at(pageX);
+      });
+    },
+    onPanResponderMove: (e) => at(e.nativeEvent.pageX),
+    onPanResponderRelease: () => setDragging(false),
+    onPanResponderTerminate: () => setDragging(false),
+  }), [count]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const step = (d: number) => onChange(Math.max(0, Math.min(count - 1, frame + d)));
+  const pct = count > 1 ? (frame / (count - 1)) * 100 : 0;
+  return (
+    <View
+      ref={track}
+      {...responder.panHandlers}
+      focusable
+      accessible
+      accessibilityRole="adjustable"
+      accessibilityLabel="Forecast hour"
+      accessibilityValue={{ min: 0, max: count - 1, now: frame, text: label }}
+      // react-native-web reads the aria-* props, not accessibilityValue.
+      aria-valuemin={0}
+      aria-valuemax={count - 1}
+      aria-valuenow={frame}
+      aria-valuetext={label}
+      accessibilityActions={[{ name: "increment" }, { name: "decrement" }]}
+      onAccessibilityAction={(e) => step(e.nativeEvent.actionName === "increment" ? 1 : -1)}
+      onKeyDown={(e) => {
+        const key = (e.nativeEvent as unknown as { key?: string }).key;
+        if (key === "ArrowRight" || key === "ArrowLeft") { e.preventDefault(); step(key === "ArrowRight" ? 1 : -1); }
+      }}
+      style={[s.scrub, WEB_DRAG]}
+    >
+      <View style={s.rail}>
+        <View style={[s.railFill, { width: `${pct}%` }]} />
+        {Array.from({ length: count }, (_, i) => (
+          <View key={i} style={[s.notch, { left: `${count > 1 ? (i / (count - 1)) * 100 : 0}%` }]} />
+        ))}
+      </View>
+      <View style={[s.thumb, dragging && s.thumbActive, { left: `${pct}%` }]} />
+    </View>
+  );
+}
+
+// Web: no page scroll or text selection while dragging the bar, and a grab cursor.
+const WEB_DRAG = (Platform.OS === "web" ? { touchAction: "none", userSelect: "none", cursor: "grab" } : {}) as ViewStyle;
+
 function Legend({ field, range }: { field: MapField; range: [number, number] }) {
   const t = useTheme();
   const id = useSvgId("legend");
@@ -257,10 +327,15 @@ const s = StyleSheet.create({
   scrubRow: { flexDirection: "row", alignItems: "center", gap: 12 },
   play: { width: 36, height: 36, borderRadius: 18, alignItems: "center", justifyContent: "center", backgroundColor: "rgba(255,255,255,0.1)" },
   playText: { fontFamily: fonts.medium, fontSize: 12 },
-  scrub: { flex: 1, flexDirection: "row", gap: 3 },
-  tickHit: { flex: 1, paddingVertical: 8 },
-  tick: { height: 6, borderRadius: 3, backgroundColor: "rgba(255,255,255,0.16)" },
-  tickPast: { backgroundColor: "rgba(255,255,255,0.4)" },
-  tickOn: { backgroundColor: "#fff" },
+  // Tall hit area around a thin rail; the thumb is centred on the current frame.
+  scrub: { flex: 1, height: 32, justifyContent: "center", marginHorizontal: 9 },
+  rail: { height: 6, borderRadius: 3, backgroundColor: "rgba(255,255,255,0.16)" },
+  railFill: { position: "absolute", left: 0, top: 0, bottom: 0, borderRadius: 3, backgroundColor: "rgba(255,255,255,0.45)" },
+  notch: { position: "absolute", top: 1, width: 2, height: 4, marginLeft: -1, borderRadius: 1, backgroundColor: "rgba(8,12,40,0.35)" },
+  thumb: {
+    position: "absolute", top: 7, width: 18, height: 18, marginLeft: -9, borderRadius: 9, backgroundColor: "#fff",
+    boxShadow: "0 2px 8px rgba(3,6,25,0.45)",
+  },
+  thumbActive: { transform: [{ scale: 1.2 }] },
   note: { fontFamily: fonts.regular, fontSize: 12, lineHeight: 17 },
 });
