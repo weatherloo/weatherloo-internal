@@ -31,9 +31,14 @@ export function ReportScreen() {
           <View style={s.page}>
             <View style={s.topBar}>
               <Text style={[s.eyebrow, { color: theme.muted }]}>WATERLOO, ONTARIO</Text>
-              <Link href="/compare" asChild>
-                <Text style={s.compareLink}>Compare models  ›</Text>
-              </Link>
+              <View style={s.links}>
+                <Link href="/demo" asChild>
+                  <Text style={s.compareLink}>Training demo  ›</Text>
+                </Link>
+                <Link href="/compare" asChild>
+                  <Text style={s.compareLink}>Compare models  ›</Text>
+                </Link>
+              </View>
             </View>
             <ModelPicker activeModelId={activeModelId} onSelect={setActiveModelId} />
             <View style={s.hero}>
@@ -79,6 +84,7 @@ const s = StyleSheet.create({
   page: { width: "100%", maxWidth: MAX_WIDTH, paddingHorizontal: 16, gap: 12 },
   topBar: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 4 },
   eyebrow: { fontFamily: fonts.semi, fontSize: 11, letterSpacing: 1.1 },
+  links: { flexDirection: "row", gap: 16 },
   compareLink: { color: "#fff", fontFamily: fonts.medium, fontSize: 13, paddingVertical: 6 },
   hero: { alignItems: "center", paddingBottom: 56 },
   place: { flexDirection: "row", alignItems: "center", gap: 6 },
