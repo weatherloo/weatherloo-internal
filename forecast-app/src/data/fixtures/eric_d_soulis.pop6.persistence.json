@@ -1,0 +1,59 @@
+{
+  "schema_version": 1,
+  "model_id": "persistence",
+  "model": {
+    "family": "baseline",
+    "version": "demo_fixture_v1",
+    "tags": [
+      "placeholder",
+      "synthetic_demo"
+    ]
+  },
+  "station_id": "eric_d_soulis",
+  "init_time": "2026-11-27T06:00:00Z",
+  "issued_at": "2026-11-27T10:00:00Z",
+  "variable": "pop6",
+  "unit": "fraction",
+  "points": [
+    {
+      "lead_hours": 6,
+      "valid_time": "2026-11-27T12:00:00Z",
+      "value": 0.057
+    },
+    {
+      "lead_hours": 12,
+      "valid_time": "2026-11-27T18:00:00Z",
+      "value": 0.025
+    },
+    {
+      "lead_hours": 18,
+      "valid_time": "2026-11-28T00:00:00Z",
+      "value": 0.045
+    },
+    {
+      "lead_hours": 24,
+      "valid_time": "2026-11-28T06:00:00Z",
+      "value": 0.04
+    },
+    {
+      "lead_hours": 30,
+      "valid_time": "2026-11-28T12:00:00Z",
+      "value": 0.109
+    },
+    {
+      "lead_hours": 36,
+      "valid_time": "2026-11-28T18:00:00Z",
+      "value": 0.43
+    },
+    {
+      "lead_hours": 42,
+      "valid_time": "2026-11-29T00:00:00Z",
+      "value": 0.54
+    },
+    {
+      "lead_hours": 48,
+      "valid_time": "2026-11-29T06:00:00Z",
+      "value": 0.57
+    }
+  ]
+}

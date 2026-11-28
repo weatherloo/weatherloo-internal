@@ -108,6 +108,8 @@ take precedence for files within their directories.
 - `models/lstm/AGENTS.md` — LSTM bias-correction sweeps and training workflow.
 - `models/hrrr_cnn/AGENTS.md` — HRRR station-correction CNN: region-configurable
   pipeline for temperature, wind and precipitation, run on Modal.
+- `forecast-app/AGENTS.md` — Expo forecast app: routes, data source seam, fixtures,
+  Vercel deploy.
 - `models/hyperds_full/AGENTS.md` — HyperDS replication and its temporal and
   HRRR/AIFS-input variants (research), run on Modal.
 
@@ -128,6 +130,8 @@ migration map.
   `methods/<method>/compute_benchmark.py` entry points that write into
   `benchmarking-site/data/<method>/`.
 - `src/hrrr_bias_correction/` — shared HRRR bias-correction Python package.
+- `forecast-app/` — Expo / React Native forecast app (web build on Vercel); read
+  `forecast-app/AGENTS.md` first. Not yet merged with `weatherloo-forecast`.
 - `models/` — model-specific implementations, training, and evaluation
   (`unet/`, `unet-hrrr/`, `lstm/`, `hrrr_cnn/`, `hyperds_full/`; earlier
   prototypes in `temporal_hyperds/`, `temporal_station/`, `weight_space_pilot/`).

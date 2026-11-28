@@ -1,0 +1,24 @@
+{
+  "expo": {
+    "name": "Weatherloo",
+    "slug": "weatherloo-forecast-app",
+    "scheme": "weatherloo",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "backgroundColor": "#1c1b19",
+    "icon": "./assets/icon.png",
+    "plugins": ["expo-router"],
+    "ios": { "supportsTablet": true },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#1c1b19",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "web": { "output": "single", "bundler": "metro", "favicon": "./assets/favicon.png" }
+  }
+}
