@@ -6,9 +6,11 @@ import { Card } from "@/components/Card";
 import { SkyBackground } from "@/components/SkyBackground";
 import stationData from "@/data/demo/stations.json";
 import demo from "@/data/demo/locations.json";
-import { fonts, MAX_WIDTH, nightTheme, ThemeContext } from "@/theme/tokens";
+import { pageStyle, useWide } from "@/theme/layout";
+import { fonts, nightTheme, ThemeContext } from "@/theme/tokens";
 import { STATION_RADIUS_KM, distanceKm, hrrrDomain, runChecks, type LatLon, type Station } from "./checks";
 import { Globe } from "./Globe";
+import { LocationSearch, type SearchEntry } from "./LocationSearch";
 import { TrainRun } from "./TrainRun";
 import { ui } from "./ui";
 import { Walkthrough, type DemoLocation, type DemoMeta } from "./Walkthrough";
@@ -23,15 +25,26 @@ const STATIONS: Station[] = [
   ...(stationData.stations as Row[]).map(([id, name, lat, lon, begin, network]) => ({ id, name, lat, lon, begin, network })),
 ];
 
+const SEARCH: SearchEntry[] = [
+  ...PREPARED.map((l) => ({ key: `prepared-${l.id}`, title: l.label, subtitle: l.station_name, lat: l.lat, lon: l.lon, preparedId: l.id })),
+  ...(stationData.stations as Row[]).map(([id, name, lat, lon, , network]) => ({
+    key: id, title: name, subtitle: [id, network].filter(Boolean).join(" · "), lat, lon,
+  })),
+];
+
 // A station within 2 km of a prepared target is the same site (e.g. IEM's CYYZ vs ECCC 51459).
 const preparedFor = (station: Station | null) => station && PREPARED.find((l) => distanceKm(l, station) < 2);
 
 const ICON = { pass: "✓", fail: "✕", skip: "–" } as const;
 const ICON_BG = { pass: "#10b981", fail: "#dc2626", skip: "rgba(255,255,255,0.2)" } as const;
 
-/** Training demo: pick a spot on the globe, check it, then replay or plan an hrrr_cnn training run. */
+/**
+ * Training demo: pick a spot on the globe, check it, then replay or plan an hrrr_cnn training run.
+ * Desktop puts the globe and the training panel side by side.
+ */
 export function DemoScreen() {
   const insets = useSafeAreaInsets();
+  const wide = useWide();
   const [tap, setTap] = useState<LatLon | null>(null);
   const [focus, setFocus] = useState<LatLon | null>(null);
   const [open, setOpen] = useState<{ loc: DemoLocation; km: number | null } | null>(null);
@@ -43,95 +56,93 @@ export function DemoScreen() {
     const loc = PREPARED.find((l) => l.id === id)!;
     setTap({ lat: loc.lat, lon: loc.lon });
     setFocus({ lat: loc.lat, lon: loc.lon });
-    setOpen(null);
+    setOpen({ loc, km: null });
   };
 
   return (
     <ThemeContext.Provider value={nightTheme}>
       <View style={s.root}>
         <SkyBackground />
-        <ScrollView contentContainerStyle={[s.content, { paddingTop: insets.top + 20, paddingBottom: insets.bottom + 40 }]}>
-          <View style={s.page}>
+        <ScrollView contentContainerStyle={[s.content, { paddingTop: insets.top + (wide ? 32 : 20), paddingBottom: insets.bottom + 40 }]}>
+          <View style={pageStyle(wide)}>
             <View style={s.topBar}>
-              <Link href="/" asChild>
+              <Link href="/" replace asChild>
                 <Text style={s.backLink}>‹  Forecast</Text>
               </Link>
             </View>
             <Text style={s.title}>Training demo</Text>
-            <Text style={s.subtitle}>
-              Pick a spot inside HRRR coverage and step through how we train a station forecast correction: download,
-              preprocessing, training and validation.
+            <Text style={[s.subtitle, wide && s.subtitleWide]}>
+              Pick a spot in HRRR coverage and watch a correction model train for it.
             </Text>
 
-            <Card title="Pick a location" icon="nav">
-              <Globe
-                domain={DOMAIN}
-                pins={PREPARED.map((l) => ({
-                  id: l.id, label: PIN_LABELS[l.id] ?? l.label, lat: l.lat, lon: l.lon,
-                  left: l.id === "eric_d_soulis", // Waterloo and Pearson are 75 km apart; keep labels apart
-                }))}
-                tap={tap}
-                station={result?.station ?? null}
-                radiusKm={STATION_RADIUS_KM}
-                tapOk={result?.ok ?? true}
-                focus={focus}
-                onTap={(p) => { setTap(p); setOpen(null); }}
-                onPin={pickPrepared}
-              />
-              <View style={s.legend}>
-                <Legend color="#67e8f9" label="HRRR coverage" />
-                <Legend color="#10b981" label="Prepared run" />
-                <Legend color="#10b981" dashed label={`${STATION_RADIUS_KM} km station search`} />
-              </View>
-            </Card>
+            <View style={wide ? s.columns : s.stack}>
+              <Card title="Pick a location" icon="nav" style={wide && s.globeCol}>
+                <LocationSearch
+                  entries={SEARCH}
+                  onPick={(e) => {
+                    if (e.preparedId) return pickPrepared(e.preparedId);
+                    setTap({ lat: e.lat, lon: e.lon });
+                    setFocus({ lat: e.lat, lon: e.lon });
+                    setOpen(null);
+                  }}
+                />
+                <Globe
+                  domain={DOMAIN}
+                  pins={PREPARED.map((l) => ({
+                    id: l.id, label: PIN_LABELS[l.id] ?? l.label, lat: l.lat, lon: l.lon,
+                    left: l.id === "eric_d_soulis", // Waterloo and Pearson are 75 km apart; keep labels apart
+                  }))}
+                  tap={tap}
+                  station={result?.station ?? null}
+                  radiusKm={STATION_RADIUS_KM}
+                  tapOk={result?.ok ?? true}
+                  focus={focus}
+                  onTap={(p) => { setTap(p); setOpen(null); }}
+                  onPin={pickPrepared}
+                />
+                <View style={s.legend}>
+                  <Legend color="#67e8f9" label="HRRR coverage" />
+                  <Legend color="#10b981" label="Finished run" />
+                  <Legend color="#10b981" dashed label={`${STATION_RADIUS_KM} km station search`} />
+                </View>
+              </Card>
 
-            {open ? (
-              <Walkthrough loc={open.loc} km={open.km} meta={META} onClose={() => setOpen(null)} />
-            ) : (
-              <Card title="Train a forecast correction">
-                <Text style={ui.muted}>
-                  Tap anywhere on the globe. We check that the spot can be trained on, then step through the pipeline:
-                  download, preprocessing, training and validation.
-                </Text>
-
-                {result && tap ? (
-                  <View style={s.checks}>
-                    <Text style={ui.h4}>{tap.lat.toFixed(2)}°, {tap.lon.toFixed(2)}°</Text>
-                    {result.steps.map((st) => (
-                      <View key={st.id} style={[s.check, st.status === "skip" && s.skip]}
-                        accessibilityLabel={`${st.label}: ${st.status}. ${st.detail}`}>
-                        <Text style={[s.checkIcon, { backgroundColor: ICON_BG[st.status] }]}>{ICON[st.status]}</Text>
-                        <View style={s.flex}>
-                          <Text style={[ui.body, s.strong]}>{st.label}</Text>
-                          <Text style={ui.muted}>{st.detail}</Text>
+              {open ? (
+                <View style={wide && s.panelCol}>
+                  <Walkthrough key={open.loc.id} loc={open.loc} km={open.km} meta={META} onClose={() => setOpen(null)} />
+                </View>
+              ) : (
+                <Card title="Train a correction" style={wide && s.panelCol}>
+                  {result && tap ? (
+                    <View style={s.checks}>
+                      <Text style={ui.note}>{tap.lat.toFixed(2)}°, {tap.lon.toFixed(2)}°</Text>
+                      {result.steps.map((st) => (
+                        <View key={st.id} style={[s.check, st.status === "skip" && s.skip]}
+                          accessibilityLabel={`${st.label}: ${st.status}. ${st.detail}`}>
+                          <Text style={[s.checkIcon, { backgroundColor: ICON_BG[st.status] }]}>{ICON[st.status]}</Text>
+                          <View style={s.flex}>
+                            <Text style={ui.body}>{st.label}</Text>
+                            {st.status === "fail" || st.id === "station" ? <Text style={ui.note}>{st.detail}</Text> : null}
+                          </View>
                         </View>
-                      </View>
-                    ))}
-                    {!result.ok ? (
-                      <Text style={[ui.body, s.bad]}>This spot can&apos;t be trained on. Try another.</Text>
-                    ) : prepared ? (
-                      <>
-                        <Text style={[ui.body, s.good]}>Ready: {prepared.label} has a prepared run.</Text>
+                      ))}
+                      {!result.ok ? (
+                        <Text style={[ui.body, s.bad]}>Can&apos;t train here. Try another spot.</Text>
+                      ) : prepared ? (
                         <Pressable accessibilityRole="button" style={s.primary}
                           onPress={() => setOpen({ loc: prepared, km: distanceKm(tap, prepared) < 1 ? null : result.km })}>
-                          <Text style={s.primaryText}>Start training walkthrough</Text>
+                          <Text style={s.primaryText}>Replay training run</Text>
                         </Pressable>
-                      </>
-                    ) : (
-                      <TrainRun station={result.station!} stations={STATIONS} />
-                    )}
-                  </View>
-                ) : null}
-
-                <Text style={[ui.h4, s.subhead]}>Prepared runs</Text>
-                {PREPARED.map((l) => (
-                  <Pressable key={l.id} accessibilityRole="button" style={s.preparedRow} onPress={() => pickPrepared(l.id)}>
-                    <Text style={[ui.body, s.strong]}>{l.label}</Text>
-                    <Text style={ui.muted}>{l.lat.toFixed(2)}°, {l.lon.toFixed(2)}°</Text>
-                  </Pressable>
-                ))}
-              </Card>
-            )}
+                      ) : (
+                        <TrainRun station={result.station!} stations={STATIONS} />
+                      )}
+                    </View>
+                  ) : (
+                    <Text style={ui.muted}>Tap the globe to check a spot, or tap a green pin to replay a finished run.</Text>
+                  )}
+                </Card>
+              )}
+            </View>
           </View>
         </ScrollView>
       </View>
@@ -151,11 +162,15 @@ function Legend({ color, label, dashed }: { color: string; label: string; dashed
 const s = StyleSheet.create({
   root: { flex: 1 },
   content: { alignItems: "center" },
-  page: { width: "100%", maxWidth: MAX_WIDTH, paddingHorizontal: 16, gap: 12 },
+  stack: { gap: 12 },
+  columns: { flexDirection: "row", gap: 16, alignItems: "flex-start" },
+  globeCol: { flex: 1.15, minWidth: 0 },
+  panelCol: { flex: 1, minWidth: 0 },
   topBar: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   backLink: { color: "#fff", fontFamily: fonts.medium, fontSize: 14, paddingVertical: 6 },
   title: { color: "#fff", fontFamily: fonts.semi, fontSize: 34, letterSpacing: -0.5, marginTop: 4 },
-  subtitle: { color: "rgba(225,228,255,0.7)", fontFamily: fonts.regular, fontSize: 15, lineHeight: 21, marginTop: -8 },
+  subtitle: { color: "rgba(225,228,255,0.72)", fontFamily: fonts.regular, fontSize: 15, lineHeight: 21, marginTop: -6 },
+  subtitleWide: { maxWidth: 680 },
   legend: { flexDirection: "row", flexWrap: "wrap", gap: 12, marginTop: 10 },
   legendItem: { flexDirection: "row", alignItems: "center", gap: 6 },
   legendKey: { width: 12, height: 12, borderRadius: 6, borderWidth: 1.5 },
@@ -168,14 +183,7 @@ const s = StyleSheet.create({
     color: "#fff", fontFamily: fonts.semi, fontSize: 12,
   },
   flex: { flex: 1 },
-  strong: { fontFamily: fonts.semi },
-  good: { color: "#6ee7b7", fontFamily: fonts.semi },
   bad: { color: "#ffb4ab", fontFamily: fonts.semi },
   primary: { alignSelf: "flex-start", paddingVertical: 10, paddingHorizontal: 16, borderRadius: 999, backgroundColor: "#10b981" },
   primaryText: { color: "#04241a", fontFamily: fonts.semi, fontSize: 15 },
-  subhead: { marginTop: 16 },
-  preparedRow: {
-    flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingVertical: 10,
-    borderTopWidth: 1, borderTopColor: "rgba(255,255,255,0.12)",
-  },
 });

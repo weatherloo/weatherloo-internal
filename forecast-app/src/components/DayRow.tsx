@@ -4,10 +4,12 @@ import { deg } from "@/data/narrative";
 import type { DayEntry } from "@/data/report";
 import { fonts, useTheme } from "@/theme/tokens";
 import { Icon } from "./Icon";
+import { useSvgId } from "./svgId";
 
 /** One forecast row: day, sky (+ chance), low, range bar, high. */
 export function DayRow({ day, min, max, first }: { day: DayEntry; min: number; max: number; first?: boolean }) {
   const t = useTheme();
+  const rangeId = useSvgId("range");
   const span = Math.max(max - min, 1);
   const l = ((day.low - min) / span) * 100, w = Math.max(((day.high - day.low) / span) * 100, 4);
   const name = day.weekday === "today" ? "Today" : day.weekday.charAt(0).toUpperCase() + day.weekday.slice(1);
@@ -22,12 +24,12 @@ export function DayRow({ day, min, max, first }: { day: DayEntry; min: number; m
       <View style={s.bar}>
         <Svg width="100%" height="5" viewBox="0 0 100 5" preserveAspectRatio="none">
           <Defs>
-            <LinearGradient id={`g${day.key}`} x1="0" y1="0" x2="1" y2="0">
+            <LinearGradient id={rangeId} x1="0" y1="0" x2="1" y2="0">
               <Stop offset="0" stopColor="#5ac8fa" /><Stop offset="1" stopColor="#cfe67a" />
             </LinearGradient>
           </Defs>
           <Rect width="100" height="5" rx="2.5" fill="rgba(0,0,0,0.25)" />
-          <Rect x={l} width={w} height="5" rx="2.5" fill={`url(#g${day.key})`} />
+          <Rect x={l} width={w} height="5" rx="2.5" fill={`url(#${rangeId})`} />
         </Svg>
       </View>
       <Text style={[s.hi, { color: t.text }]}>{deg(day.high)}°</Text>

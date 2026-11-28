@@ -1,7 +1,6 @@
-import { StyleSheet, Text, View } from "react-native";
-import Svg, { Circle, Defs, G, Line, LinearGradient, Path, Stop } from "react-native-svg";
+import { StyleSheet, Text, View, type StyleProp, type ViewStyle } from "react-native";
+import Svg, { Circle, Line, Path } from "react-native-svg";
 import { Card } from "@/components/Card";
-import { moonInfo } from "@/data/moon";
 import { deg } from "@/data/narrative";
 import { POP_WET, type Report } from "@/data/report";
 import { clock } from "@/data/time";
@@ -12,17 +11,18 @@ import { fonts, useTheme } from "@/theme/tokens";
  * station location/date, appear here (no humidity, pressure, UV, visibility).
  */
 export function Tiles({ report }: { report: Report }) {
+  // Phone layout: precipitation and sunrise side by side, wind full width (compact labels fit 375 px).
   return (
     <View style={s.grid}>
-      <View style={s.half}><FeelsLike report={report} /></View>
-      <View style={s.half}><Precip report={report} /></View>
-      <View style={s.full}><Wind report={report} /></View>
-      <View style={s.half}><Sunrise report={report} /></View>
-      <View style={s.half}><Daylight report={report} /></View>
-      <View style={s.full}><Moon report={report} /></View>
+      <View style={s.half}><Precip report={report} style={s.fill} /></View>
+      <View style={s.half}><Sunrise report={report} style={s.fill} /></View>
+      <View style={s.full}><Wind report={report} compact /></View>
     </View>
   );
 }
+
+/** `compact` shrinks the dial/disc and row text for the narrower desktop columns. */
+type TileProps = { report: Report; style?: StyleProp<ViewStyle>; compact?: boolean };
 
 function Big({ children }: { children: string }) {
   const t = useTheme();
@@ -33,25 +33,14 @@ function Note({ children }: { children: string }) {
   return <Text style={[s.note, { color: t.text }]}>{children}</Text>;
 }
 
-function FeelsLike({ report }: { report: Report }) {
-  const c = report.current, diff = c.feels - c.temp;
-  return (
-    <Card title="Feels like" icon="thermometer" style={s.tile}>
-      <Big>{`${deg(c.feels)}°`}</Big>
-      <View style={{ flex: 1 }} />
-      <Note>{diff < -1 ? "Wind is making it feel colder." : "Similar to the actual temperature."}</Note>
-    </Card>
-  );
-}
-
-function Precip({ report }: { report: Report }) {
+export function Precip({ report, style }: TileProps) {
   const t = useTheme();
   const today = report.today;
   const next = report.allHours.find((h) => h.time > report.now && h.pop >= POP_WET);
   const peak = Math.round(Math.max(...report.allHours.map((h) => h.pop)) * 100);
   const unit = report.precipSky === "snow" ? "snow" : "precip";
   return (
-    <Card title="Precipitation" icon="drop" style={s.tile}>
+    <Card title="Precipitation" icon="drop" style={[s.tile, style]}>
       <Big>{`${Math.round(today.maxPop * 100)}%`}</Big>
       <Text style={[s.sub, { color: t.text }]}>Chance today</Text>
       <View style={{ flex: 1 }} />
@@ -64,39 +53,46 @@ function Precip({ report }: { report: Report }) {
   );
 }
 
-function Wind({ report }: { report: Report }) {
-  const t = useTheme();
+export function Wind({ report, style, compact }: TileProps) {
   const w = report.hours.map((h) => h.windKmh);
   const now = Math.round(report.current.windKmh);
   const rows: [string, string][] = [
-    ["Wind", `${now} km/h`],
-    ["Strongest, 24 h", `${Math.round(Math.max(...w))} km/h`],
-    ["Lightest, 24 h", `${Math.round(Math.min(...w))} km/h`],
+    [compact ? "Now" : "Wind", `${now} km/h`],
+    [compact ? "Max, 24 h" : "Strongest, 24 h", `${Math.round(Math.max(...w))} km/h`],
+    [compact ? "Min, 24 h" : "Lightest, 24 h", `${Math.round(Math.min(...w))} km/h`],
   ];
   return (
-    <Card title="Wind" icon="wind">
+    <Card title="Wind" icon="wind" style={style}>
       <View style={{ flexDirection: "row", alignItems: "center" }}>
-        <View style={{ flex: 1, paddingRight: 16 }}>
-          {rows.map(([k, v], i) => (
-            <View key={k} style={[s.kv, i > 0 && { borderTopWidth: 1, borderTopColor: t.hairline }]}>
-              <Text style={[s.kvKey, { color: t.text }]}>{k}</Text>
-              <Text style={[s.kvVal, { color: t.muted }]}>{v}</Text>
-            </View>
-          ))}
-        </View>
-        <Dial value={now} />
+        <KeyValues rows={rows} compact={compact} />
+        <Dial value={now} size={compact ? 108 : 140} />
       </View>
     </Card>
   );
 }
 
-/** Tick ring with the speed in the middle (the CNN has no wind direction, so no compass). */
-function Dial({ value }: { value: number }) {
+function KeyValues({ rows, compact }: { rows: [string, string][]; compact?: boolean }) {
   const t = useTheme();
-  const size = 140, c = size / 2;
+  const text = compact && s.kvCompact;
+  return (
+    <View style={{ flex: 1, paddingRight: compact ? 12 : 16 }}>
+      {rows.map(([k, v], i) => (
+        <View key={k} style={[s.kv, compact && s.kvRowCompact, i > 0 && { borderTopWidth: 1, borderTopColor: t.hairline }]}>
+          <Text style={[s.kvKey, text, { color: t.text }]}>{k}</Text>
+          <Text style={[s.kvVal, text, { color: t.muted }]}>{v}</Text>
+        </View>
+      ))}
+    </View>
+  );
+}
+
+/** Tick ring with the speed in the middle (the CNN has no wind direction, so no compass). */
+function Dial({ value, size }: { value: number; size: number }) {
+  const t = useTheme();
+  const c = 70;
   return (
     <View style={{ width: size, height: size, alignItems: "center", justifyContent: "center" }}>
-      <Svg width={size} height={size} style={{ position: "absolute" }}>
+      <Svg width={size} height={size} viewBox="0 0 140 140" style={{ position: "absolute" }}>
         {Array.from({ length: 72 }, (_, i) => {
           const a = (i / 72) * 2 * Math.PI;
           return <Line key={i} x1={c + Math.sin(a) * 60} y1={c - Math.cos(a) * 60} x2={c + Math.sin(a) * 68} y2={c - Math.cos(a) * 68}
@@ -109,7 +105,7 @@ function Dial({ value }: { value: number }) {
   );
 }
 
-function Sunrise({ report }: { report: Report }) {
+export function Sunrise({ report, style }: TileProps) {
   const tz = report.station.timeZone, t = useTheme();
   const { sunrise, sunset } = report.sun;
   const frac = Math.min(1, Math.max(0, (report.now.getTime() - sunrise.getTime()) / (sunset.getTime() - sunrise.getTime())));
@@ -117,7 +113,7 @@ function Sunrise({ report }: { report: Report }) {
   // Curve: horizon at y=40, peak y=8; dot rides the daylight arc, below the line at night.
   const px = 4 + frac * 112, py = 40 - Math.sin(frac * Math.PI) * 32;
   return (
-    <Card title={before ? "Sunrise" : after ? "Sunset" : "Sunset"} icon="sunrise" style={s.tile}>
+    <Card title={before ? "Sunrise" : after ? "Sunset" : "Sunset"} icon="sunrise" style={[s.tile, style]}>
       <Big>{clock(before ? sunrise : sunset, tz)}</Big>
       <Svg width="100%" height={54} viewBox="0 0 120 54" style={{ marginTop: 6 }}>
         <Line x1="0" y1="40" x2="120" y2="40" stroke={t.muted} strokeWidth={1} />
@@ -129,61 +125,12 @@ function Sunrise({ report }: { report: Report }) {
   );
 }
 
-function Daylight({ report }: { report: Report }) {
-  const m = report.sun.daylightMinutes, diff = report.sunTomorrow.daylightMinutes - m;
-  return (
-    <Card title="Daylight" icon="clock" style={s.tile}>
-      <Big>{`${Math.floor(m / 60)}h ${String(m % 60).padStart(2, "0")}m`}</Big>
-      <View style={{ flex: 1 }} />
-      <Note>{diff < 0 ? "Days are getting shorter until Dec 21." : "Days are getting longer."}</Note>
-    </Card>
-  );
-}
-
-function Moon({ report }: { report: Report }) {
-  const t = useTheme();
-  const m = moonInfo(report.now);
-  const rows: [string, string][] = [
-    ["Illumination", `${Math.round(m.illumination * 100)}%`],
-    ["Next full moon", m.daysToFull === 0 ? "Today" : `${m.daysToFull} days`],
-  ];
-  return (
-    <Card title={m.name} icon="moon">
-      <View style={{ flexDirection: "row", alignItems: "center" }}>
-        <View style={{ flex: 1, paddingRight: 16 }}>
-          {rows.map(([k, v], i) => (
-            <View key={k} style={[s.kv, i > 0 && { borderTopWidth: 1, borderTopColor: t.hairline }]}>
-              <Text style={[s.kvKey, { color: t.text }]}>{k}</Text>
-              <Text style={[s.kvVal, { color: t.muted }]}>{v}</Text>
-            </View>
-          ))}
-        </View>
-        <MoonDisc illumination={m.illumination} waxing={m.waxing} />
-      </View>
-    </Card>
-  );
-}
-
-function MoonDisc({ illumination, waxing }: { illumination: number; waxing: boolean }) {
-  const r = 60, rx = r * Math.abs(1 - 2 * illumination), crescent = illumination < 0.5;
-  const edgeSweep = waxing ? 1 : 0;
-  const termSweep = waxing ? (crescent ? 0 : 1) : (crescent ? 1 : 0);
-  const lit = `M0 ${-r} A${r} ${r} 0 0 ${edgeSweep} 0 ${r} A${rx} ${r} 0 0 ${termSweep} 0 ${-r} Z`;
-  return (
-    <Svg width={130} height={130} viewBox="-65 -65 130 130">
-      <Defs>
-        <LinearGradient id="moonlit" x1="0" y1="0" x2="1" y2="1"><Stop offset="0" stopColor="#f3f4fb" /><Stop offset="1" stopColor="#b9bdd6" /></LinearGradient>
-      </Defs>
-      <Circle r={r} fill="#232850" />
-      <G><Path d={lit} fill="url(#moonlit)" /></G>
-    </Svg>
-  );
-}
-
 const s = StyleSheet.create({
   grid: { flexDirection: "row", flexWrap: "wrap", gap: 12 },
-  half: { width: "48.4%", flexGrow: 1 },
+  // Two per row: 2 x 47% plus the 12 px gap fits a 343 px phone column.
+  half: { width: "47%", flexGrow: 1 },
   full: { width: "100%" },
+  fill: { flex: 1 },
   tile: { minHeight: 176 },
   big: { fontFamily: fonts.regular, fontSize: 38, color: "#fff" },
   sub: { fontFamily: fonts.semi, fontSize: 17, marginTop: 2 },
@@ -191,4 +138,6 @@ const s = StyleSheet.create({
   kv: { flexDirection: "row", justifyContent: "space-between", paddingVertical: 13 },
   kvKey: { fontFamily: fonts.regular, fontSize: 17 },
   kvVal: { fontFamily: fonts.regular, fontSize: 17 },
+  kvCompact: { fontSize: 15 },
+  kvRowCompact: { paddingVertical: 11, gap: 8 },
 });

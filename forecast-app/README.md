@@ -79,6 +79,17 @@ Opened from "Training demo ›" on the forecast screen. Tap a spot on the globe;
 - **Any other valid spot** can be planned and trained through the training API (`benchmarking-site/server/train_api.py`, served by `npz_api.py` on port 5174). Planning only checks the setup on Modal; training starts only after the user switches on the go-ahead and presses Start, and the API also requires the region name as approval. Set `EXPO_PUBLIC_TRAIN_API_URL` when the API is not at `http://localhost:5174`, and add the app's origin to `BENCHMARK_API_CORS` on the API.
 - `src/data/demo/stations.json` is rebuilt with `python pipelines/download/build_demo_stations.py` (IEM metadata, about 70 small requests).
 
+## HRRR forecast map
+
+The map card on the forecast screen shows **real** NOAA HRRR output, unlike the station fixtures: 2 m temperature, 10 m wind and precipitation rate on HRRR's native 3 km grid, in an 80 × 80-cell (240 km) square around Eric D. Soulis, every 3 hours to 48 h. It is raw HRRR; the CNN correction only applies at stations. The data is `src/data/hrrr-map.json`, quantized to uint8 (about 410 KB). Regenerate it from the repository root:
+
+```bash
+python3 -m venv .venv && .venv/bin/pip install "dynamical-catalog>=0.8.0,<1" pyproj==3.7.0
+.venv/bin/python pipelines/download/export_hrrr_map.py --init 2026-11-27T06:00 --out forecast-app/src/data/hrrr-map.json
+```
+
+It reads one to four storage chunks per field from the dynamical.org catalog (tens of MB) and takes a few seconds.
+
 ## Swapping fixtures for live data
 
 Only `src/data/source.ts` knows where data comes from. Implement `ForecastSource` against the read API (`GET /forecast`, see `weatherloo-forecast/docs/DESIGN.md` §7), return `ForecastRecord[]` for a `(modelId, stationId)`, make `now()` return `new Date()`, and point `forecastSource` at it. The UI reads only from `useForecast()`.
@@ -88,3 +99,7 @@ Only `src/data/source.ts` knows where data comes from. Implement `ForecastSource
 - **A model:** add an entry to `MODELS` in `src/data/registry.ts` and make its records available (fixture JSON listed in `src/data/fixtures/index.ts`, or the live source). The active model is `activeModelId` / `setActiveModelId` from `useForecast()`. To show a historical score, set `benchmarkMethodId` only when the benchmark method directly matches the forecast model, then regenerate the summary using `npm run benchmark-summary`.
 - **A screen** (coolcucumber, AutoML globe): add a file in `src/app/` (e.g. `globe.tsx`) with its code under `src/features/globe/`, and link to it with `expo-router`'s `Link`. Providers in `_layout.tsx` are shared. Native-only libraries need a development build; keep web fallbacks in mind.
 - **A variable:** add a record for it, read it with `seriesOf` in `src/data/report.ts`, and surface it as a tile in `src/features/report/Tiles.tsx`.
+
+## Credits
+
+Background photo: [University of Waterloo William G. Davis Computer Research Center Bridge](https://commons.wikimedia.org/wiki/File:University_of_Waterloo_William_G._Davis_Computer_Research_Center_Bridge.jpg) by Victor Vucicevich, [CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0). Resized and toned to a dark-blue duotone for `assets/images/campus-davis-centre.jpg`.

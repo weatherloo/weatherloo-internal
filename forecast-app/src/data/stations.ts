@@ -12,7 +12,7 @@ export const STATIONS: Station[] = [
   {
     id: "eric_d_soulis",
     name: "Eric D. Soulis Station",
-    place: "waterloo, ontario",
+    place: "Waterloo, Ontario",
     lat: 43.4723,
     lon: -80.5449,
     timeZone: "America/Toronto",

@@ -6,6 +6,7 @@ import { feature, mesh } from "topojson-client";
 import type { GeometryCollection, Topology } from "topojson-specification";
 import world from "world-atlas/countries-110m.json";
 import { fonts } from "@/theme/tokens";
+import { useSvgId } from "@/components/svgId";
 import type { LatLon } from "./checks";
 
 const SIZE = 600; // SVG units; the view scales to its width
@@ -37,6 +38,7 @@ interface Props {
 export function Globe({ domain, pins, tap, station, radiusKm, tapOk, focus, onTap, onPin }: Props) {
   const [rotation, setRotation] = useState<[number, number, number]>([97.5, -40, 0]);
   const [zoom, setZoom] = useState(1.6);
+  const oceanId = useSvgId("ocean");
   const [width, setWidth] = useState(SIZE);
 
   useEffect(() => {
@@ -105,12 +107,12 @@ export function Globe({ domain, pins, tap, station, radiusKm, tapOk, focus, onTa
       >
         <Svg width="100%" height="100%" viewBox={`0 0 ${SIZE} ${SIZE}`} pointerEvents="none">
           <Defs>
-            <RadialGradient id="ocean" cx="40%" cy="35%" r="75%">
+            <RadialGradient id={oceanId} cx="40%" cy="35%" r="75%">
               <Stop offset="0" stopColor="#173158" />
               <Stop offset="1" stopColor={C.dark} />
             </RadialGradient>
           </Defs>
-          <Path d={d({ type: "Sphere" })} fill="url(#ocean)" stroke="rgba(103,232,249,0.35)" />
+          <Path d={d({ type: "Sphere" })} fill={`url(#${oceanId})`} stroke="rgba(103,232,249,0.35)" />
           <Path d={d(GRATICULE)} fill="none" stroke="rgba(148,163,184,0.14)" />
           <Path d={d(LAND)} fill="#22395f" stroke="#2f4c78" strokeWidth={0.6} />
           <Path d={d(BORDERS)} fill="none" stroke="rgba(203,213,225,0.35)" strokeWidth={0.6} />
@@ -135,10 +137,10 @@ export function Globe({ domain, pins, tap, station, radiusKm, tapOk, focus, onTa
               <G key={p.id} x={xy[0]} y={xy[1]}>
                 <Circle r={6} fill={C.ok} stroke={C.ink} strokeWidth={1.5} />
                 {/* Outline first, then the label: react-native-svg has no paint-order. */}
-                {[{ stroke: "rgba(8,18,36,0.85)", strokeWidth: 3 }, {}].map((extra, k) => (
+                {[{ stroke: "rgba(8,18,36,0.85)", strokeWidth: 3.5, strokeLinejoin: "round" as const }, {}].map((extra, k) => (
                   <SvgText
                     key={k} x={p.left ? -10 : 10} y={-9} textAnchor={p.left ? "end" : "start"}
-                    fill={C.ink} fontSize={13} fontWeight="600" {...extra}
+                    fill={C.ink} fontSize={14} fontFamily={fonts.semi} letterSpacing={0.2} {...extra}
                   >
                     {p.label}
                   </SvgText>
