@@ -8,6 +8,9 @@ Endpoints:
       [&init_from=ISO][&init_to=ISO][&cycles=00,06,12,18]
       -> { lead_times_hours, rmse, mae, bias, acc, n_inits, n_samples }
 
+  POST /api/train/plan, POST /api/train/start, GET /api/train/status
+      -> hrrr_cnn training runs for the forecast app's training demo (see train_api.py)
+
 Run: python3 server/npz_api.py  (default port 5174)
 """
 
@@ -24,6 +27,8 @@ from urllib.parse import parse_qs, urlparse
 
 import numpy as np
 
+import train_api
+
 SITE_ROOT = Path(__file__).resolve().parents[1]
 DATA_ROOT = SITE_ROOT / "data"
 DEFAULT_YEAR = 2025
@@ -31,6 +36,14 @@ DEFAULT_PORT = 5174
 
 METRICS = ("rmse", "mae", "bias", "acc")
 METHOD_ID_RE = re.compile(r"^[a-z0-9_]+$")
+
+# Browser origins allowed to call the API directly (the forecast app's training
+# demo). Comma-separated; the benchmark site itself goes through the Vite proxy.
+CORS_ORIGINS = {
+    o.strip()
+    for o in os.environ.get("BENCHMARK_API_CORS", "http://localhost:8081").split(",")
+    if o.strip()
+}
 
 _npz_cache: dict[str, tuple[str, np.lib.npyio.NpzFile]] = {}
 
@@ -197,6 +210,7 @@ class Handler(BaseHTTPRequestHandler):
         self.send_response(status)
         self.send_header("Content-Type", "application/json")
         self.send_header("Content-Length", str(len(body)))
+        self._cors_headers()
         self.end_headers()
         self.wfile.write(body)
 
@@ -211,7 +225,46 @@ class Handler(BaseHTTPRequestHandler):
         action = parts[3] if len(parts) > 3 else None
         return method_id, action, query
 
+    def _cors_headers(self) -> None:
+        origin = self.headers.get("Origin")
+        if origin in CORS_ORIGINS:
+            self.send_header("Access-Control-Allow-Origin", origin)
+            self.send_header("Vary", "Origin")
+
+    def do_OPTIONS(self) -> None:
+        self.send_response(204)
+        self._cors_headers()
+        self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+        self.send_header("Access-Control-Allow-Headers", "Content-Type")
+        self.send_header("Content-Length", "0")
+        self.end_headers()
+
+    def _train(self, call) -> None:
+        try:
+            self._send_json(200, call())
+        except train_api.TrainError as exc:
+            self._send_json(exc.status, {"error": str(exc)})
+
+    def do_POST(self) -> None:
+        path = urlparse(self.path).path
+        handlers = {"/api/train/plan": train_api.plan, "/api/train/start": train_api.start}
+        if path not in handlers:
+            self._send_json(404, {"error": "Not found"})
+            return
+        try:
+            length = int(self.headers.get("Content-Length", 0))
+            body = json.loads(self.rfile.read(min(length, 65536)) or b"{}")
+        except (ValueError, json.JSONDecodeError):
+            self._send_json(400, {"error": "Body must be JSON"})
+            return
+        self._train(lambda: handlers[path](body if isinstance(body, dict) else {}))
+
     def do_GET(self) -> None:
+        parsed = urlparse(self.path)
+        if parsed.path == "/api/train/status":
+            region = parse_qs(parsed.query).get("region", [""])[0]
+            self._train(lambda: train_api.status(region))
+            return
         method_id, action, query = self._read_route()
         if method_id is None or not METHOD_ID_RE.fullmatch(method_id):
             self._send_json(404, {"error": "Not found"})
