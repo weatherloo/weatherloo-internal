@@ -13,6 +13,7 @@ npm run web        # dev server, web (http://localhost:8081)
 npm start          # Expo dev server; press i / a for iOS / Android
 npm run typecheck
 npm run test:data  # validate fixture contracts and benchmark provenance
+npm run test:demo  # training-demo location checks (HRRR grid, tiles, station history)
 ```
 
 ## Build for web
@@ -37,12 +38,15 @@ vercel --prod
 ## Layout
 
 ```
-src/app/              routes (Expo Router): _layout.tsx (providers, fonts), index.tsx (report)
+src/app/              routes (Expo Router): _layout.tsx (providers, fonts), index.tsx (report),
+                      compare.tsx, demo.tsx (training demo)
 src/features/report/  the forecast screen (ReportScreen.tsx) and detail tiles (Tiles.tsx)
 src/components/       Card, Icon, SkyBackground, HourlyStrip, DayRow
 src/data/             contract.ts, registry.ts, stations.ts, source.ts, ForecastProvider.tsx,
                       report.ts (view model), benchmark-summary.json, fixtures/
 src/features/compare/  side-by-side synthetic forecast and historical skill comparison
+src/features/demo/    training demo: globe, location checks, walkthrough, plan/approve/train panel
+src/data/demo/        prepared hrrr_cnn runs (locations.json) and the IEM ASOS station list (stations.json)
 src/theme/tokens.ts   night/day themes, fonts
 scripts/              generate-fixtures.mjs
 ```
@@ -66,6 +70,14 @@ The comparison screen plots synthetic temperature and wind trajectories for ever
 HRRR CNN remains demo-only and unscored: no local f024 CNN prediction/checkpoint is available, so the app does not show pooled CNN scores or claim an improvement over HRRR. Regenerate the compact summary from the existing benchmark aggregates with `npm run benchmark-summary`.
 
 **Contract gap:** the v1 schema's `unit` enum only has `degC` and `m/s`. Precipitation needs `fraction` and `mm`, so `src/data/contract.ts` extends the type. The schema in `weatherloo-forecast/contract/` needs a matching bump before live precipitation can be published.
+
+## Training demo (`/demo`)
+
+Opened from "Training demo ›" on the forecast screen. Tap a spot on the globe; the app checks it the way the hrrr_cnn pipeline would (`src/features/demo/checks.ts`: inside HRRR, an ASOS station within 125 km with records back to Dec 2020, and the 17x17 patch inside one stored HRRR tile).
+
+- **Prepared runs** (Waterloo, Pearson, SFO) replay the pipeline with real 2025 scores from `models/hrrr_cnn/README.md`, stored in `src/data/demo/locations.json`.
+- **Any other valid spot** can be planned and trained through the training API (`benchmarking-site/server/train_api.py`, served by `npz_api.py` on port 5174). Planning only checks the setup on Modal; training starts only after the user switches on the go-ahead and presses Start, and the API also requires the region name as approval. Set `EXPO_PUBLIC_TRAIN_API_URL` when the API is not at `http://localhost:5174`, and add the app's origin to `BENCHMARK_API_CORS` on the API.
+- `src/data/demo/stations.json` is rebuilt with `python pipelines/download/build_demo_stations.py` (IEM metadata, about 70 small requests).
 
 ## Swapping fixtures for live data
 
